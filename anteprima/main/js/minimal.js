@@ -35,11 +35,10 @@ export function scrivaniaMinimal (sc) {
   if (!prendi('adesso')) return sc
   for (const c of r) { c.nascosto = true; c.gruppo = null }
   sc.gruppi = []
-  const misure = { adesso: 12, giorni: 8, scadute: 8, progetti: 8, notifiche: 4 }
+  const misure = { adesso: 12, scadute: 8, notifiche: 4 } // i prossimi giorni e i progetti stanno in cima ad «Adesso» (25-11 sera)
   const ordine = Object.keys(misure).map(prendi).filter(Boolean)
   for (const c of ordine) { r.splice(r.indexOf(c), 1); Object.assign(c, { nascosto: false, larghezza: misure[c.id], altezza: null, piccolo: false }) }
   r.unshift(...ordine)
-  cartella(sc, 'gruppo-agenda', 'Agenda', ['giorni', 'scadute', 'progetti'], prendi('adesso'), 8)
   return sc
 }
 

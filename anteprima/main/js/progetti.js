@@ -14,6 +14,17 @@ export function progetti (lista, stanza) {
       : el('p', { class: 'vuoto', testo: 'Nessuna cartella di progetto con cose da fare.' }))
 }
 
+// i progetti in piccolo, a destra dei prossimi giorni in cima ad «Adesso» (Marco, 25-11 sera: «inserisci vicino al calendario, ma
+// sulla parte destra, la sezione progetti, togliendo la card»): l'anello, il nome e quante cose restano; un clic apre il resoconto
+export function progettiPiccoli (lista = []) {
+  const aperti = lista.filter(p => p.aperte > 0)
+  return el('div', { class: 'progetti-piccoli', role: 'group', 'aria-label': 'I progetti' },
+    el('a', { class: 'sopra piccolo', href: '#scrivania?pagina=progetti', title: 'Tutti i progetti', testo: 'Progetti' }),
+    aperti.length ? el('ul', {}, ...aperti.slice(0, 4).map(p => el('li', {}, el('button', { type: 'button', onclick: () => resoconto(p.cartella), title: `${p.nome}: ${p.fatte} fatte, ${p.aperte} aperte · un clic per il resoconto` },
+      el('span', { class: 'anello', style: { '--p': p.percento } }), el('b', { testo: p.nome }), el('small', { testo: String(p.aperte) })))))
+      : el('span', { class: 'sopra piccolo', testo: 'nessuno aperto' }))
+}
+
 // le principali con sotto le loro sotto task (padre = la riga della principale, nella stessa nota)
 function albero (lista, principale, figlia) {
   const qui = new Set(lista.map(k => k.nota + '|' + k.riga)), figli = new Map()

@@ -11,7 +11,7 @@ import { griglia, mostraCasella, TITOLI, iconeCard } from './riquadri.js'
 import { cornice } from './widget.js'
 import * as extra from './caselle-extra.js'
 import { barraScrivanie } from './scrivanie.js'
-import { progetti } from './progetti.js'
+import { progetti, progettiPiccoli } from './progetti.js'
 import { programmi, daChiudere } from './caselle-nuove.js'
 import { strisciaCosaManca } from './cosa-manca.js'
 import { MISURA, salva, ordinabile, pulsanteAnnulla, scrivania as scrivaniaAttiva } from './su-misura.js'
@@ -248,9 +248,10 @@ function giorni (s, ricarica, { compatta = false } = {}) {
   if (compatta) {
     // la lista del giorno la mette il banner dove serve: sotto la task da fare
     lista.classList.add('giorno-in-adesso')
-    return Object.assign(el('div', { class: 'giorni-piccoli', role: 'group', 'aria-label': 'I prossimi giorni' },
+    return Object.assign(el('div', { class: 'giorni-piccoli', role: 'group', 'aria-label': 'I prossimi giorni e i progetti' },
       el('div', { class: 'giorni-piccoli-fila' }, el('span', { class: 'sopra piccolo', testo: 'I prossimi giorni' }), schede,
-        el('a', { class: 'quieto piccolo', href: '#calendario', title: 'Il mese, con le task' }, ic('calendar-dots')))), { listaGiorno: lista })
+        el('a', { class: 'quieto piccolo', href: '#calendario', title: 'Il mese, con le task' }, ic('calendar-dots'))),
+      progettiPiccoli(s.progetti)), { listaGiorno: lista })
   }
   return el('section', { class: 'fascia giorni', 'aria-labelledby': 'giorni-t' },
     // il giorno scelto si apre in Google Calendar (Marco, 21-11: «sui giorni dammi modo di poterlo aprire con Google Calendar»)
