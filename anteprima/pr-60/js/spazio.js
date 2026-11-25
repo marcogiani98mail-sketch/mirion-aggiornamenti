@@ -1,0 +1,115 @@
+// Lo stile Spazio di Mirion (Marco, 25-11-2026: «la dashboard falla anche su Mirion, inventa proprio uno stile spaziale»): il
+// cielo dietro tutte le caselle. Un <canvas> fermo dietro la pagina: tre strati di stelle che scorrono piano (le vicine un po'
+// più in fretta), brillano, ogni tanto una stella cadente, e una cometa lenta che attraversa lo schermo ogni qualche minuto.
+// Lo stesso cielo di Mirion Fit (Piatto, public/cielo.js), con i colori della sfumatura scelta. Leggero: al massimo 30 disegni
+// al secondo, si ferma quando la finestra non si vede, con «riduci il movimento» resta fermo, e si spegne da solo appena si
+// sceglie un altro tema (stili.css, body[data-stile]).
+let stato = null
+
+const tinta = (nome, base) => {
+  const v = getComputedStyle(document.body).getPropertyValue(nome).trim()
+  const m = /^#([0-9a-f]{6})$/i.exec(v)
+  if (!m) return base
+  const n = parseInt(m[1], 16)
+  return `${n >> 16},${(n >> 8) & 255},${n & 255}`
+}
+
+export function accendiStelle () {
+  if (stato || typeof document === 'undefined') return
+  const tela = document.createElement('canvas')
+  tela.className = 'spazio-stelle'; tela.setAttribute('aria-hidden', 'true')
+  document.body.prepend(tela)
+  const ctx = tela.getContext('2d')
+  const fermo = matchMedia('(prefers-reduced-motion: reduce)')
+  let L = 0, H = 0, stelle = [], cadente = null, prossima = 0, ultimo = 0, giro = 0, colori = []
+
+  function semina () {
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    L = innerWidth; H = innerHeight
+    tela.width = Math.round(L * dpr); tela.height = Math.round(H * dpr)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    // bianco, l'accento chiaro e il secondo colore della sfumatura: le stelle prendono i colori del tema
+    colori = ['255,255,255', tinta('--lilla', '235,172,255'), tinta('--accento-2', '238,121,62'), '205,222,255']
+    const n = Math.min(320, Math.round((L * H) / 3600))
+    stelle = Array.from({ length: n }, () => {
+      const strato = Math.random() < 0.62 ? 0 : Math.random() < 0.75 ? 1 : 2 // lontane, medie, vicine
+      return {
+        x: Math.random() * L, y: Math.random() * H, strato,
+        r: [0.55, 0.95, 1.45][strato] * (0.7 + Math.random() * 0.6),
+        v: [2.5, 5, 9][strato], // pixel al secondo
+        luce: 0.4 + Math.random() * 0.6, fase: Math.random() * Math.PI * 2, ritmo: 0.5 + Math.random() * 1.5,
+        colore: Math.random() < 0.72 ? colori[0] : colori[1 + Math.floor(Math.random() * 3)],
+      }
+    })
+  }
+
+  function disegna (t, dt) {
+    ctx.clearRect(0, 0, L, H)
+    for (const s of stelle) {
+      s.x -= s.v * dt; s.y -= s.v * 0.22 * dt
+      if (s.x < -2) s.x += L + 4
+      if (s.y < -2) s.y += H + 4
+      const a = s.luce * (0.62 + 0.38 * Math.sin(s.fase + t * s.ritmo))
+      ctx.fillStyle = `rgba(${s.colore},${a.toFixed(3)})`
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill()
+      if (s.strato === 2 && a > 0.72) { // le più vicine e luminose: l'alone e la croce di luce
+        ctx.fillStyle = `rgba(${s.colore},${(a * 0.13).toFixed(3)})`
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 3.4, 0, Math.PI * 2); ctx.fill()
+        ctx.strokeStyle = `rgba(${s.colore},${(a * 0.35).toFixed(3)})`; ctx.lineWidth = 0.6
+        ctx.beginPath(); ctx.moveTo(s.x - s.r * 4, s.y); ctx.lineTo(s.x + s.r * 4, s.y); ctx.moveTo(s.x, s.y - s.r * 4); ctx.lineTo(s.x, s.y + s.r * 4); ctx.stroke()
+      }
+    }
+    // una stella cadente ogni 8–20 secondi
+    if (!cadente && t > prossima) {
+      cadente = { x: L * (0.3 + Math.random() * 0.7), y: H * Math.random() * 0.45, vx: -(340 + Math.random() * 220), vy: 150 + Math.random() * 90, vita: 0, durata: 0.9 + Math.random() * 0.5 }
+      prossima = t + 8 + Math.random() * 12
+    }
+    if (cadente) {
+      const c = cadente; c.vita += dt; c.x += c.vx * dt; c.y += c.vy * dt
+      const p = c.vita / c.durata, a = Math.sin(Math.min(1, p) * Math.PI)
+      const g = ctx.createLinearGradient(c.x, c.y, c.x - c.vx * 0.2, c.y - c.vy * 0.2)
+      g.addColorStop(0, `rgba(255,255,255,${(0.95 * a).toFixed(3)})`); g.addColorStop(1, `rgba(${colori[1]},0)`)
+      ctx.strokeStyle = g; ctx.lineWidth = 1.5; ctx.lineCap = 'round'
+      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x - c.vx * 0.2, c.y - c.vy * 0.2); ctx.stroke()
+      if (p >= 1) cadente = null
+    }
+  }
+
+  function passo (ora) {
+    giro = 0
+    if (document.hidden || !stato) return
+    if (ora - ultimo >= 33) { // circa 30 al secondo
+      const dt = ultimo ? Math.min(0.1, (ora - ultimo) / 1000) : 0
+      ultimo = ora; disegna(ora / 1000, dt)
+    }
+    giro = requestAnimationFrame(passo)
+  }
+  const parti = () => {
+    cancelAnimationFrame(giro); ultimo = 0
+    if (fermo.matches) { disegna(0, 0); return } // con «riduci il movimento»: le stelle ci sono, ma ferme
+    prossima = performance.now() / 1000 + 3
+    giro = requestAnimationFrame(passo)
+  }
+  let attesa = null
+  const ridimensiona = () => { clearTimeout(attesa); attesa = setTimeout(() => { semina(); parti() }, 150) }
+  const visibile = () => { if (!document.hidden) parti() }
+  // un altro tema: le stelle se ne vanno; un'altra sfumatura: le stelle cambiano colore
+  const guarda = new MutationObserver(() => { if (document.body.dataset.stile !== 'spazio') spegniStelle() })
+  const colore = () => { semina(); if (fermo.matches) disegna(0, 0) }
+  addEventListener('resize', ridimensiona)
+  addEventListener('mirion-colori', colore)
+  document.addEventListener('visibilitychange', visibile)
+  fermo.addEventListener?.('change', parti)
+  guarda.observe(document.body, { attributes: true, attributeFilter: ['data-stile'] })
+  stato = {
+    via () {
+      cancelAnimationFrame(giro); guarda.disconnect()
+      removeEventListener('resize', ridimensiona); removeEventListener('mirion-colori', colore)
+      document.removeEventListener('visibilitychange', visibile); fermo.removeEventListener?.('change', parti)
+      tela.remove()
+    },
+  }
+  semina(); parti()
+}
+
+export function spegniStelle () { stato?.via(); stato = null }
