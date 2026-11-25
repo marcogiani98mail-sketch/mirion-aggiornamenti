@@ -64,7 +64,7 @@ export function attivazione (s) {
     codex: { nome: 'Codex', chi: 'di OpenAI, nell’app ChatGPT', installa: '/api/attivazione/codex', sito: 'https://chatgpt.com/download', account: 'https://chatgpt.com/auth/login', c: 'codex', inCorso: 'installaCodex' },
   }
   const passoClaude = el('li', { class: 'passo-ia' })
-  let scelta = s.ia === 'codex' ? 'codex' : 'claude', stato = { ...s }, messaggio = null
+  let scelta = s.ia === 'codex' ? 'codex' : 'claude', stato = { ...s }, messaggio = null, gratis = s.gratis === true
   const ASPETTA_C = 'La sto installando. Se Windows chiede il permesso, rispondi «Sì».'
   const disegnaClaude = () => {
     const a = APP[scelta], c = stato[a.c] === true
@@ -72,10 +72,13 @@ export function attivazione (s) {
       el('b', {}, c ? ic('check-circle') : null, 'L’intelligenza artificiale'),
       el('span', { class: 'scelta-ia', role: 'radiogroup', 'aria-label': 'Con quale intelligenza artificiale lavori' },
         ...Object.entries(APP).map(([id, x]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(id === scelta), class: 'scelta-ia-voce' + (id === scelta ? ' scelta' : ''),
-          onclick: () => { if (id === scelta) return; scelta = id; messaggio = null; disegnaClaude(); api('/api/attivazione/ia', { ia: id }).catch(e => mostra(e.message)) } },
+          onclick: () => { if (id === scelta) return; scelta = id; messaggio = null; disegnaClaude(); api('/api/attivazione/ia', { ia: id, gratis }).catch(e => mostra(e.message)) } },
           el('img', { src: `./icone/${id}.png`, alt: '' }), el('span', {}, el('b', { testo: x.nome }), el('small', { testo: x.chi }))))),
       el('span', { testo: c ? `${a.nome} c’è: «Fallo con ${a.nome}» lavora nel cervello. Se non hai ancora l’account, crealo: per cominciare basta quello gratuito.`
         : messaggio ?? `È l’intelligenza artificiale che lavora nel cervello con «Fallo con ${a.nome}». Installa l’app e crea l’account: per cominciare basta quello gratuito.` }),
+      // l'account gratuito (Marco, 25-11 sera): «Fallo con…» fa lo stesso le task, nella chat invece che dentro il cervello
+      el('label', { class: 'gratis-ia' }, el('input', { type: 'checkbox', checked: gratis, onchange: e => { gratis = e.target.checked; disegnaClaude(); api('/api/attivazione/ia', { ia: scelta, gratis }).catch(err => mostra(err.message)) } }),
+        el('span', {}, el('b', { testo: 'Uso l’account gratuito' }), el('small', { testo: gratis ? `«Fallo con ${a.nome}» apre la chat con la task e il pezzo di nota già scritti: ${a.nome} ti aiuta a farla. Per farlo lavorare da solo dentro il cervello serve il piano a pagamento; lo cambi quando vuoi dalla freccina accanto a «Fallo con».` : 'Con il piano a pagamento lavora da solo dentro il cervello.' }))),
       el('span', { class: 'bottoni' },
         !c && !messaggio ? el('button', { type: 'button', class: 'secondario piccolo', onclick: installaClaude }, ic('arrow-down'), `Installa ${a.nome}`) : null,
         el('button', { type: 'button', class: 'quieto piccolo', onclick: () => window.open(a.account, '_blank', 'noopener') }, 'Account gratuito'))].filter(Boolean))

@@ -195,6 +195,10 @@ input:focus, textarea:focus, select:focus { border-color: var(--viola); outline:
 .scelta-ia-voce span { display: grid; line-height: 1.2; }
 .scelta-ia-voce small { color: var(--tenue); font-size: .72rem; }
 .scelta-ia-voce.scelta { border-color: var(--viola); box-shadow: 0 0 0 1px var(--viola) inset; }
+.gratis-ia { display: flex; align-items: flex-start; gap: .5rem; max-width: 60ch; cursor: pointer; }
+.gratis-ia input { margin-top: .2rem; }
+.gratis-ia span { display: grid; gap: .1rem; }
+.gratis-ia small { color: var(--tenue); font-size: .76rem; }
 .passi-attivazione b svg.ic { width: 18px; height: 18px; color: var(--bene); }
 .passi-attivazione span { color: var(--testo-2); font-size: .9rem; }
 .attivazione-errore { color: var(--scaduto); background: rgba(255, 148, 157, .08); border: 1px solid rgba(255, 148, 157, .3); border-radius: 10px; padding: .6rem .8rem; }
