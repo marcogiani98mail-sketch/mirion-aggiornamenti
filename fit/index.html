@@ -98,9 +98,12 @@
   document.getElementById('passi-android').hidden = iphone
   if (!telefono) document.getElementById('computer').hidden = false
   // il codice firmato che apre l'app (licenza.js): arriva nel QR di Mirion Trainer dopo il #, che il browser non manda a nessuno
-  const codice = (/[#&]a=([\w.~-]+)/.exec(location.hash) || [])[1]
+  // l'invito a Mirion Fit online (26-11, server su Supabase): ?k=<gettone>&a=<codice>, che passano alla web app così come sono
+  const q = new URLSearchParams(location.search), buono = v => /^[\w.~-]{1,2000}$/.test(v || '')
+  const codice = (/[#&]a=([\w.~-]+)/.exec(location.hash) || [])[1] || (buono(q.get('a')) ? q.get('a') : null)
+  const gettone = buono(q.get('k')) ? q.get('k') : null
   const apri = document.getElementById('apri')
-  if (codice) { apri.href = 'app/?a=' + encodeURIComponent(codice) + '#/diario'; apri.hidden = false }
+  if (codice) { apri.href = 'app/?' + (gettone ? 'k=' + encodeURIComponent(gettone) + '&' : '') + 'a=' + encodeURIComponent(codice) + '#/diario'; apri.hidden = false }
   else document.getElementById('senza-codice').hidden = false
   fetch('versione.json', { cache: 'no-store' }).then(r => r.json()).then(v => {
     document.getElementById('versione').textContent = `Versione ${v.versione}`
