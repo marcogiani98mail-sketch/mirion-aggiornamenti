@@ -99,8 +99,20 @@ function rimettiScorrimento ({ stanza, x, y, palco, dentro }) {
 
 function ascoltaIlVault () {
   if (!window.EventSource) return
-  let timer = null
+  let timer = null, ultimoGiro = 0, inAttesa = false
+  // ogni tanto, non a ogni file (Marco, 25-11 notte: «è importante che venga sempre aggiornata, ma lo fa ogni minuto, a me fa
+  // strano»): dopo un cambiamento si aspetta un attimo di calma e al più un giro ogni due minuti; con la finestra nascosta si
+  // aspetta che torni davanti, e lì ci si rimette in pari subito. «Aggiornami» lo fa sempre subito
+  const OGNI = 120_000, CALMA = 1500
+  const rimanda = () => {
+    inAttesa = true; clearTimeout(timer)
+    if (document.hidden) return
+    timer = setTimeout(giro, Math.max(CALMA, ultimoGiro + OGNI - Date.now()))
+  }
+  const torna = () => { if (!document.hidden && inAttesa) { clearTimeout(timer); timer = setTimeout(giro, 300) } } // tornando da Obsidian: subito in pari
+  addEventListener('visibilitychange', torna); addEventListener('focus', torna)
   const giro = async () => {
+    inAttesa = false; ultimoGiro = Date.now()
     bollino()
     try {
       const d = await api('/api/ia/sessioni'), n = d.sessioni.filter(s => s.attiva).length, b = $('[data-bollino-ia]')
@@ -123,7 +135,7 @@ function ascoltaIlVault () {
     // un avviso del server, non un file cambiato: quello che hai fatto sulla scrivania non è arrivato su GitHub (rotte-squadra.mjs)
     let d = null; try { d = JSON.parse(e.data) } catch { /* un file cambiato */ }
     if (d?.legame) { if (!d.legame.ok && d.legame.errore) notifica('Non è ancora arrivato agli altri: ' + d.legame.errore, { tipo: 'sempre', durata: 9000 }); return }
-    clearTimeout(timer); timer = setTimeout(giro, 1500)
+    rimanda()
   }
   sorgente.onopen = () => { if (STATO.allineato === false) giro() } // il server è tornato: ci si rimette in pari
   sorgente.onerror = () => { STATO.allineato = false; dispatchEvent(new Event('delion-allineato')) } // il server non risponde: non si è in pari
