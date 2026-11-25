@@ -353,7 +353,7 @@ export async function mostra (stanza, params) {
         el('span', { class: 'sopra piccolo', testo: 'le card si spostano, si allargano e si tolgono come sulla scrivania; «Metti sulla scrivania» le porta anche su quella principale' })),
       // «personalizzabile, ma solo con le cose inerenti alla sezione»: le sue card tolte sono icone in cima, un clic le apre
       // e «Qui» le rimette (Marco, 25-11 sera: «fai la stessa cosa… con card immettibili dalla dashboard»)
-      tolte.length ? iconeCard(contenuti, disegna, { titoli: CARTE, dove: disposizione, spazi, qui: 'Qui' }) : '',
+      tolte.length ? iconeCard(contenuti, disegna, { titoli: CARTE, dove: disposizione, qui: 'qui' }) : '',
       griglia(contenuti, ridisegna, { dove: disposizione, titoli: CARTE, spazi, vuoto: el('p', { class: 'vuoto', testo: 'Hai tolto tutte le card: sono fra le icone qui sopra.' }) }))
   }
   disegna()

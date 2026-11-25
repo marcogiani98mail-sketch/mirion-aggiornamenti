@@ -62,7 +62,7 @@ body {
 .cassetto, .guida-scatola, .primo-scatola, .comandi-scatola, .finestra-attivazione {
   background: color-mix(in oklch, var(--alto) 82%, transparent); backdrop-filter: blur(calc(var(--vetro) + 10px)) saturate(1.6);
   border-color: var(--linea-forte); box-shadow: var(--luce), 0 30px 80px -24px rgb(0 0 0 / .7); }
-.cassetto-fondo, .card-volante-fondo, .comandi, .guida, .scelta-fondo { background: color-mix(in oklch, var(--fondo) 45%, transparent); backdrop-filter: blur(6px); }
+.cassetto-fondo, .comandi, .guida, .scelta-fondo { background: color-mix(in oklch, var(--fondo) 45%, transparent); backdrop-filter: blur(6px); }
 .menu-destro, .casella-menu, .notifica, .giorno-al-volo, .cartella-volo, .tecniche {
   background: var(--menu); backdrop-filter: blur(calc(var(--vetro) + 8px)) saturate(1.6); border-color: var(--linea-forte); box-shadow: var(--luce), var(--ombra-su); }
 .grande-anello::before { background: var(--carta); }

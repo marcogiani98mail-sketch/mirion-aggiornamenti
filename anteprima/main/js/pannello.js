@@ -159,7 +159,7 @@ function corpo (chiudi) {
   // le card, con la grafica (Marco, 25-11: «la sezione Personalizza deve far capire tramite una grafica cosa aggiungo alla scrivania»):
   // in cima la mappa della scrivania com'è adesso; sotto tutte le card, ognuna con la sua miniatura, cosa mostra e se c'è già.
   // Qui non si aggiunge più (Marco, 25-11 sera: «levi dalla personalizzazione l'aggiungimento»): le card che non sono sulla scrivania
-  // stanno fra le icone in cima alla scrivania, e da lì si aprono o si rimettono (riquadri.js, iconeCard).
+  // stanno fra le icone in cima alla scrivania, e un clic le rimette (riquadri.js, iconeCard).
   const titoli = Object.fromEntries(Object.entries(TITOLI).filter(([id]) => id !== 'studio-pt' && riq(id))) // Claudio, per ora, no (23-11 sera)
   const pianta = mappa(sc, titoli)
   const nomeCartella = r => r.gruppo && sc.gruppi?.find(g => g.id === r.gruppo)?.nome
@@ -173,7 +173,7 @@ function corpo (chiudi) {
         : el('div', { class: 'carta-stato' }, el('span', { class: 'sopra piccolo' }, ic(segno(id)), 'Fra le icone in cima')))
   })
   const lecard = el('section', { class: 'card-pannello' }, pianta,
-    el('p', { class: 'sopra piccolo', testo: 'La tua scrivania com\'è adesso. Le card che non ci sono stanno fra le icone in cima alla scrivania: un clic le apre, e «Sulla scrivania» le mette qui.' }),
+    el('p', { class: 'sopra piccolo', testo: 'La tua scrivania com\'è adesso. Le card che non ci sono stanno fra le icone in cima alla scrivania: un clic e tornano qui.' }),
     el('ul', { class: 'carte-anteprima' }, ...carte))
   // a schede (Marco, 25-11: «tramite finestre scompartimenti: il tema con il logo e i colori in uno, le card in un altro»):
   // ogni scheda è una finestra sua; quella scelta resta finché Mirion è aperta

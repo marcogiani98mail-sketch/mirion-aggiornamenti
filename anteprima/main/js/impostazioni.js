@@ -85,7 +85,7 @@ function aggiornamentiENotifiche () {
   const controlla = el('button', { type: 'button', class: 'secondario', testo: 'Controlla gli aggiornamenti', onclick: async () => {
     try {
       const r = await api('/api/aggiornamenti')
-      stato.textContent = !r.attivo ? 'Manca l’indirizzo degli aggiornamenti (qui sotto, in «Aggiornamenti»).' : r.nuova ? `C’è la versione ${r.ultima} (questa è la ${r.versione}). ${r.note}` : `Mirion è aggiornata: versione ${r.versione}.`
+      stato.textContent = r.store ? `Questa Mirion (versione ${r.versione}) viene dal Microsoft Store: la aggiorna lo Store da solo.` : !r.attivo ? 'Manca l’indirizzo degli aggiornamenti (qui sotto, in «Aggiornamenti»).' : r.nuova ? `C’è la versione ${r.ultima} (questa è la ${r.versione}). ${r.note}` : `Mirion è aggiornata: versione ${r.versione}.`
       aggiorna.hidden = !r.nuova
     } catch (e) { stato.textContent = e.message }
   } })

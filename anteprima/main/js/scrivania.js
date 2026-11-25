@@ -97,7 +97,7 @@ function disegna () {
   }
   // le card che non sono sulla scrivania: icone in cima, un clic e si aprono (Marco, 25-11 sera)
   const spazi = { ...SPAZI, ...spaziSoftware }
-  stanza.replaceChildren(manca ?? '', fila, iconeCard(contenuti, disegna, { spazi }), griglia(contenuti, disegna, { spazi }))
+  stanza.replaceChildren(manca ?? '', fila, iconeCard(contenuti, disegna), griglia(contenuti, disegna, { spazi }))
 }
 addEventListener('su-misura', () => { if (ultima && !ultima.stanza.hidden && sezione !== 'squadra') disegna() })
 
@@ -179,7 +179,11 @@ function banner (s, ricarica) {
   // in cima, fissi, su tutta la larghezza, i prossimi giorni in piccolo (Marco, 25-11 sera: «i numeri del cervello mettimeli dentro
   // la card principale in modo permanente, in alto» · poi «oggi nel cervello lo sostituisci con i prossimi giorni: fammi in piccolo
   // i giorni e la fai funzionare da lì»): un clic su un giorno apre sotto le sue cose, un altro clic lo richiude
-  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, giorni(s, ricarica, { compatta: true }), ilPunto(s), sinistra, centro)
+  // le cose del giorno toccato vanno sotto la task da fare (Marco, 25-11 sera: «se tocco una casella del calendario dammi anche le task
+  // che ho quel giorno lì, sotto la task da fare»)
+  const giorniPiccoli = giorni(s, ricarica, { compatta: true })
+  centro.append(giorniPiccoli.listaGiorno)
+  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, giorniPiccoli, ilPunto(s), sinistra, centro)
 }
 
 // il punto (Marco, 25-11 sera: «l'idea è implementare tutto nella card principale, in modo tale che da lì si sappia tutto, e poi si
@@ -232,15 +236,22 @@ function giorni (s, ricarica, { compatta = false } = {}) {
     lista.hidden = !scelto
     if (!scelto) return lista.replaceChildren()
     const cose = s.prossime.filter(k => k.data === scelto).sort((a, b) => (a.ora ?? '99').localeCompare(b.ora ?? '99')), impegni = eventi.filter(e => e.giorno === scelto)
-    lista.replaceChildren(el('ul', { class: 'caselle in-fila' },
+    const nomeGiorno = scelto === s.oggi ? 'Oggi' : quando(scelto) === 'domani' ? 'Domani' : new Date(scelto + 'T12:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
+    lista.replaceChildren(compatta ? el('div', { class: 'giorno-lista-cima' }, el('span', { class: 'sopra piccolo', testo: nomeGiorno }),
+      el('button', { type: 'button', class: 'riquadro-tasto', title: 'Chiudi il giorno', 'aria-label': 'Chiudi il giorno', onclick: () => { giornoAperto = null; disegna() } }, ic('x'))) : '',
+    el('ul', { class: 'caselle in-fila' },
       ...impegni.map(e => el('li', { class: 'impegno' }, el('b', { testo: e.ora ?? 'tutto il giorno' }), el('span', { testo: e.titolo ?? 'Impegno' }))),
       ...cose.map(k => { const r = casella(k, { mostraData: false, dopo: ricarica, scegli: inAdesso }); r.classList.toggle('in-adesso', chiave(k) === scelta); return r }),
       !cose.length && !impegni.length && el('li', { class: 'vuoto', testo: 'Niente in programma.' })))
   }
   disegna()
-  if (compatta) return el('div', { class: 'giorni-piccoli', role: 'group', 'aria-label': 'I prossimi giorni' },
-    el('div', { class: 'giorni-piccoli-fila' }, el('span', { class: 'sopra piccolo', testo: 'I prossimi giorni' }), schede,
-      el('a', { class: 'quieto piccolo', href: '#calendario', title: 'Il mese, con le task' }, ic('calendar-dots'))), lista)
+  if (compatta) {
+    // la lista del giorno la mette il banner dove serve: sotto la task da fare
+    lista.classList.add('giorno-in-adesso')
+    return Object.assign(el('div', { class: 'giorni-piccoli', role: 'group', 'aria-label': 'I prossimi giorni' },
+      el('div', { class: 'giorni-piccoli-fila' }, el('span', { class: 'sopra piccolo', testo: 'I prossimi giorni' }), schede,
+        el('a', { class: 'quieto piccolo', href: '#calendario', title: 'Il mese, con le task' }, ic('calendar-dots')))), { listaGiorno: lista })
+  }
   return el('section', { class: 'fascia giorni', 'aria-labelledby': 'giorni-t' },
     // il giorno scelto si apre in Google Calendar (Marco, 21-11: «sui giorni dammi modo di poterlo aprire con Google Calendar»)
     el('header', {}, el('h2', { id: 'giorni-t', testo: 'I prossimi giorni' }), !s.calendario?.collegato && el('a', { class: 'sopra piccolo', href: '#impostazioni', testo: 'Collega il calendario di Google' }),

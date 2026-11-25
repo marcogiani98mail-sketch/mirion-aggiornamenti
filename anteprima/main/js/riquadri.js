@@ -48,7 +48,7 @@ export function griglia (contenuti, ridisegna, opz = {}) {
     fatti.add(r.gruppo); g.append(scatola(r.gruppo, membri(r.gruppo), contenuti, ridisegna))
   }
   if (!g.childElementCount && opz.vuoto) g.append(opz.vuoto)
-  else if (!g.childElementCount) g.append(el('div', { class: 'vuoto riquadri-vuoto' }, el('p', { testo: 'Questa scrivania è vuota: le card sono fra le icone qui sopra. Un clic ne apre una, e «Sulla scrivania» la mette qui.' })))
+  else if (!g.childElementCount) g.append(el('div', { class: 'vuoto riquadri-vuoto' }, el('p', { testo: 'Questa scrivania è vuota: le card sono fra le icone qui sopra: un clic e tornano qui.' })))
   // ogni volta che una casella cambia altezza (contenuto, rimpicciolita, allargata) si ricontano le sue righe
   osserva?.disconnect()
   osserva = new ResizeObserver(voci => voci.forEach(v => adatta(v.target)))
@@ -194,9 +194,8 @@ export function mostraCasella (id) {
   return cambiato
 }
 
-// Le icone delle card (Marco, 25-11 sera: «dalla dashboard principale mi fai delle icone con la card annessa, dove quando la clicco
-// mi viene fuori»): in cima alla scrivania, un'icona per ogni card che non è sulla scrivania. Un clic apre la card sopra la scrivania,
-// con tutto quello che fa; da lì si mette sulla scrivania (📌) o si apre la sua pagina completa. Così in Personalizza non serve aggiungere.
+// Le icone delle card (Marco, 25-11 sera): in cima alla scrivania, un'icona con il suo nome per ogni card che non è sulla
+// scrivania; un clic la manda sulla scrivania. Così in Personalizza non serve aggiungere.
 const SEGNI = { adesso: 'target', giorni: 'calendar-dots', cervello: 'notebook', progetti: 'folder-simple', 'senza-data': 'check-circle', scadute: 'check-square',
   accessi: 'squares-four', cerca: 'magnifying-glass', diario: 'book-open-text', conti: 'briefcase', gestionali: 'desktop', notizie: 'paper-plane-tilt',
   notifiche: 'bell', lavagne: 'pencil-simple', versioni: 'arrows-clockwise', programmi: 'sliders-horizontal', 'da-chiudere': 'check',
@@ -206,51 +205,31 @@ const SEGNI = { adesso: 'target', giorni: 'calendar-dots', cervello: 'notebook',
   oggi: 'target', colazione: 'book-open-text', pranzo: 'book-open-text', cena: 'book-open-text', spuntini: 'book-open-text', pasti: 'book-open-text',
   peso: 'arrows-vertical', acqua: 'sparkle', sonno: 'clock', integratori: 'plus', allenamento: 'target', attivita: 'arrows-out', settimana: 'calendar-dots' }
 export const segno = id => SEGNI[id] ?? 'squares-four'
-let volante = null // la card aperta dall'icona, finché non la chiudi
 
 // dove: la disposizione delle card (la scrivania, la Squadra, un'app come Mirion Fit: Marco, 25-11 sera: «fai la stessa cosa per
 // una dashboard principale di tutte le aree del programma, con card immettibili dalla dashboard»)
-export function iconeCard (contenuti, ridisegna, { titoli = TITOLI, spazi = {}, dove = scrivania, qui = 'Sulla scrivania' } = {}) {
+// il nome di una parola sotto l'icona (Marco, 25-11 sera: «dagli il nome di una parola»)
+const PAROLA = { adesso: 'Adesso', giorni: 'Giorni', cervello: 'Cervello', progetti: 'Progetti', 'senza-data': 'Libere', scadute: 'Task', accessi: 'Lavoro',
+  cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'Gestionali', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Versioni',
+  programmi: 'Programmi', 'da-chiudere': 'Chiudere', punto: 'Punto', assegna: 'Assegna', lavoro: 'Lavoro', chat: 'Chat', storico: 'Storico', persone: 'Persone', tue: 'Tue' }
+export const parola = (id, titolo = '') => PAROLA[id] ?? (String(titolo).replace(/^(il|lo|la|i|gli|le|l’|l')\s*/i, '').split(/\s+/)[0] || id)
+
+// Marco, 25-11 sera: «le icone in alto servono solo per inviare card sulla scrivania»: un clic e la card va in fondo, accesa
+export function iconeCard (contenuti, ridisegna, { titoli = TITOLI, dove = scrivania, qui = 'sulla scrivania' } = {}) {
   const fuori = (dove()?.riquadri ?? []).filter(r => r.nascosto && contenuti[r.id] && titoli[r.id])
   if (!fuori.length) return ''
-  return el('nav', { class: 'icone-card', 'aria-label': 'Le altre card: un clic e si aprono' },
-    ...fuori.map(r => el('button', { type: 'button', class: 'icona-card', 'data-id': r.id, title: titoli[r.id], 'aria-haspopup': 'dialog',
-      onclick: () => apriCard(r.id, contenuti, ridisegna, { titoli, spazi, dove, qui }) }, el('span', { class: 'icona-card-segno' }, ic(segno(r.id))), el('span', { class: 'icona-card-nome', testo: titoli[r.id] }))))
-}
-
-export function apriCard (id, contenuti, ridisegna, { titoli = TITOLI, spazi = {}, dove = scrivania, qui = 'Sulla scrivania' } = {}) {
-  chiudiCard()
-  const x = spazi[id], pagina = typeof x === 'function' ? x() : x
-  const chiudi = () => chiudiCard()
-  const fondo = el('div', { class: 'card-volante-fondo', onclick: e => { if (e.target === fondo) chiudi() } })
-  const metti = () => {
+  const metti = id => {
     const lay = dove(), r = lay?.riquadri.find(c => c.id === id)
     if (!r) return
     const resto = lay.riquadri.filter(c => c !== r)
     r.nascosto = false; r.gruppo = null; r.piccolo = false
     lay.riquadri = [...resto.filter(c => !c.nascosto), r, ...resto.filter(c => c.nascosto)] // in fondo alle card accese
-    chiudi(); salva({ subito: true }); ridisegna()
+    salva({ subito: true }); ridisegna()
   }
-  const card = el('div', { class: 'card-volante riquadro', role: 'dialog', 'aria-modal': 'true', 'aria-label': titoli[id], 'data-id': id },
-    el('header', { class: 'card-volante-cima' },
-      el('span', { class: 'icona-card-segno' }, ic(segno(id))), el('h2', { testo: titoli[id] }),
-      el('div', { class: 'card-volante-tasti' },
-        el('button', { type: 'button', class: 'quieto piccolo', onclick: metti, title: 'Mettila qui, in fondo' }, ic('plus'), qui),
-        pagina ? el('a', { class: 'quieto piccolo', href: pagina, onclick: () => chiudi(), title: 'La pagina completa' }, ic('corners-out'), 'Pagina') : null,
-        el('button', { type: 'button', class: 'riquadro-tasto chiudi-card', 'aria-label': 'Chiudi', title: 'Chiudi (Esc)', onclick: chiudi }, ic('x')))),
-    el('div', { class: 'riquadro-corpo' }, contenuti[id]()))
-  fondo.append(card)
-  document.body.append(fondo)
-  const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); chiudi() } }
-  addEventListener('keydown', esc, true)
-  volante = { fondo, esc }
-  card.querySelector('.chiudi-card').focus()
+  return el('nav', { class: 'icone-card', 'aria-label': `Le card da mettere ${qui}` },
+    ...fuori.map(r => el('button', { type: 'button', class: 'icona-card', 'data-id': r.id, title: `Metti «${titoli[r.id]}» ${qui}`, onclick: () => metti(r.id) },
+      ic(segno(r.id)), el('span', { class: 'icona-card-nome', testo: parola(r.id, titoli[r.id]) }))))
 }
-export function chiudiCard () {
-  if (!volante) return
-  volante.fondo.remove(); removeEventListener('keydown', volante.esc, true); volante = null
-}
-addEventListener('hashchange', chiudiCard)
 
 // Esc chiude lo schermo intero
 addEventListener('keydown', e => { if (e.key === 'Escape' && intero && !document.querySelector('[aria-modal="true"]:not([hidden])')) { intero = null; dispatchEvent(new CustomEvent('su-misura')) } })

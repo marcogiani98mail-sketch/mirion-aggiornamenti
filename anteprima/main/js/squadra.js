@@ -78,8 +78,8 @@ function disegna () {
   // card divise, che si sovrappongono in cartelle con il nome che vuoi (Marco, 25-11 sera: «tutto il lavoro delle card divise e
   // sovrapponibili… e a squadra»): la pagina unica del pomeriggio torna la griglia di card, con le tre cartelle di partenza
   const contenuti = Object.fromEntries(Object.entries(caselle).filter(([, x]) => x).map(([id, x]) => [id, () => x]))
-  // le tolte sono icone: un clic apre la card, «Nella Squadra» la rimette (Marco, 25-11 sera)
-  const icone = tolte.length ? iconeCard(contenuti, disegna, { titoli: TITOLI_SQUADRA, dove: () => MISURA.d.squadra, qui: 'Nella Squadra' }) : ''
+  // le tolte sono icone: un clic la rimette nella Squadra (Marco, 25-11 sera)
+  const icone = tolte.length ? iconeCard(contenuti, disegna, { titoli: TITOLI_SQUADRA, dove: () => MISURA.d.squadra, qui: 'nella Squadra' }) : ''
   stanza.replaceChildren(testa, github ?? '', el('div', { class: 'squadra-sopra' }, pulsanteAnnulla()), icone, griglia(contenuti, disegna, { dove: () => MISURA.d.squadra, titoli: TITOLI_SQUADRA,
     vuoto: el('p', { class: 'vuoto', testo: 'Hai tolto tutte le caselle: sono fra le icone qui sopra.' }) }))
 }
