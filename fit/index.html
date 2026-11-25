@@ -39,6 +39,8 @@
   .nota { font-size: 14px; color: var(--testo-2); }
   .avviso { border-color: color-mix(in oklch, var(--presto) 45%, transparent); }
   .avviso h2 { color: var(--presto); }
+  .attiva { border-color: color-mix(in oklch, var(--viola) 55%, transparent); }
+  .attiva .bottone { margin-top: 12px; }
   .piccolo { font-size: 12px; color: var(--tenue); text-align: center; margin-top: 22px; }
   .piccolo a { color: var(--testo-2); }
   [hidden] { display: none !important; }
@@ -75,7 +77,19 @@
       <li>Quando ha finito, tocca <b>Apri</b> (oppure la notifica del download).</li>
       <li>La prima volta Android chiede di permettere le app da Chrome: <b>Impostazioni</b> → attiva <b>Consenti da questa fonte</b> → torna indietro.</li>
       <li>Premi <b>Installa</b>. Se compare «App sconosciuta», premi <b>Altri dettagli</b> → <b>Installa comunque</b>.</li>
+      <li>Torna su questa pagina e premi <b>Attiva l'app</b>.</li>
     </ol>
+  </section>
+
+  <section class="carta attiva" id="attiva" hidden>
+    <h2>Poi apri l'app</h2>
+    <p class="nota">Quando l'app è installata, premi qui: si apre già attiva, con il tuo trainer.</p>
+    <a class="bottone" id="attiva-link" href="#">Attiva l'app</a>
+  </section>
+
+  <section class="carta" id="senza-codice" hidden>
+    <h2>Serve il QR del tuo trainer</h2>
+    <p class="nota">Mirion Fit si apre solo con il QR che ti mostra il tuo personal trainer da Mirion Trainer. Inquadralo con la fotocamera del telefono: installi e attivi l'app in un colpo.</p>
   </section>
 
   <section class="carta">
@@ -92,6 +106,13 @@
   if (iphone) { document.getElementById('iphone').hidden = false; document.getElementById('scarica').setAttribute('aria-disabled', 'true') }
   else if (!android) document.getElementById('computer').hidden = false
   const scarica = document.getElementById('scarica')
+  // il codice firmato che apre l'app (25-11, Marco: «assicurati che nessuno possa copiare l'app»): arriva nel QR di Mirion Trainer,
+  // dopo il #, che il browser non manda a nessun server; l'app lo controlla con la chiave di Marco (licenza.js in Piatto)
+  const codice = (/[#&]a=([\w.~-]+)/.exec(location.hash) || [])[1]
+  if (codice) {
+    document.getElementById('attiva').hidden = iphone
+    document.getElementById('attiva-link').href = 'piatto://attiva?codice=' + encodeURIComponent(codice)
+  } else if (!iphone) document.getElementById('senza-codice').hidden = false
   // Marco, 25-11: «se una persona prende il qr code gli fa installare l'apk»: su Android il download parte da solo, una volta
   // per apertura; il pulsante resta per riprovare
   const parti = () => {

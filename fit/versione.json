@@ -1,9 +1,9 @@
 {
-  "versione": "1.0.4",
-  "codice": 4,
-  "note": "Mirion Fit: l'icona nuova, il battito e gli allenamenti dall'orologio, la scheda del trainer, I tuoi dispositivi",
-  "byte": 174213,
-  "sha256": "388c65f5c88201841adc719b94df784670de8ffda4a4df45732532cd36b1e679",
-  "quando": "2026-11-24T18:43:33.012Z",
-  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=4"
+  "versione": "1.0.5",
+  "codice": 5,
+  "note": "Mirion Fit si apre solo con il QR del tuo trainer; gli aggiornamenti arrivano da GitHub",
+  "byte": 211514,
+  "sha256": "ca69f4c52077c75899da39c31841d3dbe585d41813edf408eacf42a7b6e8d37a",
+  "quando": "2026-11-25T22:50:37.164Z",
+  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=5"
 }
