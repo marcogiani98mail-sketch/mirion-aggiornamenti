@@ -124,8 +124,7 @@ function banner (s, ricarica) {
     el('p', { class: 'sopra', testo: new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }) }),
     el('h1', { testo: `${saluto()}${nome ? ', ' + nome : ''}` }),
     el('p', { class: 'sopra' }, `${oggi ? `${oggi} ${oggi === 1 ? 'cosa' : 'cose'} per oggi` : 'niente in scadenza oggi'} · ${s.prossime.length} nei prossimi giorni`,
-      s.scadute ? [' · ', el('a', { href: '#scadute', testo: `${s.scadute} scadute` })] : null),
-    oggiNelCervello(s))
+      s.scadute ? [' · ', el('a', { href: '#scadute', testo: `${s.scadute} scadute` })] : null))
   const centro = el('div', { class: 'banner-adesso' }, el('h2', { testo: 'Adesso' }))
   if (prima) {
     const altre = fila.length - 1
@@ -175,7 +174,9 @@ function banner (s, ricarica) {
         el('button', { type: 'button', class: 'secondario altro-adesso', title: 'Rimandala, mettila in pausa, archiviala, segnala come «non serve più», aggiungi una sotto task', 'aria-haspopup': 'menu',
           onclick: e => { e.stopPropagation(); gesti.apriMenu(e.currentTarget) } }, ic('dots-three'), 'Altro')))
   } else centro.append(el('p', { class: 'grande', testo: 'Niente in coda.' }), el('p', { class: 'sopra', testo: 'Quando scrivi «- [ ]» in una nota, la cosa da fare compare qui.' }))
-  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, sinistra, centro)
+  // i numeri del cervello in cima, fissi, su tutta la larghezza (Marco, 25-11 sera: «dato che c'è spazio, i numeri del cervello
+  // mettimeli dentro la card principale in modo permanente, in alto»)
+  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, oggiNelCervello(s), sinistra, centro)
 }
 
 // «Oggi nel cervello» dentro «Adesso» (Marco, 25-11: «oggi nel cervello me lo aggiungi nella dashboard principale e la card la levi»):

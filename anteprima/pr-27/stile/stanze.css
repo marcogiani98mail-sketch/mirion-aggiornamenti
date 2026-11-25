@@ -675,3 +675,4 @@ body.barra-stretta .voci-estensione-nome { display: none; }
 .github-passi { margin: 0; padding-left: 1.3rem; display: grid; gap: .2rem; }
 .github-conferma { display: grid; gap: .5rem; padding: .7rem .9rem; border-radius: .7rem; background: rgba(255,255,255,.04); }
 .importa-numero .ic { width: 1rem; height: 1rem; }
+.da-chiudere-stato { margin: .2rem 0 0; }

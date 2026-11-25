@@ -144,3 +144,8 @@
 .banner-cifra b { font: 700 1rem var(--titoli); color: var(--testo); }
 .banner-cifra span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .banner-cifra:hover, .banner-cifra:focus-visible { border-color: var(--viola); color: var(--testo); }
+
+/* i numeri del cervello in cima ad «Adesso», fissi, su tutta la larghezza, in fila (25-11 sera) */
+.banner > .banner-cervello { grid-column: 1 / -1; margin: 0; display: flex; align-items: center; gap: .4rem .8rem; flex-wrap: wrap; padding-bottom: .9rem; border-bottom: 1px solid var(--linea-forte); }
+.banner > .banner-cervello .banner-cifre { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; }
+@media (max-width: 600px) { .banner > .banner-cervello .banner-cifre { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
