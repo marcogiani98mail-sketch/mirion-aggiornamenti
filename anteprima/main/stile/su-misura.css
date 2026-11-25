@@ -330,3 +330,6 @@ body[data-tema]:not([data-tema="viola"]), .riquadro[data-colore] {
 .icona-card:hover, .icona-card:focus-visible { color: var(--testo); background: none; }
 .icona-card:hover svg.ic, .icona-card:focus-visible svg.ic { transform: translateY(-2px); }
 .icona-card-nome { font-size: .74rem; line-height: 1; white-space: nowrap; }
+/* la card che si apre dal «punto» della Squadra si illumina un attimo (25-11 sera) */
+.riquadro.evidenziata { animation: evidenzia 1.4s ease-out; border-radius: var(--r, 20px); }
+@keyframes evidenzia { 0%, 30% { box-shadow: 0 0 0 2px var(--viola), 0 0 24px -4px var(--viola); } 100% { box-shadow: 0 0 0 0 transparent; } }

@@ -49,7 +49,13 @@ function vedi (id) {
   if (!r) return
   const g = r.gruppo && sq.gruppi?.find(x => x.id === r.gruppo)
   if (r.nascosto || (g && g.scelto !== id) || r.piccolo) { r.nascosto = false; r.piccolo = false; if (g) g.scelto = id; salva({ subito: true }) }
-  requestAnimationFrame(() => document.querySelector(`.riquadro[data-id="${r.gruppo ?? id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  // dopo il ridisegno (salva → su-misura): la card si porta in vista e si illumina un attimo, così si vede che è lei
+  setTimeout(() => {
+    const box = document.querySelector(`.riquadro[data-id="${r.gruppo ?? id}"]`)
+    if (!box) return
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    box.classList.remove('evidenziata'); void box.offsetWidth; box.classList.add('evidenziata')
+  }, 120)
 }
 function puntoSquadra (d, n, rifai) {
   const voce = (icona, numero, nome, id, attento = false) => el('button', { type: 'button', class: 'punto-voce' + (attento ? ' attento' : ''), title: 'Apri', onclick: () => vedi(id) },
@@ -66,7 +72,7 @@ function puntoSquadra (d, n, rifai) {
       voce('bell', String(nuove), nuove === 1 ? 'novità dagli altri' : 'novità dagli altri', 'storico', nuove > 0),
       voce('paper-plane-tilt', 'Chat', 'scrivi alla squadra', 'chat'),
       voce('clock', d.sync?.quando ? new Date(d.sync.quando).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—', d.sync?.errore ? 'ultimo giro: ' + d.sync.errore : 'ultimo giro con GitHub', 'lavoro', Boolean(d.sync?.errore))),
-    el('div', { class: 'bottoni' }, d.io ? el('button', { type: 'button', class: 'primario piccolo', onclick: () => vedi('assegna') }, ic('user-plus'), 'Assegna una task') : null, prendi))
+    el('div', { class: 'bottoni' }, d.io ? el('button', { type: 'button', class: 'primario piccolo', onclick: () => apriAssegna(d, rifai) }, ic('user-plus'), 'Assegna una task') : null, prendi))
 }
 
 function disegna () {
@@ -191,7 +197,21 @@ function scegliReparto (p, d, rifai) {
 // assegnare una task (Marco, 25-11: «assegnare task tramite Claude o tramite me»): a te o a chi sta sotto di te (il titolare a
 // tutti), con la data se c'è. Diventa una casella in Incarichi/<persona>.md e parte subito su GitHub, anche dall'area personale.
 // Claude fa lo stesso scrivendo nella stessa nota (le regole sono nel CLAUDE.md della squadra, «Dare una task»)
-async function assegna (d, rifai) {
+// «Assegna una task» dalla card principale (Marco, 25-11 sera: «assegna una task non funziona»): prima portava alla card
+// «Assegna», che spesso era già lì o dietro un'altra scheda, e sembrava non fare niente. Ora apre subito il modulo, sopra la Squadra
+async function apriAssegna (d, rifai) {
+  const fondo = el('div', { class: 'cassetto-fondo', onclick: e => { if (e.target === fondo) chiudi() } })
+  const chiudi = () => { fondo.remove(); removeEventListener('keydown', esc) }
+  const esc = e => { if (e.key === 'Escape') chiudi() }
+  const corpo = el('div', {}, el('p', { class: 'sopra', testo: 'Un attimo…' }))
+  fondo.append(el('aside', { class: 'cassetto', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Assegna una task' },
+    el('header', {}, el('h2', { testo: 'Assegna una task' }), el('button', { type: 'button', class: 'quieto chiudi', 'aria-label': 'Chiudi', onclick: chiudi }, ic('x'))), corpo))
+  document.body.append(fondo); addEventListener('keydown', esc)
+  try { corpo.replaceChildren(await assegna(d, rifai, { fatto: chiudi })) } catch (err) { corpo.replaceChildren(el('p', { class: 'sopra', testo: 'Non riesco ad aprire il modulo: ' + err.message })) }
+  corpo.querySelector('input:not([type=date])')?.focus()
+}
+
+async function assegna (d, rifai, { fatto } = {}) {
   const { persone = [] } = await api('/api/squadra/a-chi').catch(() => ({}))
   if (!persone.length) return el('p', { class: 'sopra', testo: 'Il tuo ruolo non dà task ad altri.' })
   const chi = el('select', { 'aria-label': 'A chi' }, ...persone.map(p => el('option', { value: p.id, testo: p.id === d.io.id ? `A me (${p.nome})` : p.nome + (p.reparto ? ` · ${p.reparto}` : '') })))
@@ -200,7 +220,7 @@ async function assegna (d, rifai) {
   return el('div', {},
     el('form', { class: 'riga-form squadra-assegna-form', onsubmit: async e => {
       e.preventDefault(); const b = e.target.querySelector('button'); if (b.disabled) return; b.disabled = true
-      try { const r = await api('/api/squadra/incarico', { persona: chi.value, testo: t.value, data: data.value || null }); const n = persone.find(p => p.id === r.persona)?.nome ?? r.persona; t.value = ''; data.value = ''; notifica(`Task data a ${n}: è in Incarichi/${r.persona}.md e parte su GitHub.`, { tipo: 'sempre' }) }
+      try { const r = await api('/api/squadra/incarico', { persona: chi.value, testo: t.value, data: data.value || null }); const n = persone.find(p => p.id === r.persona)?.nome ?? r.persona; t.value = ''; data.value = ''; notifica(`Task data a ${n}: è in Incarichi/${r.persona}.md e parte su GitHub.`, { tipo: 'sempre' }); fatto?.() }
       catch (err) { notifica(err.message, { tipo: 'sempre' }) } finally { b.disabled = false }
     } }, chi, t, data, el('button', { class: 'primario' }, ic('paper-plane-tilt'), 'Assegna')),
     el('p', { class: 'sopra piccolo', testo: 'Anche Claude può assegnarle: chiediglielo (es. «dai a Sava la revisione del sito entro venerdì»). Scrive in Incarichi/<persona>.md come dice il CLAUDE.md della squadra, e Mirion la manda su GitHub al giro dopo.' }))

@@ -103,7 +103,7 @@ export async function storicoEMessaggi (d, rifai) {
           testo, el('button', { class: 'primario tondo', 'aria-label': 'Manda' }, ic('paper-plane-right'))),
         el('p', { class: 'sopra piccolo', testo: 'I messaggi viaggiano con GitHub: partono subito e arrivano agli altri quando la loro Mirion prende le novità (da sola, ogni minuto).' })),
     // ogni invio si apre: il lavoro fatto e i file (invio.js; Marco, 22-11)
-    storico: el('section', { class: 'fascia squadra-storico' }, el('header', {}, el('h2', { testo: 'Lo storico' }), el('span', { class: 'sopra piccolo', testo: 'un clic su un invio: il lavoro e i file' })),
+    storico: el('section', { class: 'fascia squadra-storico' }, el('header', {}, el('h2', { testo: 'Lo storico' })), // niente istruzioni (Marco, 25-11 sera: «nello storico togli la descrizione»)
       s.storico.length ? el('ul', { class: 'storico-squadra' }, ...s.storico.map(c => el('li', {}, el('button', { type: 'button', class: 'invio-apri', title: 'Apri: il lavoro fatto e i file', onclick: () => apriInvio(c.sha) },
         el('div', { class: 'novita-testa' }, el('b', { testo: c.chi }), el('small', { testo: ORA(c.quando) })),
         c.vede ? el('small', { class: 'storico-vede', testo: 'solo per ' + c.vede.map(id => d.persone.find(p => p.id === id)?.nome ?? id).join(' e ') }) : null,
