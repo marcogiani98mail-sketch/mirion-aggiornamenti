@@ -56,8 +56,12 @@ export async function mostra (stanza, params) {
   if (sezione === 'squadra') return mostraSquadra(stanza)
   const [s, manca] = await Promise.all([api('/api/scrivania'), strisciaCosaManca().catch(() => null)])
   const ricarica = () => mostra(stanza).then(bollino)
+  // se il vault è cambiato ma la scrivania no (Claude scrive una nota che qui non si vede, git), non si ridisegna niente
+  // (Marco, 25-11 notte: «continua ad aggiornarsi la pagina»): stessi dati, stessa stanza già disegnata, stessa pagina
+  const firma = JSON.stringify([s, manca ? manca.textContent : null, pagina, widget, location.hash])
+  if (ultima?.stanza === stanza && ultima.firma === firma && stanza.isConnected && stanza.childElementCount) return
   avvisaCalendario(s)
-  ultima = { stanza, s, ricarica, manca }
+  ultima = { stanza, s, ricarica, manca, firma }
   disegna()
 }
 

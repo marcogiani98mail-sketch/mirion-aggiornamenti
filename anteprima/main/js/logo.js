@@ -59,13 +59,15 @@ export function svg (l = {}, colori = {}) {
 export function applica (l) {
   if (typeof document === 'undefined') return
   const x = { ...DI_BASE, ...(l ?? {}) }, marchio = document.querySelector('.marchio')
+  // la Mirion di un trainer si chiama Mirion Trainer, qualunque nome ci sia nel logo (app.js, server/profilo.mjs)
+  if (document.body.classList.contains('solo-trainer')) x.nome = 'Mirion Trainer'
   if (!marchio) return
   const vecchio = marchio.querySelector('img, .logo-disegno'), disegno = svg(x)
   if (disegno) { const t = document.createElement('template'); t.innerHTML = disegno; vecchio?.replaceWith(t.content.firstChild) }
   else if (!vecchio || vecchio.tagName !== 'IMG') { const i = Object.assign(document.createElement('img'), { src: './marchio.svg', alt: '', width: 26, height: 26 }); vecchio ? vecchio.replaceWith(i) : marchio.prepend(i) }
   const nome = marchio.querySelector('span'); if (nome) nome.textContent = x.nome || 'Mirion'
   marchio.setAttribute('aria-label', `${x.nome || 'Mirion'}, la scrivania`)
-  document.title = x.nome && x.nome !== 'Mirion' ? `${x.nome} · Mirion` : 'Mirion'
+  document.title = x.nome && x.nome !== 'Mirion' && x.nome !== 'Mirion Trainer' ? `${x.nome} · Mirion` : (x.nome || 'Mirion')
   // l'icona della finestra: lo stesso disegno, con i colori veri di adesso (le var(--…) fuori dalla pagina non valgono)
   const st = getComputedStyle(document.body), v = k => st.getPropertyValue(k).trim()
   const icona = disegno ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg(x, { a: x.a ?? v('--viola'), b: x.b ?? v('--accento-2'), fondo: '#150e18' }).replace(/var\(--viola\)/g, v('--viola')).replace(/var\(--accento-2\)/g, v('--accento-2'))) : './marchio.svg'

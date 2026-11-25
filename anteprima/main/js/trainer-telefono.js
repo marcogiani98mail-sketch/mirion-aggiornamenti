@@ -6,6 +6,7 @@
 // con le stesse API della stanza Clienti (/api/clienti). Si installa come app con «Aggiungi a schermata Home» (trainer.webmanifest).
 import { daGuardare, squadra, quandoBreve, giorniDa, TEMI, FASTIDI } from './trainer-oggi.js'
 import { accendiStelle } from './spazio.js'
+import { BASE_API } from './trainer-config.js' // '' = il server di Mirion sul computer; online, l'indirizzo del backend
 
 const $ = s => document.querySelector(s)
 function el (tag, attr = {}, ...figli) {
@@ -21,9 +22,9 @@ function el (tag, attr = {}, ...figli) {
   return e
 }
 async function api (url, corpo) {
-  const r = await fetch(url, corpo === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) })
+  const r = await fetch(BASE_API + url, corpo === undefined ? { credentials: BASE_API ? 'include' : 'same-origin' } : { method: 'POST', credentials: BASE_API ? 'include' : 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) })
   const d = await r.json().catch(() => ({ errore: 'risposta illeggibile' }))
-  if (r.status === 401 && !d.accesso) { location.href = '/'; throw new Error('Abbina prima il telefono') } // la porta del telefono chiede il codice
+  if (r.status === 401 && !d.accesso && !BASE_API) { location.href = '/'; throw new Error('Abbina prima il telefono') } // la porta del telefono chiede il codice
   if (!r.ok || d?.errore) throw new Error(d?.errore ?? `errore ${r.status}`)
   return d
 }

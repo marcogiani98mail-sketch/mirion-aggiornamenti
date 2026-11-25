@@ -4,6 +4,19 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.39', data: '2026-11-26', titolo: 'Ognuno vede il suo, la pagina si aggiorna ogni mezz’ora', novita: [
+    'La scrivania si rimette in pari con il Cervello ogni mezz’ora, senza saltare in cima; quando vuoi tu, «Aggiornami» in alto lo fa subito. Quello che fai in Mirion si vede subito.',
+    'La Mirion di un trainer con la licenza di Mirion Trainer si chiama «Mirion Trainer» e mostra solo i clienti e le Impostazioni.',
+    'Mirion la condivide solo Marco; l’app Mirion Fit la dà ai clienti solo chi ha la licenza da trainer.',
+  ] },
+  { versione: '0.1.38', data: '2026-11-26', titolo: 'Mirion Fit online, Mirion Trainer sul telefono, lo stile Spazio', novita: [
+    '«Invita su Mirion Fit online» fa un QR solo: il cliente apre la web app, dà il consenso, e il suo diario, gli allenamenti e i messaggi ti arrivano da qualunque rete, non solo dalla Wi-Fi dello studio.',
+    'Mirion Fit si installa come web app su iPhone e Android, dalla pagina del QR: niente più APK da scaricare.',
+    'Mirion Trainer sul telefono: Oggi, Clienti, il Cerchio e la pagina del cliente con scheda e chat.',
+    'Nella pagina del cliente ci sono il cerchio delle prestazioni, il percorso, com’è andata ogni seduta e gli avvisi che scrive dall’app.',
+    'In Clienti le card «Da guardare oggi», «Il cerchio della squadra» e «Le sedute di oggi»; in Scrivania «Le app sul telefono».',
+    'Lo stile «Spazio» in Personalizza: stelle che scorrono e caselle di vetro scuro. Anche la finestra dell’aggiornamento è nello stile di Aurora.',
+  ] },
   { versione: '0.1.37', data: '2026-11-25', titolo: 'La pagina resta dove sei, progetti e notifiche con le frecce', novita: [
     'Mentre Claude o git cambiano il Cervello, Mirion si rimette in pari senza riportarti in cima alla pagina.',
     'In cima ad «Adesso» i progetti e le notifiche si vedono uno alla volta, con le frecce per passare agli altri.',

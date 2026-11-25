@@ -11,6 +11,7 @@ import { pulsanteIndietro, ricorda } from './indietro.js'
 import { notificheSquadra } from './notifiche-squadra.js'
 import { pulsanteAggiornami } from './aggiornami.js'
 
+const SOLO_TRAINER = ['clienti', 'impostazioni'] // le stanze della Mirion di un trainer
 const STANZE = {
   scrivania: () => import('./scrivania.js'), scadute: () => import('./task.js'), lavoro: () => import('./lavoro.js'),
   lavagne: () => import('./lavagne.js'), cerca: () => import('./cerca.js'), notizie: () => import('./notizie.js'), // le notizie (notizie.js, 23-11)
@@ -30,6 +31,8 @@ async function vai () {
   // la Squadra è una sezione della scrivania (Marco, 23-11): i vecchi indirizzi «#squadra» portano lì
   if (nome === 'squadra') { nome = 'scrivania'; resto = 'sezione=squadra'; history.replaceState(null, '', '#scrivania?sezione=squadra') }
   if (!STANZE[nome]) nome = 'scrivania'
+  // la Mirion di un trainer (server/profilo.mjs, 25-11 notte: «Claudio deve visualizzare solo Mirion Trainer»): i clienti e le impostazioni
+  if (STATO.profilo === 'trainer' && !SOLO_TRAINER.includes(nome)) { nome = 'clienti'; resto = ''; history.replaceState(null, '', '#clienti') }
   document.body.classList.toggle('modo-widget', /[?&]widget=/.test(location.hash)) // una card sola, a tutto schermo (widget.js)
   for (const s of $$('[data-sezione]')) s.hidden = s.id !== nome
   for (const a of $$('[data-stanze] a')) { if (a.getAttribute('href') === '#' + nome) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current') }
@@ -96,8 +99,18 @@ function rimettiScorrimento ({ stanza, x, y, palco, dentro }) {
 
 function ascoltaIlVault () {
   if (!window.EventSource) return
-  let timer = null
+  let timer = null, ultimoGiro = 0, inAttesa = false
+  // ogni mezz'ora, non a ogni file (Marco, 25-11 notte: «è importante che venga sempre aggiornata, ma lo fa ogni minuto, a me fa
+  // strano… oppure fallo fare a me manualmente e tu ogni mezz'ora»): dopo un cambiamento nel vault la scrivania si rimette in
+  // pari al più una volta ogni 30 minuti; quando vuoi tu, «Aggiornami» in alto lo fa subito. Quello che fai in Mirion si vede subito
+  const OGNI = 30 * 60_000, CALMA = 1500
+  const rimanda = () => {
+    inAttesa = true
+    if (timer) return // il giro è già in programma
+    timer = setTimeout(() => { timer = null; giro() }, Math.max(CALMA, ultimoGiro + OGNI - Date.now()))
+  }
   const giro = async () => {
+    inAttesa = false; ultimoGiro = Date.now()
     bollino()
     try {
       const d = await api('/api/ia/sessioni'), n = d.sessioni.filter(s => s.attiva).length, b = $('[data-bollino-ia]')
@@ -120,11 +133,11 @@ function ascoltaIlVault () {
     // un avviso del server, non un file cambiato: quello che hai fatto sulla scrivania non è arrivato su GitHub (rotte-squadra.mjs)
     let d = null; try { d = JSON.parse(e.data) } catch { /* un file cambiato */ }
     if (d?.legame) { if (!d.legame.ok && d.legame.errore) notifica('Non è ancora arrivato agli altri: ' + d.legame.errore, { tipo: 'sempre', durata: 9000 }); return }
-    clearTimeout(timer); timer = setTimeout(giro, 1500)
+    rimanda()
   }
   sorgente.onopen = () => { if (STATO.allineato === false) giro() } // il server è tornato: ci si rimette in pari
   sorgente.onerror = () => { STATO.allineato = false; dispatchEvent(new Event('delion-allineato')) } // il server non risponde: non si è in pari
-  addEventListener('delion-aggiornami', () => { clearTimeout(timer); giro() }) // il tasto «Aggiornami»
+  addEventListener('delion-aggiornami', () => { clearTimeout(timer); timer = null; giro() }) // il tasto «Aggiornami»
   giro()
 }
 
@@ -149,6 +162,11 @@ async function parti () {
   try {
     const [stato, preset] = await Promise.all([api('/api/stato'), api('/api/preset')])
     Object.assign(STATO, stato, { preset })
+    // la Mirion di un trainer: si chiama Mirion Trainer e mostra solo i clienti (stili.css, body.solo-trainer)
+    if (stato.profilo === 'trainer') {
+      document.body.classList.add('solo-trainer'); document.title = 'Mirion Trainer'
+      const m = $('.marchio'); if (m) { m.href = '#clienti'; m.setAttribute('aria-label', 'Mirion Trainer, i tuoi clienti'); const t = m.querySelector('span'); if (t) t.textContent = 'Mirion Trainer' }
+    }
     // il numero della versione accanto al nome, in alto (Marco, 23-11: «metti anche da ora in poi il numero della versione»)
     // «alpha» finché Marco non dice che è pronta (23-11: «dai una versione alpha»); il numero resta quello vero, così gli aggiornamenti si confrontano come prima
     // cliccato, apre le versioni e le loro novità (Marco, 25-11: «le versioni mettile cliccando la versione attuale in alto a sinistra»):
@@ -165,6 +183,7 @@ async function parti () {
   ascoltaIlVault()
   // la guida si apre da sola solo se manca qualcosa e non l'hai saltata; quando non serve, la prima volta c'è il primo sguardo.
   // Un'area di lavoro mai letta (nuova, o con la cartella cambiata) parte con il primo sguardo, come la prima volta.
+  if (STATO.profilo === 'trainer') return // la Mirion di un trainer non ha il vault da preparare: niente guida e niente primo sguardo
   const area = aree.attiva()
   if (!await guida(false)) import('./primo-sguardo.js').then(m => { m.primoSguardo(area && !area.letta); if (area && !area.letta) api('/api/aree/letta', { id: area.id }).catch(() => {}) })
 }
