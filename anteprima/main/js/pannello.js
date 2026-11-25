@@ -54,7 +54,7 @@ function coloriDiAurora (d) {
       el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'quieto', testo: 'Rimetti la sfumatura com\'era', onclick: () => { d.colori = { trasparenza: DI_BASE.trasparenza, aurora: DI_BASE.aurora }; salva({ subito: true }) } }))))
 }
 // i temi (Marco, 23-11: «questo potrebbe essere quello classico e poi fanne altri due per capire dove possiamo spaziare»)
-const COSA_STILE = { classica: 'Aurora: scura, vetro e luci sullo sfondo', carta: 'chiara e calda, i titoli con le grazie', netto: 'scura e piatta, angoli vivi, a macchina' }
+const COSA_STILE = { classica: 'Aurora: scura, vetro e luci sullo sfondo', carta: 'chiara e calda, i titoli con le grazie', netto: 'scura e piatta, angoli vivi, a macchina', spazio: 'il cielo di notte: stelle che scorrono, nebulose, vetro scuro' }
 function temaNelPannello (d) {
   return el('div', { class: 'stili-scelta', role: 'radiogroup', 'aria-label': 'Il tema di Mirion' }, ...Object.entries(STILI).map(([id, nome]) =>
     el('button', { type: 'button', role: 'radio', class: 'stile-voce', 'aria-checked': String((d.stile ?? 'classica') === id), onclick: () => { d.stile = id; salva({ subito: true }) } },

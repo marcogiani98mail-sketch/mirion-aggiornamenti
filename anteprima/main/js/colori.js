@@ -49,7 +49,9 @@ const L_ACCENTO_CHIARI = [0.985, 0.97, 0.945, 0.92, 0.89, 0.85, 0.79, 0.7, 0.57,
 const scura = (L, i, buio) => i < 8 && buio ? L * (1 - 0.6 * buio / 100 * (1 - i / 10)) : L
 const scala = (h, C, neutra, chiaro = false, buio = 0) => (neutra ? (chiaro ? L_GRIGI_CHIARI : L_GRIGI) : (chiaro ? L_ACCENTO_CHIARI : L_ACCENTO)).map((L, i) => hex(chiaro ? L : scura(L, i, buio), neutra ? C * (i < 8 ? 1 : i < 10 ? 1.1 : 0.7) * (1 - 0.7 * buio / 100) : C * PROFILO[i], h))
 // i temi (stili) di Mirion: Classica è Aurora com'era; Carta è chiara; Netto è scura, piatta, senza aurora (stili.css)
-export const STILI = { classica: 'Classica', carta: 'Carta', netto: 'Netto' }
+// Spazio (Marco, 25-11-2026: «la dashboard falla anche su Mirion, inventa proprio uno stile spaziale»): il fondo quasi nero,
+// le nebulose al posto dell'aurora, le stelle che si muovono (spazio.js) e le caselle di vetro scuro con un filo di luce
+export const STILI = { classica: 'Classica', carta: 'Carta', netto: 'Netto', spazio: 'Spazio' }
 
 // la scelta salvata ({ tema, colori }) → i numeri veri
 export function numeri ({ tema, colori, stile } = {}) {
@@ -67,6 +69,7 @@ export function numeri ({ tema, colori, stile } = {}) {
 export function variabili (scelta) {
   const k = numeri(scelta)
   const chiaro = k.stile === 'carta', netto = k.stile === 'netto'
+  if (k.stile === 'spazio') { k.buio = Math.max(k.buio, 75); k.trasparenza = Math.min(k.trasparenza, 40) } // il cielo di notte, le caselle che lasciano vedere le stelle
   const grigio = scala(k.accento, (netto ? 0.004 : k.forza < 0.08 ? 0.008 : chiaro ? 0.012 : 0.018) * Math.min(1.5, k.saturazione / 100), true, chiaro, k.buio), a = scala(k.accento, k.forza, false, chiaro)
   const stato = h => scala(h, 0.15, false, chiaro), verde = stato(152), ambra = stato(75), rosso = stato(25), blu = stato(250)
   // Netto: caselle piene e niente aurora; Carta: caselle quasi piene e l'aurora appena accennata

@@ -72,7 +72,8 @@ export function disegnaBarre () {
   }
   const software = $('.voci-prodotti', nav); if (software) fondo.before(software) // i software restano sotto le stanze (prodotto.js)
   document.body.dataset.tema = d.tema ?? 'aurora' // il tema (su-misura.css)
-  document.body.dataset.stile = d.stile ?? 'classica' // Classica, Carta o Netto (stili.css, Marco 23-11)
+  document.body.dataset.stile = d.stile ?? 'classica' // Classica, Carta, Netto o Spazio (stili.css, Marco 23-11 e 25-11)
+  if (d.stile === 'spazio') import('./spazio.js').then(m => m.accendiStelle()).catch(() => {}) // le stelle che si muovono (spazio.js)
   applicaColori({ tema: d.tema, colori: d.colori, stile: d.stile }) // le sfumature di Aurora, scelte in Personalizza (colori.js)
   applicaLogo(d.logo) // il logo e il nome in alto, e l'icona della finestra (logo.js)
   document.body.classList.toggle('barra-stretta', d.stanze.strette)

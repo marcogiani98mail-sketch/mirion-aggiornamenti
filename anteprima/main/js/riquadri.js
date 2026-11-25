@@ -6,7 +6,7 @@ import { ic } from './icone.js'
 import { MISURA, salva, ordinabile, nuovoId, scrivania, avvisa } from './su-misura.js'
 
 export const TITOLI = { adesso: 'Adesso', giorni: 'I prossimi giorni', cervello: 'Oggi nel cervello', progetti: 'I progetti', 'senza-data': 'Senza data',
-  scadute: 'Task', accessi: 'Lavoro', cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'I gestionali', 'studio-pt': 'Claudio', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Le versioni', programmi: 'I programmi', 'da-chiudere': 'Da chiudere e nascoste' }
+  scadute: 'Task', accessi: 'Lavoro', cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'I gestionali', 'studio-pt': 'Claudio', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Le versioni', programmi: 'I programmi', 'da-chiudere': 'Da chiudere e nascoste', telefoni: 'Le app sul telefono' }
 
 // dove stanno le caselle che si disegnano: la scrivania, o un'altra stanza fatta a caselle (la Squadra: Marco, 22-11:
 // «dammi la possibilità di personalizzare come nella scrivania anche queste parti»); la imposta griglia()

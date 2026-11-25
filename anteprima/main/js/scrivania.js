@@ -13,6 +13,7 @@ import * as extra from './caselle-extra.js'
 import { barraScrivanie } from './scrivanie.js'
 import { progetti, progettiPiccoli, sfoglia } from './progetti.js'
 import { programmi, daChiudere } from './caselle-nuove.js'
+import { casellaTelefoni } from './telefoni.js' // Mirion Fit e Mirion Trainer come sul telefono (25-11)
 import { strisciaCosaManca } from './cosa-manca.js'
 import { MISURA, salva, ordinabile, pulsanteAnnulla, scrivania as scrivaniaAttiva } from './su-misura.js'
 import * as software from './prodotto.js'
@@ -86,7 +87,7 @@ function disegna () {
     scadute: () => extra.scadute(ricarica), accessi: extra.accessi, lavagne: extra.lavagne, cerca: extra.cerca, diario: extra.diario, gestionali: casellaGestionali, conti: casellaConti,
     // Claudio, per ora, non c'è (Marco, 23-11 sera: «per ora Claudio e Turni pulizie toglieli»): la sua card non si disegna
     notizie: casellaNotizie, versioni: () => extra.versioni(pagina === 'versioni'), notifiche: () => casellaNotifiche(s, { tutte: pagina === 'notifiche' }),
-    programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere() }
+    programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere(), telefoni: casellaTelefoni }
   // il widget: la card da sola, a tutto schermo (widget.js)
   if (widget && contenuti[widget]) return stanza.replaceChildren(cornice(el('div', { class: 'riquadro widget-riquadro' }, el('div', { class: 'riquadro-corpo' }, contenuti[widget]())), '#scrivania'))
   // la pagina completa di una card che non ha una stanza sua: la card da sola, con tutto lo spazio, e «← Scrivania» per tornare

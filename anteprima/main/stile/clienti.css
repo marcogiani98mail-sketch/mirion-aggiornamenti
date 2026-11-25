@@ -148,3 +148,30 @@
 .cliente-checkin-elenco li.con-fastidio .cliente-umore { color: var(--presto, #f6bb66); font-weight: 700; }
 .bolla.bolla-dolore { border-left: 3px solid var(--presto, #f6bb66); }
 .cerchio-fit path, .cerchio-fit text { stroke: none; }
+
+/* la dashboard a card dei clienti (25-11-2026): da guardare oggi, il cerchio della squadra, le sedute di oggi */
+.clienti-cruscotto { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin: 4px 0 14px; }
+@media (max-width: 1100px) { .clienti-cruscotto { grid-template-columns: 1fr 1fr; } .cruscotto-guarda { grid-column: 1 / -1; } }
+@media (max-width: 720px) { .clienti-cruscotto { grid-template-columns: 1fr; } }
+.cruscotto-carta { padding: 1rem 1.1rem; display: grid; align-content: start; gap: .6rem; }
+.cruscotto-carta > header { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.cruscotto-carta h2 { margin: 0; font-size: 1.02rem; }
+.guarda-elenco { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.guarda-elenco a { display: flex; gap: .7rem; align-items: flex-start; padding: .55rem .65rem; border-radius: 12px; color: inherit; text-decoration: none; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.guarda-elenco a:hover { background: color-mix(in oklch, var(--testo) 8%, transparent); }
+.guarda-elenco li.urgente a { background: color-mix(in oklch, var(--presto) 10%, transparent); box-shadow: inset 3px 0 0 var(--presto); }
+.guarda-elenco b { display: block; font-weight: 600; }
+.guarda-elenco p { margin: 2px 0 0; color: var(--testo-2); font-size: .86rem; }
+.guarda-icona { font-size: 1.15rem; width: 1.6rem; text-align: center; flex: none; }
+.cruscotto-media { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem; }
+.cruscotto-media b { font: 700 2.6rem/1 var(--titoli); background: linear-gradient(140deg, var(--lilla), var(--accento-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cruscotto-media em { font-style: normal; font-size: .82rem; width: 100%; }
+.cruscotto-classifica { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cruscotto-classifica a { display: grid; grid-template-columns: minmax(0, 7rem) 1fr 2rem; align-items: center; gap: .6rem; color: inherit; text-decoration: none; font-size: .88rem; }
+.cruscotto-classifica span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cruscotto-classifica b { text-align: right; font-family: var(--titoli); }
+.cruscotto-classifica i { height: 6px; border-radius: 6px; background: color-mix(in oklch, var(--testo) 8%, transparent); position: relative; overflow: hidden; }
+.cruscotto-classifica i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--pieno); border-radius: 6px; background: linear-gradient(90deg, var(--viola), var(--lilla)); }
+.cruscotto-classifica i.basso::after { background: linear-gradient(90deg, var(--accento-2), var(--presto)); }
+.cruscotto-oggi a { display: grid; gap: 2px; color: inherit; text-decoration: none; }
+.trainer-passi { margin: .2rem 0; padding-left: 1.2rem; text-align: left; display: grid; gap: .3rem; font-size: .88rem; }

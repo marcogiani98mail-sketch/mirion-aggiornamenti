@@ -50,6 +50,43 @@ body[data-stile="netto"] .cassetto, body[data-stile="netto"] .menu-destro, body[
 body[data-stile="netto"] .versione-attuale, body[data-stile="netto"] .versione-nuova-tasto { border-radius: 3px; font-family: var(--titoli); }
 body[data-stile="netto"] .marchio > span { font-family: var(--titoli); letter-spacing: -.03em; }
 
+/* ---- Spazio: il cielo di notte (Marco, 25-11-2026: «inventa proprio uno stile spaziale»). Le stelle sono un canvas dietro tutto
+   (spazio.js); qui le nebulose sullo sfondo, le caselle di vetro scuro con un filo di luce in cima, i titoli in Space Grotesk ---- */
+body[data-stile="spazio"] {
+  --titoli: "Space Grotesk", "Inter", "Segoe UI Variable Display", system-ui, sans-serif;
+  --r: 18px; --vetro: 1.5px; /* poco sfocato: le stelle si vedono anche dietro le caselle */
+  --luce: inset 0 1px 0 0 rgb(255 255 255 / .07);
+  --ombra-vetro: 0 0 0 1px color-mix(in oklch, var(--lilla) 7%, transparent), 0 18px 50px -24px rgb(0 0 0 / .9);
+  --ombra-su: 0 0 0 1px color-mix(in oklch, var(--lilla) 14%, transparent), 0 24px 60px -20px rgb(0 0 0 / .95), 0 0 50px -20px color-mix(in oklch, var(--viola) 40%, transparent);
+  background-color: var(--fondo);
+  background-image:
+    radial-gradient(1100px 620px at 85% -10%, color-mix(in oklch, var(--viola) calc(var(--aurora-forza) * 48%), transparent), transparent 68%),
+    radial-gradient(800px 520px at -6% 38%, color-mix(in oklch, var(--info) calc(var(--aurora-forza) * 34%), transparent), transparent 70%),
+    radial-gradient(900px 560px at 60% 118%, color-mix(in oklch, var(--accento-2) calc(var(--aurora-forza) * 26%), transparent), transparent 70%),
+    radial-gradient(1400px 900px at 50% 50%, transparent 55%, rgb(0 0 0 / .55));
+  background-attachment: fixed;
+}
+/* le stelle stanno sotto tutto (z-index -1): sopra lo sfondo con le nebulose, che il body passa alla pagina */
+canvas.spazio-stelle { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+body[data-stile="spazio"] h1 { font-weight: 700; letter-spacing: -.035em; }
+body[data-stile="spazio"] h2, body[data-stile="spazio"] h3 { font-weight: 600; letter-spacing: -.01em; }
+body[data-stile="spazio"] .cima { background: color-mix(in oklch, var(--fondo) 45%, transparent); border-bottom-color: color-mix(in oklch, var(--lilla) 10%, transparent); }
+/* le caselle: vetro scuro, un filo di luce che va dall'accento al secondo colore lungo il bordo in alto */
+body[data-stile="spazio"] .riquadro > .riquadro-corpo > *, body[data-stile="spazio"] .riquadro-striscia, body[data-stile="spazio"] .schede-cartella, body[data-stile="spazio"] .fascia, body[data-stile="spazio"] .pannello, body[data-stile="spazio"] .scelta-carta, body[data-stile="spazio"] .banner {
+  background:
+    linear-gradient(90deg, transparent 8%, color-mix(in oklch, var(--lilla) 55%, transparent), color-mix(in oklch, var(--accento-2) 45%, transparent), transparent 92%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, color-mix(in oklch, var(--carta) calc(var(--trasparenza) + 6%), transparent), color-mix(in oklch, var(--fondo) var(--trasparenza), transparent));
+  border-color: color-mix(in oklch, var(--lilla) 10%, transparent); }
+body[data-stile="spazio"] .riquadro > .riquadro-corpo > *:hover, body[data-stile="spazio"] .fascia:hover { border-color: color-mix(in oklch, var(--lilla) 22%, transparent); }
+body[data-stile="spazio"] .primario { box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), 0 0 0 1px color-mix(in oklch, var(--lilla) 30%, transparent), 0 0 24px -6px var(--viola); }
+body[data-stile="spazio"] .stanze a[aria-current="page"] { background: linear-gradient(90deg, color-mix(in oklch, var(--viola) 28%, transparent), transparent); box-shadow: inset 2px 0 0 var(--lilla); }
+body[data-stile="spazio"] .cassetto, body[data-stile="spazio"] .menu-destro, body[data-stile="spazio"] .casella-menu, body[data-stile="spazio"] .notifica { background: color-mix(in oklch, var(--fondo) 80%, transparent); }
+body[data-stile="spazio"] .marchio > span { font-family: var(--titoli); letter-spacing: .02em; }
+.stile-mini.spazio { position: relative; background: radial-gradient(70px 40px at 90% 0%, #8a5cff55, transparent), radial-gradient(60px 40px at 0% 100%, #2a9df455, transparent), #05040a; }
+.stile-mini.spazio::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 12% 30%, #fff, transparent), radial-gradient(1px 1px at 70% 18%, #fff, transparent), radial-gradient(1.4px 1.4px at 46% 66%, #ebacff, transparent), radial-gradient(1px 1px at 88% 78%, #fff, transparent), radial-gradient(1px 1px at 28% 86%, #cfe0ff, transparent), radial-gradient(1px 1px at 58% 40%, #fff, transparent); }
+.stile-mini.spazio i { position: relative; background: linear-gradient(180deg, #ffffff10, #ffffff05); border: 1px solid #ebacff26; border-radius: 6px; }
+.stile-mini.spazio i:nth-child(3) { box-shadow: inset 0 1px 0 #ebacffaa; }
+
 /* ---- Personalizza: la scelta del tema e del logo ---- */
 .stili-scelta { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .6rem; margin: .4rem 0 .3rem; }
 .stile-voce { all: unset; cursor: pointer; display: grid; gap: .45rem; padding: .55rem; border-radius: 14px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--alto) 70%, transparent); }

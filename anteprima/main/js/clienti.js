@@ -12,6 +12,7 @@ import { carta, barra, colonne, grafico } from './pagine-piatto.js'
 import { schedeTrainer, eTitolare, accendiVoce, NOME as TRAINER } from './schede-trainer.js'
 import { conIA, pulsantiIA, obsidian } from './ia.js'
 import { leggiNota } from './markdown.js'
+import { daGuardare, squadra, quandoBreve } from './trainer-oggi.js'
 
 const n = v => Number.isFinite(+v) ? Math.round(+v).toLocaleString('it-IT') : '—'
 const virgola = v => Number.isFinite(+v) ? (+v).toLocaleString('it-IT', { maximumFractionDigits: 1 }) : '—'
@@ -113,16 +114,66 @@ export async function mostra (stanza, params) {
           : el('button', { type: 'button', class: 'primario', title: 'Il QR porta alla porta del telefono (Impostazioni → «Il telefono»)', onclick: async () => { await api('/api/telefono', { azione: 'accendi' }).catch(e => notifica(e.message, { tipo: 'sempre' })); rifai() } }, ic('user-plus'), 'Accendi la porta per invitare'),
         // l'app Mirion Fit per Android: il QR porta alla pagina su GitHub, che la scarica e la installa (25-11, senza Netlify né porta)
         el('button', { type: 'button', class: 'secondario', title: 'Un QR che chiunque inquadra col telefono Android: scarica e installa Mirion Fit da GitHub', onclick: () => qrApp(fai) }, ic('arrow-down'), 'QR per installare l’app'),
+        el('button', { type: 'button', class: 'secondario', title: 'Mirion Trainer sul telefono: i clienti, quello da guardare oggi, la chat e le schede', onclick: () => trainerTelefono(fai) }, ic('device-mobile'), 'Sul telefono'),
         el('button', { type: 'button', class: 'secondario', onclick: async () => { await fai({ azione: demo ? 'via-demo' : 'demo' }, demo ? 'Tolti i clienti inventati.' : (d.claudio?.ce ? 'Ecco i clienti inventati, anche quelli della demo del gestionale.' : 'Ecco quattro clienti inventati, per provare.')); rifai() } }, demo ? 'Togli la prova' : 'Prova con clienti inventati'))),
     el('div', { class: 'clienti-cifre' },
       ...[[clienti.length, 'clienti'], [attivi, 'attivi negli ultimi 3 giorni'], [fermi, 'fermi da 3 giorni o più', fermi ? 'presto' : ''], [novita, 'messaggi nelle ultime 24 ore', novita ? 'bene' : '']].map(([v, t, cls], i) =>
         el('div', { class: 'cifra clienti-cifra ' + (cls ?? ''), style: { '--i': i } }, conta(el('b'), v), el('span', { testo: t })))),
+    clienti.length ? cruscotto(clienti) : null,
     clienti.some(c => !conApp(c)) && clienti.some(conApp) || clienti.some(c => c.soloNota) ? el('p', { class: 'sopra piccolo legenda-fit' },
       el('span', { class: 'pallino-fit si' }), ` ${clienti.filter(conApp).length} con l’app Mirion Fit`, ' · ', el('span', { class: 'pallino-fit no' }), ` ${clienti.filter(c => !conApp(c)).length} senza (i dati dai check-in, dal gestionale o dalla sua nota)`) : null,
     clienti.length ? el('div', { class: 'clienti-griglia' }, ...clienti.map((c, i) => cartaCliente(c, i)))
       : el('section', { class: 'fascia clienti-vuoto' }, el('h2', { testo: 'Ancora nessun cliente' }), el('p', { class: 'sopra', testo: porta ? 'Premi «Invita un cliente»: esce un QR, il cliente lo inquadra col telefono, scrive il nome e dà il consenso. Da lì ti manda peso, allenamenti e come sta, e può collegare il suo Mirion Fit.' : 'Per invitare i clienti serve la porta del telefono accesa: il QR porta lì. Vanno sulla stessa rete Wi-Fi del computer.' })),
     el('p', { class: 'sopra piccolo clienti-nota', testo: `I dati di chi condivide da qui stanno solo su questo computer, in «Delion/Clienti PT/<nome>» (non vanno su GitHub, non li vede nessun altro): la scheda e i check-in si leggono anche in Obsidian. ${d.claudio?.ce ? 'Quelli del gestionale della palestra (peso e misure, allenamenti, abbonamento) Mirion li legge dal gestionale su questo computer, senza copiarli nel cervello; lo stesso cliente si unisce dal nome. ' : ''}Sono dati sulla salute: si condividono solo con il consenso del cliente, che può smettere quando vuole.` }),
     d.claudio?.errore ? el('p', { class: 'sopra piccolo presto', testo: d.claudio.errore }) : null))
+}
+
+// la dashboard a card (Marco, 25-11-2026: «nella versione desktop usiamo le card»): sopra i clienti, tre card che dicono subito
+// cosa fare: quello da guardare oggi (dolori, avvisi dall'app, messaggi senza risposta, chi è fermo), il cerchio della squadra
+// e le sedute di oggi del percorso di ognuno. Gli stessi conti di Mirion Trainer sul telefono (trainer-oggi.js)
+function cruscotto (clienti) {
+  const lista = daGuardare(clienti), sq = squadra(clienti)
+  const oggi = clienti.filter(c => c.piatto?.allena?.percorso?.oggi)
+  const vai = id => '#clienti?id=' + encodeURIComponent(id)
+  return el('div', { class: 'clienti-cruscotto' },
+    el('section', { class: 'fascia cruscotto-carta cruscotto-guarda', 'aria-label': 'Da guardare oggi' },
+      el('header', {}, el('h2', { testo: 'Da guardare oggi' }), el('span', { class: 'sopra piccolo', testo: lista.length ? `${lista.length} ${lista.length === 1 ? 'cosa' : 'cose'} · le più urgenti in cima` : 'tutto tranquillo' })),
+      lista.length ? el('ul', { class: 'guarda-elenco' }, ...lista.slice(0, 6).map(v => el('li', { class: 'guarda-' + v.tipo.split('-')[0] + (v.peso >= 90 ? ' urgente' : '') },
+        el('a', { href: vai(v.id) }, el('span', { class: 'guarda-icona', 'aria-hidden': 'true', testo: v.icona }),
+          el('div', {}, el('small', { class: 'sopra', testo: [v.nome, quandoBreve(v.quando)].filter(Boolean).join(' · ') }), el('b', { testo: v.titolo }), v.testo ? el('p', { testo: v.testo }) : null)))))
+        : el('p', { class: 'sopra', testo: 'Nessun dolore, nessun avviso, nessuno fermo. Quando un cliente scrive dall’app o segna un fastidio a fine seduta, compare qui.' })),
+    el('section', { class: 'fascia cruscotto-carta cruscotto-cerchio', 'aria-label': 'Il cerchio della squadra' },
+      el('header', {}, el('h2', { testo: 'Il cerchio della squadra' }), el('span', { class: 'sopra piccolo', testo: `${sq.allenati} su ${sq.clienti} allenati in settimana` })),
+      el('div', { class: 'cruscotto-media' }, el('b', { testo: sq.cerchio ?? '–' }), el('span', { class: 'sopra', testo: sq.cerchio != null ? 'su 100, in media' : 'ancora nessun cerchio' }),
+        sq.fastidi ? el('em', { class: 'presto', testo: `${sq.fastidi} ${sq.fastidi === 1 ? 'seduta' : 'sedute'} con un fastidio in 14 giorni` }) : null),
+      sq.classifica.length ? el('ol', { class: 'cruscotto-classifica' }, ...sq.classifica.slice(0, 6).map(x => el('li', {},
+        el('a', { href: vai(x.id) }, el('span', { testo: x.nome }), el('i', { style: { '--pieno': x.punteggio + '%' }, class: x.punteggio < 55 ? 'basso' : '' }), el('b', { testo: x.punteggio }))))) : null),
+    el('section', { class: 'fascia cruscotto-carta cruscotto-oggi', 'aria-label': 'Le sedute di oggi' },
+      el('header', {}, el('h2', { testo: 'Le sedute di oggi' }), el('span', { class: 'sopra piccolo', testo: oggi.length ? 'dal percorso di ognuno' : '' })),
+      oggi.length ? el('ul', { class: 'pasto-voci' }, ...oggi.slice(0, 7).map(c => { const pc = c.piatto.allena.percorso; return el('li', {}, el('a', { href: vai(c.id) }, el('span', { testo: c.nome }), el('small', { class: 'sopra', testo: `${pc.oggi}${pc.di ? ` · ${pc.fatti}/${pc.di} esercizi` : ''}` }))) }))
+        : el('p', { class: 'sopra', testo: 'Quando i clienti scelgono un percorso in Mirion Fit (la scheda «Allena»), qui vedi la seduta di oggi di ognuno.' })))
+}
+
+// Mirion Trainer sul telefono: l'indirizzo e il QR della pagina del trainer, sulla porta del telefono (Impostazioni → «Il telefono»)
+async function trainerTelefono (fai) {
+  const r = await fai({ azione: 'trainer-telefono' }); if (!r) return
+  const chiudi = () => fondo.remove()
+  const corpo = []
+  if (!r.acceso) corpo.push(el('p', { class: 'sopra', testo: 'Prima accendi la porta del telefono: il telefono deve stare sulla stessa Wi-Fi del computer.' }),
+    el('button', { type: 'button', class: 'primario', onclick: async () => { await fai({ azione: 'accendi' }).catch(() => {}); await api('/api/telefono', { azione: 'accendi' }).catch(e => notifica(e.message, { tipo: 'sempre' })); chiudi(); trainerTelefono(fai) } }, 'Accendi la porta del telefono'))
+  else if (!r.url) corpo.push(el('p', { class: 'sopra', testo: 'Il computer non è su una rete Wi-Fi di casa: collegalo alla stessa rete del telefono e riprova.' }))
+  else {
+    const t = document.createElement('template'); t.innerHTML = r.qr
+    corpo.push(el('div', { class: 'invito-qr' }, t.content.firstChild), el('code', { class: 'telefono-indirizzo invito-url', testo: r.url }),
+      el('ol', { class: 'sopra trainer-passi' }, el('li', { testo: 'Inquadra il QR con il telefono (stessa Wi-Fi del computer).' }),
+        el('li', { testo: r.telefoni ? 'Se il telefono è già abbinato si apre Mirion Trainer; se no scrivi il codice da Impostazioni → «Il telefono» → «Abbina un telefono».' : 'La prima volta chiede un codice: lo trovi in Impostazioni → «Il telefono» → «Abbina un telefono».' }),
+        el('li', { testo: 'Dal menu del browser scegli «Aggiungi a schermata Home»: Mirion Trainer diventa un’app.' })))
+  }
+  const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) chiudi() } },
+    el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Mirion Trainer sul telefono' },
+      el('h2', { testo: 'Mirion Trainer sul telefono' }), el('p', { class: 'sopra piccolo', testo: 'I tuoi clienti, quello da guardare oggi, il cerchio, le sedute, la chat e la scheda: tutto dal telefono, collegato a questo computer.' }), ...corpo,
+      el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'secondario', onclick: chiudi }, 'Chiudi'))))
+  document.body.append(fondo)
 }
 
 // la card di un cliente: l'anteprima di Piatto, misurata come le card di Piatto
