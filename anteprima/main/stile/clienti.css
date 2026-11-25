@@ -135,3 +135,16 @@
 .invito-scatola .licenza-campo, .licenza-altro input { width: 100%; margin: 6px 0; box-sizing: border-box; font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--linea-forte); background: var(--carta-2); color: var(--testo); }
 .licenza-altro { margin-top: 12px; text-align: left; }
 .licenza-altro summary { cursor: pointer; color: var(--testo-2); }
+
+/* gli allenamenti di Mirion Fit (25-11-2026): il cerchio delle prestazioni, le sedute con un fastidio, i messaggi su un dolore */
+.cerchio-fit { margin: 4px auto 8px; max-width: 260px; }
+.cerchio-fit svg { display: block; width: 100%; height: auto; overflow: visible; }
+.cerchio-fit .cerchio-vuoto { fill: var(--linea-forte); }
+.cerchio-fit .cerchio-pieno { fill: var(--viola, #b666ce); }
+.cerchio-fit .cerchio-pieno.debole { fill: var(--presto, #f6bb66); }
+.cerchio-fit .cerchio-nome { fill: var(--testo-2); font: 600 11px Inter, system-ui, sans-serif; }
+.cerchio-fit .cerchio-punti { fill: var(--testo); font: 700 30px "Bricolage Grotesque", Inter, system-ui, sans-serif; }
+.cerchio-fit .cerchio-sotto { fill: var(--tenue); font: 500 11px Inter, system-ui, sans-serif; }
+.cliente-checkin-elenco li.con-fastidio .cliente-umore { color: var(--presto, #f6bb66); font-weight: 700; }
+.bolla.bolla-dolore { border-left: 3px solid var(--presto, #f6bb66); }
+.cerchio-fit path, .cerchio-fit text { stroke: none; }

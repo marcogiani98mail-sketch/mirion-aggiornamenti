@@ -74,6 +74,26 @@ export function avvisaCalendario (s) {
 // la pagina che si aggiorna da sola: il server dice quando un file del vault cambia (Obsidian, Claude, un'altra IA, git);
 // dopo un attimo di calma si rifanno il bollino, il numerino delle sessioni con l'IA e la stanza aperta, se non stai scrivendo
 // o trascinando. EventSource si ricollega da solo se il server si riavvia.
+// dove sei scorso, prima di ridisegnare: la finestra, il palco e ogni riquadro scorso dentro (riconosciuto dalle sue classi e
+// da quale è fra quelli uguali). Dopo il disegno si rimette tutto com'era
+function segnaScorrimento (stanza) {
+  const palco = $('[data-palco]'), chiave = e => e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).map(c => CSS.escape(c)).join('.') : null
+  const dentro = []
+  for (const e of stanza?.querySelectorAll('*') ?? []) if (e.scrollTop > 0 || e.scrollLeft > 0) { const k = chiave(e); if (k) dentro.push({ k, i: [...stanza.querySelectorAll(k)].indexOf(e), su: e.scrollTop, lato: e.scrollLeft }) }
+  // l'altezza resta quella di prima finché le card non si sono riempite (le loro cose arrivano dopo, una per una): se la pagina
+  // si accorcia anche solo per un attimo, il palco salta su
+  if (stanza) { clearTimeout(stanza.sblocca); stanza.style.minHeight = stanza.offsetHeight + 'px' }
+  return { stanza, x: scrollX, y: scrollY, palco: palco?.scrollTop ?? 0, dentro }
+}
+function rimettiScorrimento ({ stanza, x, y, palco, dentro }) {
+  const fai = () => {
+    scrollTo(x, y); const p = $('[data-palco]'); if (p) p.scrollTop = palco
+    for (const d of dentro) { try { const e = stanza.querySelectorAll(d.k)[d.i]; if (e) { e.scrollTop = d.su; e.scrollLeft = d.lato } } catch { /* una classe strana */ } }
+  }
+  fai(); requestAnimationFrame(fai)
+  if (stanza) stanza.sblocca = setTimeout(() => { stanza.style.minHeight = '' }, 4000)
+}
+
 function ascoltaIlVault () {
   if (!window.EventSource) return
   let timer = null
@@ -86,7 +106,13 @@ function ascoltaIlVault () {
     const a = document.activeElement, nome = document.body.dataset.stanza
     const occupato = a?.matches?.('input, textarea, select, [contenteditable="true"]') || document.querySelector('.si-trascina, .si-allarga, .cassetto-fondo, .menu-destro, dialog[open]')
     // con quello che c'è dopo «?» nell'indirizzo: la scrivania resta nella sezione in cui sei (la Squadra, o le caselle)
-    if (!occupato && aperte[nome] && ['scrivania', 'scadute', 'diario', 'ia'].includes(nome)) await aperte[nome].mostra($('#' + nome), new URLSearchParams(location.hash.split('?')[1] ?? '')).catch(() => {})
+    // la pagina resta dove l'avevi lasciata (Marco, 25-11 sera: «continua ad aggiornarsi il programma quando sono sul vault
+    // Cervello e mi riporta in alto»): con un vault che cambia spesso (Claude, git) ogni giro ridisegnava la stanza da capo
+    if (!occupato && aperte[nome] && ['scrivania', 'scadute', 'diario', 'ia'].includes(nome)) {
+      const posti = segnaScorrimento($('#' + nome))
+      await aperte[nome].mostra($('#' + nome), new URLSearchParams(location.hash.split('?')[1] ?? '')).catch(() => {})
+      rimettiScorrimento(posti)
+    }
     STATO.allineato = Date.now(); dispatchEvent(new Event('delion-allineato')) // per «Aggiornami» (aggiornami.js): in pari alle…
   }
   const sorgente = new EventSource('/api/eventi')

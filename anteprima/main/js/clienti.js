@@ -309,6 +309,7 @@ async function paginaCliente (stanza, id) {
       (p.pasti?.[k] ?? []).length ? el('ul', { class: 'pasto-voci' }, ...p.pasti[k].map(v => el('li', {}, el('span', { testo: `${v.nome} · ${n(v.grammi)} g` }), el('small', { class: 'sopra', testo: `${n(v.kcal)} kcal` })))) : el('p', { class: 'vuoto', testo: 'niente' }))))) : null,
     giorni.length ? carta('Calorie giorno per giorno', { larga: true, sopra: ob.kcal ? 'la linea è l’obiettivo' : '' }, colonne(giorni.slice(-28).map(x => ({ etichetta: String(Number(x.giorno.slice(8))), valore: x.kcal, titolo: `${x.giorno}: ${n(x.kcal)} kcal` })), ob.kcal)) : null,
     pesi.length || !k ? carta('Peso', { sopra: [d30 != null ? `${segno(d30)} kg in 30 giorni` : null, `da ${fonti(c).join(', ')}`].filter(Boolean).join(' · ') }, grafico(pesi, p?.peso?.obiettivo)) : null,
+    ...carteAllenamenti(p),
     ...carteFit(c, p, comp, () => paginaCliente(stanza, id)),
     ...(k ? carteClaudio(k) : []),
     giorni.length ? carta(k ? 'Allenamenti in Mirion Fit: 4 settimane' : 'Allenamento: le ultime 4 settimane', { sopra: 'kg sollevati per settimana' }, colonne(settimane.map((s, i) => ({ etichetta: i === 3 ? 'questa' : `−${3 - i}`, valore: s.reduce((t, x) => t + (+x.allenamento?.volume || 0), 0) })))) : null,
@@ -333,6 +334,49 @@ async function paginaCliente (stanza, id) {
     el('div', { class: 'pagina-griglia clienti-pagina' }, ...carte.filter(Boolean).map((x, i) => { x.style.setProperty('--i', i); return x })),
     c.soloClaudio ? el('p', { class: 'sopra piccolo clienti-nota', testo: 'Questi dati arrivano dal gestionale della palestra (Mirion Fit · Palestra): si cambiano lì. Se questa persona condivide anche da Mirion (con il QR), le due schede si uniscono da sole quando il nome è lo stesso; se no lo scegli nella sua pagina.' })
       : c.scelte?.length ? abbinaClaudio(c, stanza, id) : null))
+}
+
+// ——— Gli allenamenti di Mirion Fit (Marco, 25-11-2026: «delineiamo la parte della comunicazione con il trainer», «cerchio
+// prestazioni in base agli allenamenti»): il cerchio, il percorso del cliente, com'è andata ogni seduta e gli avvisi ———
+const TEMI = { domanda: 'Domanda su un esercizio', dolore: 'Dolore o fastidio', scheda: 'Vuole cambiare la scheda', salto: 'Salta un allenamento', allenamento: 'Com’è andato l’allenamento' }
+const FASTIDI = { spalla: 'spalla', schiena: 'schiena', ginocchio: 'ginocchio', gomito: 'gomito o polso', anca: 'anca', altro: 'altro' }
+const escSvg = v => String(v ?? '').replace(/[&<>"']/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]))
+// lo stesso disegno di Mirion Fit (card.js, cerchio): sei spicchi pieni quanto le serie a settimana, al centro il punteggio
+function cerchioSvg (pr) {
+  const c = 110, r0 = 40, r1 = 96, gr = Array.isArray(pr.gruppi) ? pr.gruppi.slice(0, 8) : [], giro = (2 * Math.PI) / Math.max(1, gr.length), gap = 0.035
+  const pt = (r, a) => `${(c + r * Math.sin(a)).toFixed(1)},${(c - r * Math.cos(a)).toFixed(1)}`
+  const sp = (ra, rb, a0, a1) => `M${pt(ra, a0)} L${pt(rb, a0)} A${rb},${rb} 0 0 1 ${pt(rb, a1)} L${pt(ra, a1)} A${ra},${ra} 0 0 0 ${pt(ra, a0)} Z`
+  const parti = gr.map((g, i) => {
+    const a0 = i * giro + gap, a1 = (i + 1) * giro - gap, pieno = Math.max(0, Math.min(1, +g.pieno || 0)), [lx, ly] = pt(r1 + 14, (a0 + a1) / 2).split(',')
+    return `<path d="${sp(r0, r1, a0, a1)}" class="cerchio-vuoto"/>${pieno > 0.01 ? `<path d="${sp(r0, r0 + (r1 - r0) * pieno, a0, a1)}" class="cerchio-pieno ${g.id === pr.debole ? 'debole' : ''}"><title>${escSvg(g.nome)}: ${escSvg(g.serie)} serie a settimana su ${escSvg(g.obiettivo)}</title></path>` : ''}<text x="${lx}" y="${ly}" class="cerchio-nome" text-anchor="middle" dominant-baseline="middle">${escSvg(g.nome)}</text>`
+  }).join('')
+  const box = el('figure', { class: 'cerchio-fit' })
+  box.innerHTML = `<svg viewBox="-14 -4 248 228" role="img" aria-label="Cerchio prestazioni: ${escSvg(pr.punteggio)} su 100">${parti}<text x="${c}" y="${c - 4}" class="cerchio-punti" text-anchor="middle">${escSvg(pr.punteggio)}</text><text x="${c}" y="${c + 16}" class="cerchio-sotto" text-anchor="middle">su 100</text></svg>`
+  return box
+}
+const giornoCorto = g => new Date(g + 'T12:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+function carteAllenamenti (p) {
+  if (!p) return []
+  const pr = p.prestazioni, pc = p.percorso, ses = Array.isArray(p.sessioni) ? p.sessioni : [], av = Array.isArray(p.avvisi) ? p.avvisi : []
+  const deb = pr?.gruppi?.find(g => g.id === pr.debole)
+  const fastidi = ses.filter(s => s.fastidio)
+  return [
+    av.length ? carta('Gli avvisi dall’app', { sopra: `${av.length} · i più recenti in cima` }, el('ul', { class: 'cliente-checkin-elenco' }, ...[...av].reverse().slice(0, 8).map(a => el('li', {},
+      el('span', { class: 'cliente-umore', testo: a.tema === 'dolore' ? '🩹' : a.tema === 'salto' ? '⏸️' : a.tema === 'scheda' ? '📋' : '💬' }),
+      el('div', {}, el('small', { class: 'sopra', testo: [TEMI[a.tema], a.quando ? new Date(a.quando).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''].filter(Boolean).join(' · ') }), el('p', { testo: a.testo })))))) : null,
+    pr?.serie ? carta('Cerchio prestazioni', { sopra: `ultime ${pr.settimane ?? 4} settimane · ${pr.sedute} sedute · costanza ${pr.costanza}%` }, cerchioSvg(pr),
+      el('p', { class: 'sopra piccolo', testo: `Multiarticolari ${pr.multi}% delle serie · carichi liberi ${pr.liberi}% · macchine ${pr.macchine}%.${deb ? ` Da spingere: ${deb.nome.toLowerCase()} (${String(deb.serie).replace('.', ',')} serie a settimana su ${deb.obiettivo}).` : ''}` }),
+      pr.record?.length ? el('ul', { class: 'pasto-voci' }, ...pr.record.map(r => el('li', {}, el('span', { testo: r.nome }), el('small', { class: 'sopra', testo: `massimale stimato ${String(r.kg).replace('.', ',')} kg${r.prima ? ` (${r.kg >= r.prima ? '+' : ''}${String(Math.round((r.kg - r.prima) * 10) / 10).replace('.', ',')})` : ''}` })))) : null) : null,
+    ses.length ? carta('Com’è andata ogni seduta', { larga: true, sopra: fastidi.length ? `${fastidi.length} con un fastidio` : 'fatica da 1 a 10' }, el('ul', { class: 'cliente-checkin-elenco' }, ...ses.slice(0, 10).map(s => el('li', { class: s.fastidio ? 'con-fastidio' : '' },
+      el('span', { class: 'cliente-umore', testo: s.fatica ? String(s.fatica) : '–', title: 'fatica' }),
+      el('div', {}, el('small', { class: 'sopra', testo: [giornoCorto(s.giorno), s.seduta].filter(Boolean).join(' · ') }),
+        el('p', { testo: [s.fatica ? `fatica ${s.fatica}/10` : 'non ha detto com’è andata', s.fastidio ? `fastidio: ${FASTIDI[s.fastidio] ?? s.fastidio}` : null].filter(Boolean).join(' · ') }),
+        s.nota ? el('blockquote', { testo: s.nota }) : null))))) : null,
+    pc ? carta('Il suo percorso', { sopra: [pc.libreria ? 'dalla libreria' : pc.scelte ? 'su misura' : null, pc.oggi ? `oggi ${pc.oggi}: ${pc.fatti}/${pc.di}` : null].filter(Boolean).join(' · ') },
+      el('p', { testo: pc.titolo }),
+      el('ul', { class: 'pasto-voci' }, ...(pc.sedute ?? []).map(s => el('li', {}, el('span', { testo: s.nome }), el('small', { class: 'sopra', testo: (s.esercizi ?? []).join(' · ') })))),
+      el('p', { class: 'sopra piccolo', testo: 'Il cliente l’ha scelto in Mirion Fit. Se gli mandi una scheda tua, vale prima del percorso.' })) : null,
+  ]
 }
 
 // ——— Mirion Fit (24-11): sonno, integratori, misure, check della settimana e il piano, dai dati di Piatto ———
@@ -563,7 +607,7 @@ function chatCliente (c, id) {
   const fila = el('div', { class: 'chat-fila squadra-messaggi cliente-chat', 'aria-live': 'polite' })
   const ora = q => new Date(q).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   const disegna = messaggi => {
-    fila.replaceChildren(...messaggi.map(m => el('div', { class: `bolla ${m.da === 'trainer' ? 'mia' : 'sua'}` }, m.da === 'trainer' ? null : el('small', { class: 'strumenti', testo: c.nome }), el('p', { testo: m.testo }), el('time', { testo: ora(m.quando) }))),
+    fila.replaceChildren(...messaggi.map(m => el('div', { class: `bolla ${m.da === 'trainer' ? 'mia' : 'sua'} ${m.tema === 'dolore' ? 'bolla-dolore' : ''}` }, m.da === 'trainer' ? null : el('small', { class: 'strumenti', testo: c.nome + (TEMI[m.tema] ? ' · ' + TEMI[m.tema] : '') }), el('p', { testo: m.testo }), el('time', { testo: ora(m.quando) }))),
       messaggi.length ? '' : el('p', { class: 'vuoto', testo: `Ancora nessun messaggio. Scrivi a ${c.nome}: gli arriva su Mirion Fit.` }))
     fila.scrollTop = fila.scrollHeight
   }

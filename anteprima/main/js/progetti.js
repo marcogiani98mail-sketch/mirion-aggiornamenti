@@ -15,14 +15,29 @@ export function progetti (lista, stanza) {
 }
 
 // i progetti in piccolo, a destra dei prossimi giorni in cima ad «Adesso» (Marco, 25-11 sera: «inserisci vicino al calendario, ma
-// sulla parte destra, la sezione progetti, togliendo la card»): l'anello, il nome e quante cose restano; un clic apre il resoconto
+// sulla parte destra, la sezione progetti, togliendo la card»): l'anello, il nome e quante cose restano; un clic apre il resoconto.
+// Uno alla volta, con le frecce (Marco, 25-11 sera: «le notifiche quasi non si vedono per la quantità dei progetti… fammene
+// visualizzare solo uno e poi metti le frecce»): quattro progetti in fila schiacciavano l'ultima notifica in mezzo
+let progettoVisto = 0
 export function progettiPiccoli (lista = []) {
   const aperti = lista.filter(p => p.aperte > 0)
+  const chip = p => el('button', { type: 'button', class: 'progetto-piccolo', onclick: () => resoconto(p.cartella), title: `${p.nome}: ${p.fatte} fatte, ${p.aperte} aperte · un clic per il resoconto` },
+    el('span', { class: 'anello', style: { '--p': p.percento } }), el('b', { testo: p.nome }), el('small', { testo: String(p.aperte) }))
   return el('div', { class: 'progetti-piccoli', role: 'group', 'aria-label': 'I progetti' },
     el('a', { class: 'sopra piccolo', href: '#scrivania?pagina=progetti', title: 'Tutti i progetti', testo: 'Progetti' }),
-    aperti.length ? el('ul', {}, ...aperti.slice(0, 4).map(p => el('li', {}, el('button', { type: 'button', onclick: () => resoconto(p.cartella), title: `${p.nome}: ${p.fatte} fatte, ${p.aperte} aperte · un clic per il resoconto` },
-      el('span', { class: 'anello', style: { '--p': p.percento } }), el('b', { testo: p.nome }), el('small', { testo: String(p.aperte) })))))
+    aperti.length ? sfoglia(aperti, chip, { prima: 'Il progetto prima', dopo: 'Il progetto dopo', indice: () => progettoVisto, scegli: i => { progettoVisto = i } })
       : el('span', { class: 'sopra piccolo', testo: 'nessuno aperto' }))
+}
+
+// una cosa alla volta, con le frecce ai lati e «2 di 4» (i progetti e le notifiche in cima ad «Adesso»). Con una sola cosa le
+// frecce non ci sono. Le frecce girano: dopo l'ultima torna la prima
+export function sfoglia (voci, disegna, { prima = 'Quella prima', dopo = 'Quella dopo', indice = () => 0, scegli = () => {} } = {}) {
+  const posto = el('span', { class: 'sfoglia-voce' }), conta = el('small', { class: 'sfoglia-conta', 'aria-live': 'polite' })
+  const vai = i => { const n = ((i % voci.length) + voci.length) % voci.length; scegli(n); posto.replaceChildren(disegna(voci[n])); conta.textContent = `${n + 1} di ${voci.length}` }
+  vai(indice())
+  if (voci.length < 2) return el('span', { class: 'sfoglia' }, posto)
+  const freccia = (verso, testo) => el('button', { type: 'button', class: 'sfoglia-freccia', title: testo, 'aria-label': testo, onclick: () => vai(indice() + verso) }, ic(verso < 0 ? 'caret-left' : 'caret-right'))
+  return el('span', { class: 'sfoglia' }, freccia(-1, prima), posto, freccia(1, dopo), conta)
 }
 
 // le principali con sotto le loro sotto task (padre = la riga della principale, nella stessa nota)

@@ -4,6 +4,16 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.37', data: '2026-11-25', titolo: 'La pagina resta dove sei, progetti e notifiche con le frecce', novita: [
+    'Mentre Claude o git cambiano il Cervello, Mirion si rimette in pari senza riportarti in cima alla pagina.',
+    'In cima ad «Adesso» i progetti e le notifiche si vedono uno alla volta, con le frecce per passare agli altri.',
+    'La × accanto alle notifiche le chiude tutte: restano nella pagina delle notifiche.',
+    'Il giorno aperto dai prossimi giorni resta piccolo anche con tante cose: una riga ciascuna, e poi si scorre.',
+  ] },
+  { versione: '0.1.36', data: '2026-11-25', titolo: 'Claude o Codex, anche con l’account gratuito', novita: [
+    'Al primo avvio scegli con quale intelligenza artificiale lavorare: Claude oppure Codex (di OpenAI, nell’app ChatGPT). Diventa quella di «Fallo con…» e si installa con un clic.',
+    'Con l’account gratuito «Fallo con…» fa lo stesso le task: apre la chat con la task e il pezzo di nota già scritti. Si accende dalla freccina accanto a «Fallo con», in «Uso l’account gratuito».',
+  ] },
   { versione: '0.1.35', data: '2026-11-25', titolo: 'Card libere, Fallo con Claude nel progetto, installatore nuovo', novita: [
     'Le card della scrivania restano nella colonna dove le lasci, e le altre si incastrano intorno.',
     '«Fallo con Claude» apre Claude dentro il progetto della task, con le sue istruzioni; se la task non ha un progetto, Claude lo crea e ce la porta.',
