@@ -145,7 +145,12 @@
 .banner-cifra span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .banner-cifra:hover, .banner-cifra:focus-visible { border-color: var(--viola); color: var(--testo); }
 
-/* i numeri del cervello in cima ad «Adesso», fissi, su tutta la larghezza, in fila (25-11 sera) */
-.banner > .banner-cervello { grid-column: 1 / -1; margin: 0; display: flex; align-items: center; gap: .4rem .8rem; flex-wrap: wrap; padding-bottom: .9rem; border-bottom: 1px solid var(--linea-forte); }
-.banner > .banner-cervello .banner-cifre { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; }
-@media (max-width: 600px) { .banner > .banner-cervello .banner-cifre { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* i prossimi giorni in piccolo, in cima ad «Adesso», su tutta la larghezza (25-11 sera): un clic su un giorno apre sotto le sue cose */
+.banner > .giorni-piccoli { grid-column: 1 / -1; display: grid; gap: .5rem; padding-bottom: .8rem; border-bottom: 1px solid var(--linea-forte); min-width: 0; }
+.giorni-piccoli-fila { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+.giorni-piccoli-fila > .sopra { flex: none; }
+.giorni-piccoli .giorni-schede { flex: 1 1 auto; margin: 0; padding: 6px 6px 2px 0; }
+.giorni-piccoli .giorni-schede button { min-width: 40px; padding: .22rem .4rem; border-radius: 10px; }
+.giorni-piccoli .giorni-schede button b { font-size: .9rem; }
+.giorni-piccoli .giorno-lista { max-height: 14rem; overflow: auto; }
+@media (max-width: 600px) { .giorni-piccoli-fila > .sopra { display: none; } }

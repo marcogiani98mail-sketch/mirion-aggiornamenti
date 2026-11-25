@@ -174,24 +174,14 @@ function banner (s, ricarica) {
         el('button', { type: 'button', class: 'secondario altro-adesso', title: 'Rimandala, mettila in pausa, archiviala, segnala come «non serve più», aggiungi una sotto task', 'aria-haspopup': 'menu',
           onclick: e => { e.stopPropagation(); gesti.apriMenu(e.currentTarget) } }, ic('dots-three'), 'Altro')))
   } else centro.append(el('p', { class: 'grande', testo: 'Niente in coda.' }), el('p', { class: 'sopra', testo: 'Quando scrivi «- [ ]» in una nota, la cosa da fare compare qui.' }))
-  // i numeri del cervello in cima, fissi, su tutta la larghezza (Marco, 25-11 sera: «dato che c'è spazio, i numeri del cervello
-  // mettimeli dentro la card principale in modo permanente, in alto»)
-  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, oggiNelCervello(s), sinistra, centro)
+  // in cima, fissi, su tutta la larghezza, i prossimi giorni in piccolo (Marco, 25-11 sera: «i numeri del cervello mettimeli dentro
+  // la card principale in modo permanente, in alto» · poi «oggi nel cervello lo sostituisci con i prossimi giorni: fammi in piccolo
+  // i giorni e la fai funzionare da lì»): un clic su un giorno apre sotto le sue cose, un altro clic lo richiude
+  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, giorni(s, ricarica, { compatta: true }), sinistra, centro)
 }
 
-// «Oggi nel cervello» dentro «Adesso» (Marco, 25-11: «oggi nel cervello me lo aggiungi nella dashboard principale e la card la levi»):
-// le quattro cifre del giorno, piccole, sotto il saluto; un clic apre cosa c'è dentro, come nella card (che resta, spenta, per i widget)
-const CIFRE_OGGI = { toccate: 'note toccate', nuove: 'note nuove', chiuse: 'cose chiuse', ia: 'con l’IA' }
-function oggiNelCervello (s) {
-  const n = s.notiziario ?? {}, a = n.azioni ?? {}, v = { toccate: n.aggiornate, nuove: n.nuove, chiuse: a.fatta, ia: a.ia }
-  return el('div', { class: 'banner-cervello', role: 'group', 'aria-label': 'Oggi nel cervello' },
-    el('span', { class: 'sopra piccolo', testo: 'Oggi nel cervello' }),
-    el('div', { class: 'banner-cifre' }, ...Object.entries(CIFRE_OGGI).map(([id, nome]) => el('button', { type: 'button', class: 'banner-cifra', title: 'Apri: cosa c’è dentro, e i giorni passati', onclick: () => apriCifra(id) },
-      el('b', { testo: Number(v[id] ?? 0).toLocaleString('it-IT') }), el('span', { testo: nome })))))
-}
-
-// 2. i prossimi giorni: a sinistra le caselle dei giorni, a destra le cose del giorno, in fila orizzontale
-function giorni (s, ricarica) {
+let giornoAperto = null // nella fila piccola in cima ad «Adesso»: il giorno aperto, o nessuno
+function giorni (s, ricarica, { compatta = false } = {}) {
   const elenco = []
   for (let d = new Date(s.oggi + 'T12:00'); d.toISOString().slice(0, 10) <= s.fine; d.setDate(d.getDate() + 1)) elenco.push(d.toISOString().slice(0, 10))
   if (!elenco.includes(giornoScelto)) giornoScelto = s.oggi
@@ -211,16 +201,22 @@ function giorni (s, ricarica) {
     visto.querySelector('.banner-adesso .ia')?.focus({ preventScroll: true })
   }
   const disegna = () => {
-    schede.replaceChildren(...elenco.map(g => el('button', { type: 'button', role: 'tab', 'aria-selected': String(g === giornoScelto), onclick: () => { giornoScelto = g; disegna() } },
+    const scelto = compatta ? giornoAperto : giornoScelto
+    schede.replaceChildren(...elenco.map(g => el('button', { type: 'button', role: 'tab', 'aria-selected': String(g === scelto), onclick: () => { if (compatta) giornoAperto = giornoAperto === g ? null : g; else giornoScelto = g; disegna() } },
       el('span', { testo: g === s.oggi ? 'Oggi' : quando(g) === 'domani' ? 'Domani' : new Date(g + 'T12:00').toLocaleDateString('it-IT', { weekday: 'short' }) }),
       el('b', { testo: new Date(g + 'T12:00').getDate() }), conta(g) ? el('i', { testo: conta(g) }) : null)))
-    const cose = s.prossime.filter(k => k.data === giornoScelto).sort((a, b) => (a.ora ?? '99').localeCompare(b.ora ?? '99')), impegni = eventi.filter(e => e.giorno === giornoScelto)
+    lista.hidden = !scelto
+    if (!scelto) return lista.replaceChildren()
+    const cose = s.prossime.filter(k => k.data === scelto).sort((a, b) => (a.ora ?? '99').localeCompare(b.ora ?? '99')), impegni = eventi.filter(e => e.giorno === scelto)
     lista.replaceChildren(el('ul', { class: 'caselle in-fila' },
       ...impegni.map(e => el('li', { class: 'impegno' }, el('b', { testo: e.ora ?? 'tutto il giorno' }), el('span', { testo: e.titolo ?? 'Impegno' }))),
       ...cose.map(k => { const r = casella(k, { mostraData: false, dopo: ricarica, scegli: inAdesso }); r.classList.toggle('in-adesso', chiave(k) === scelta); return r }),
       !cose.length && !impegni.length && el('li', { class: 'vuoto', testo: 'Niente in programma.' })))
   }
   disegna()
+  if (compatta) return el('div', { class: 'giorni-piccoli', role: 'group', 'aria-label': 'I prossimi giorni' },
+    el('div', { class: 'giorni-piccoli-fila' }, el('span', { class: 'sopra piccolo', testo: 'I prossimi giorni' }), schede,
+      el('a', { class: 'quieto piccolo', href: '#calendario', title: 'Il mese, con le task' }, ic('calendar-dots'))), lista)
   return el('section', { class: 'fascia giorni', 'aria-labelledby': 'giorni-t' },
     // il giorno scelto si apre in Google Calendar (Marco, 21-11: «sui giorni dammi modo di poterlo aprire con Google Calendar»)
     el('header', {}, el('h2', { id: 'giorni-t', testo: 'I prossimi giorni' }), !s.calendario?.collegato && el('a', { class: 'sopra piccolo', href: '#impostazioni', testo: 'Collega il calendario di Google' }),
