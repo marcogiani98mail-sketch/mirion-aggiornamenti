@@ -1,9 +1,9 @@
 {
-  "versione": "1.0.6",
-  "codice": 6,
-  "note": "Mirion Fit anche come web app: su iPhone da Safari, Aggiungi alla schermata Home",
-  "byte": 211513,
-  "sha256": "98f687dce86f7da74f98eae0b845eda332b6601727b5db43840128c384db2e65",
-  "quando": "2026-11-25T22:58:30.815Z",
-  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=6"
+  "versione": "1.0.7",
+  "codice": 7,
+  "note": "Mirion Fit si installa come web app, su iPhone e Android",
+  "byte": 211514,
+  "sha256": "c61473ac11516d53117b9870c6efccfd48e710245cd2e0150b8909033357334a",
+  "quando": "2026-11-25T23:05:13.706Z",
+  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=7"
 }

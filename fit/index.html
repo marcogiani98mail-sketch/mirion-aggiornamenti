@@ -7,8 +7,8 @@
 <meta name="theme-color" content="#0f0a11">
 <title>Installa Mirion Fit</title>
 <link rel="icon" href="icona.png">
-<!-- La pagina del QR di Mirion Fit (Marco, 25-11-2026: «il qr code deve rimanere sul git a fare installare l'apk… comodo e
-     funzionale»). Sta su GitHub Pages (mirion-aggiornamenti, ramo «anteprime», cartella fit), con l'APK accanto: la pubblica il workflow
+<!-- La pagina del QR di Mirion Fit (Marco, 25-11-2026: «il qr code deve rimanere sul git… comodo e funzionale»; a mezzanotte:
+     «fai installare la web app, non l'apk»). Sta su GitHub Pages (mirion-aggiornamenti, ramo «anteprime», cartella fit), con la web app in app/: la pubblica il workflow
      «Pubblica Mirion Fit» di mirion-codice, a partire da telefono/pagina, telefono/piatto.apk e telefono/versione.json. -->
 <style>
   :root { --fondo: #0f0a11; --carta: #1b151d; --carta-2: #211b23; --linea: #2f2831; --testo: #f4eef6; --testo-2: #beb8c0; --tenue: #8b838e;
@@ -55,94 +55,56 @@
     <p class="versione" id="versione">&nbsp;</p>
   </div>
 
-  <section class="carta attiva" id="iphone" hidden>
-    <h2>Su iPhone: la web app</h2>
-    <ol>
-      <li>Premi <b>Apri Mirion Fit</b>: si apre in Safari, già attiva con il tuo trainer.</li>
-      <li>Tocca <b>Condividi</b> (il quadrato con la freccia in su), poi <b>Aggiungi alla schermata Home</b>.</li>
-      <li>Da lì si apre come un'app, anche senza rete. I tuoi dati restano sul telefono.</li>
-    </ol>
-    <a class="bottone" id="iphone-apri" href="app/">Apri Mirion Fit</a>
-  </section>
-
   <section class="carta avviso" id="computer" hidden>
     <h2>Apri questa pagina dal telefono</h2>
-    <p class="nota">L'app è per i telefoni Android: inquadra il QR col telefono, oppure scrivi questo indirizzo nel suo browser.</p>
+    <p class="nota">Mirion Fit è per il telefono: inquadra il QR del tuo trainer con la fotocamera, oppure scrivi questo indirizzo nel browser del telefono.</p>
   </section>
 
-  <a class="bottone" id="scarica" href="MirionFit.apk" download="MirionFit.apk">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
-    Scarica e installa
-  </a>
+  <a class="bottone" id="apri" href="app/" hidden>Apri Mirion Fit</a>
 
-  <section class="carta">
+  <section class="carta" id="come">
     <h2>Come si installa</h2>
-    <ol>
-      <li>Il download parte da solo (se no, premi <b>Scarica e installa</b>). Se Chrome chiede conferma, premi <b>Scarica</b>.</li>
-      <li>Quando ha finito, tocca <b>Apri</b> (oppure la notifica del download).</li>
-      <li>La prima volta Android chiede di permettere le app da Chrome: <b>Impostazioni</b> → attiva <b>Consenti da questa fonte</b> → torna indietro.</li>
-      <li>Premi <b>Installa</b>. Se compare «App sconosciuta», premi <b>Altri dettagli</b> → <b>Installa comunque</b>.</li>
-      <li>Torna su questa pagina e premi <b>Attiva l'app</b>.</li>
+    <ol id="passi-iphone" hidden>
+      <li>Premi <b>Apri Mirion Fit</b>: si apre in Safari, già attiva con il tuo trainer.</li>
+      <li>Tocca <b>Condividi</b> (il quadrato con la freccia in su), poi <b>Aggiungi alla schermata Home</b>.</li>
+      <li>Da lì si apre come un'app, anche senza rete.</li>
     </ol>
-  </section>
-
-  <section class="carta attiva" id="attiva" hidden>
-    <h2>Poi apri l'app</h2>
-    <p class="nota">Quando l'app è installata, premi qui: si apre già attiva, con il tuo trainer.</p>
-    <a class="bottone" id="attiva-link" href="#">Attiva l'app</a>
+    <ol id="passi-android">
+      <li>Premi <b>Apri Mirion Fit</b>: si apre in Chrome, già attiva con il tuo trainer.</li>
+      <li>Premi <b>Installa</b> quando l'app lo propone, oppure il menu <b>⋮</b> di Chrome → <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>).</li>
+      <li>Da lì si apre come un'app, anche senza rete.</li>
+    </ol>
   </section>
 
   <section class="carta" id="senza-codice" hidden>
     <h2>Serve il QR del tuo trainer</h2>
-    <p class="nota">Mirion Fit si apre solo con il QR che ti mostra il tuo personal trainer da Mirion Trainer. Inquadralo con la fotocamera del telefono: installi e attivi l'app in un colpo.</p>
-  </section>
-
-  <section class="carta" id="browser" hidden>
-    <h2>Senza installare niente</h2>
-    <p class="nota">Mirion Fit c'è anche come web app: <a id="browser-link" href="app/" style="color:var(--lilla)">aprila nel browser</a>, poi dal menu di Chrome scegli <b>Aggiungi a schermata Home</b>. L'app installata però fa di più: legge sonno e passi dal telefono e manda il riepilogo al trainer.</p>
+    <p class="nota">Mirion Fit si apre solo con il QR che ti mostra il tuo personal trainer da Mirion Trainer. Inquadralo con la fotocamera del telefono: si apre già attiva.</p>
   </section>
 
   <section class="carta">
-    <h2>Gli aggiornamenti</h2>
-    <p class="nota" id="aggiornamenti">Quando esce una versione nuova, l'app te lo dice da sola: premi <b>Aggiorna</b> e si installa sopra. I tuoi dati restano sul telefono.</p>
+    <h2>I tuoi dati e gli aggiornamenti</h2>
+    <p class="nota">I tuoi dati restano sul telefono. Mirion Fit si aggiorna da sola: quando esce una versione nuova, la prendi alla prossima apertura.</p>
   </section>
 
-  <p class="piccolo">Mirion Fit per Android · <a href="https://github.com/marcogiani98mail-sketch/mirion-aggiornamenti/releases">tutte le versioni</a></p>
+  <p class="piccolo">Mirion Fit · <a href="https://github.com/marcogiani98mail-sketch/mirion-aggiornamenti/releases">l'app per Android (APK) e tutte le versioni</a></p>
 </main>
 <script>
+  // Marco, 25-11 (mezzanotte): «fai installare la web app non l'apk, e con il server le facciamo comunicare»: la pagina del QR
+  // apre la web app (app/, crea-web.mjs) su iPhone e su Android; l'APK resta solo fra le versioni, per chi l'ha già
   const ua = navigator.userAgent
   const iphone = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  const android = /Android/.test(ua)
-  // 25-11 sera, Marco: «falla funzionare come web app sull'iPhone, su Android la stessa cosa»: la web app sta in app/ (crea-web.mjs)
-  if (iphone) { document.getElementById('iphone').hidden = false; document.getElementById('scarica').hidden = true; document.querySelector('.carta:not([id])').hidden = true; document.getElementById('aggiornamenti').textContent = 'La web app si aggiorna da sola: quando esce una versione nuova, la prendi alla prossima apertura. I tuoi dati restano sul telefono.' }
-  else if (!android) document.getElementById('computer').hidden = false
-  const scarica = document.getElementById('scarica')
-  // il codice firmato che apre l'app (25-11, Marco: «assicurati che nessuno possa copiare l'app»): arriva nel QR di Mirion Trainer,
-  // dopo il #, che il browser non manda a nessun server; l'app lo controlla con la chiave di Marco (licenza.js in Piatto)
+  const telefono = iphone || /Android/.test(ua)
+  document.getElementById('passi-iphone').hidden = !iphone
+  document.getElementById('passi-android').hidden = iphone
+  if (!telefono) document.getElementById('computer').hidden = false
+  // il codice firmato che apre l'app (licenza.js): arriva nel QR di Mirion Trainer dopo il #, che il browser non manda a nessuno
   const codice = (/[#&]a=([\w.~-]+)/.exec(location.hash) || [])[1]
-  if (codice) {
-    document.getElementById('attiva').hidden = iphone
-    document.getElementById('attiva-link').href = 'piatto://attiva?codice=' + encodeURIComponent(codice)
-    const web = 'app/?a=' + encodeURIComponent(codice) + '#/diario'
-    document.getElementById('iphone-apri').href = web
-    document.getElementById('browser-link').href = web
-    document.getElementById('browser').hidden = iphone
-  } else {
-    document.getElementById('senza-codice').hidden = false
-    document.getElementById('iphone-apri').hidden = true
-  }
-  // Marco, 25-11: «se una persona prende il qr code gli fa installare l'apk»: su Android il download parte da solo, una volta
-  // per apertura; il pulsante resta per riprovare
-  const parti = () => {
-    if (!android) return
-    try { if (sessionStorage.getItem('fit-scaricato')) return; sessionStorage.setItem('fit-scaricato', '1') } catch {}
-    setTimeout(() => { location.href = scarica.href }, 700)
-  }
+  const apri = document.getElementById('apri')
+  if (codice) { apri.href = 'app/?a=' + encodeURIComponent(codice) + '#/diario'; apri.hidden = false }
+  else document.getElementById('senza-codice').hidden = false
   fetch('versione.json', { cache: 'no-store' }).then(r => r.json()).then(v => {
-    const kb = v.byte ? ` · ${Math.round(v.byte / 1024)} KB` : ''
-    document.getElementById('versione').textContent = `Versione ${v.versione}${kb}`
-    if (v.apk) scarica.href = v.apk
-  }).catch(() => {}).finally(parti)
+    document.getElementById('versione').textContent = `Versione ${v.versione}`
+  }).catch(() => {})
 </script>
 </body>
 </html>
