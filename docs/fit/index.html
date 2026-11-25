@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f0a11">
+<title>Installa Mirion Fit</title>
+<link rel="icon" href="icona.png">
+<!-- La pagina del QR di Mirion Fit (Marco, 25-11-2026: «il qr code deve rimanere sul git a fare installare l'apk… comodo e
+     funzionale»). Sta su GitHub Pages (mirion-aggiornamenti/docs/fit), con l'APK accanto: la pubblica il workflow
+     «Pubblica Mirion Fit» di mirion-codice, a partire da telefono/pagina, telefono/piatto.apk e telefono/versione.json. -->
+<style>
+  :root { --fondo: #0f0a11; --carta: #1b151d; --carta-2: #211b23; --linea: #2f2831; --testo: #f4eef6; --testo-2: #beb8c0; --tenue: #8b838e;
+    --viola: #b666ce; --lilla: #ebacff; --tasto: #9f50b7; --bene: #87dea0; --presto: #f6bb66; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { min-height: 100vh; background: radial-gradient(120% 60% at 50% -10%, color-mix(in oklch, var(--viola) 28%, transparent), transparent 70%), var(--fondo);
+    color: var(--testo); font: 16px/1.5 "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; padding: max(24px, env(safe-area-inset-top)) 16px 40px; }
+  main { max-width: 460px; margin: 0 auto; }
+  .testa { text-align: center; margin: 8px 0 22px; }
+  .testa img { width: 88px; height: 88px; border-radius: 22px; box-shadow: 0 12px 40px color-mix(in oklch, var(--viola) 40%, transparent); }
+  h1 { font-size: 28px; line-height: 1.15; margin: 14px 0 4px; letter-spacing: -.01em; }
+  .sotto { color: var(--testo-2); margin: 0; }
+  .versione { color: var(--tenue); font-size: 13px; margin-top: 6px; }
+  .bottone { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 56px; border-radius: 16px; border: 0;
+    background: var(--tasto); color: #fff; font: 600 18px/1 inherit; text-decoration: none; box-shadow: 0 8px 24px color-mix(in oklch, var(--tasto) 45%, transparent); }
+  .bottone:active { transform: translateY(1px); }
+  .bottone[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+  .bottone svg { width: 22px; height: 22px; }
+  .carta { background: var(--carta); border: 1px solid var(--linea); border-radius: 18px; padding: 18px; margin-top: 16px; }
+  .carta h2 { font-size: 16px; margin: 0 0 10px; }
+  ol { margin: 0; padding: 0; list-style: none; counter-reset: passo; }
+  ol li { counter-increment: passo; position: relative; padding: 0 0 12px 40px; color: var(--testo-2); }
+  ol li:last-child { padding-bottom: 0; }
+  ol li::before { content: counter(passo); position: absolute; left: 0; top: -1px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: color-mix(in oklch, var(--viola) 18%, transparent); color: var(--lilla); font-weight: 700; font-size: 14px; }
+  b { color: var(--testo); }
+  .nota { font-size: 14px; color: var(--testo-2); }
+  .avviso { border-color: color-mix(in oklch, var(--presto) 45%, transparent); }
+  .avviso h2 { color: var(--presto); }
+  .piccolo { font-size: 12px; color: var(--tenue); text-align: center; margin-top: 22px; }
+  .piccolo a { color: var(--testo-2); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="testa">
+    <img src="icona.png" alt="" width="88" height="88">
+    <h1>Mirion Fit</h1>
+    <p class="sotto">Il diario di pasti e allenamenti, collegato al tuo trainer.</p>
+    <p class="versione" id="versione">&nbsp;</p>
+  </div>
+
+  <section class="carta avviso" id="iphone" hidden>
+    <h2>Questa è l'app per Android</h2>
+    <p class="nota">Su iPhone non si installa. Chiedi al tuo trainer il link di Mirion Fit online: lo apri con Safari e lo aggiungi alla schermata Home.</p>
+  </section>
+
+  <section class="carta avviso" id="computer" hidden>
+    <h2>Apri questa pagina dal telefono</h2>
+    <p class="nota">L'app è per i telefoni Android: inquadra il QR col telefono, oppure scrivi questo indirizzo nel suo browser.</p>
+  </section>
+
+  <a class="bottone" id="scarica" href="MirionFit.apk" download="MirionFit.apk">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+    Scarica e installa
+  </a>
+
+  <section class="carta">
+    <h2>Come si installa</h2>
+    <ol>
+      <li>Il download parte da solo (se no, premi <b>Scarica e installa</b>). Se Chrome chiede conferma, premi <b>Scarica</b>.</li>
+      <li>Quando ha finito, tocca <b>Apri</b> (oppure la notifica del download).</li>
+      <li>La prima volta Android chiede di permettere le app da Chrome: <b>Impostazioni</b> → attiva <b>Consenti da questa fonte</b> → torna indietro.</li>
+      <li>Premi <b>Installa</b>. Se compare «App sconosciuta», premi <b>Altri dettagli</b> → <b>Installa comunque</b>.</li>
+    </ol>
+  </section>
+
+  <section class="carta">
+    <h2>Gli aggiornamenti</h2>
+    <p class="nota">Quando esce una versione nuova, l'app te lo dice da sola: premi <b>Aggiorna</b> e si installa sopra. I tuoi dati restano sul telefono.</p>
+  </section>
+
+  <p class="piccolo">Mirion Fit per Android · <a href="https://github.com/marcogiani98mail-sketch/mirion-aggiornamenti/releases">tutte le versioni</a></p>
+</main>
+<script>
+  const ua = navigator.userAgent
+  const iphone = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const android = /Android/.test(ua)
+  if (iphone) { document.getElementById('iphone').hidden = false; document.getElementById('scarica').setAttribute('aria-disabled', 'true') }
+  else if (!android) document.getElementById('computer').hidden = false
+  const scarica = document.getElementById('scarica')
+  // Marco, 25-11: «se una persona prende il qr code gli fa installare l'apk»: su Android il download parte da solo, una volta
+  // per apertura; il pulsante resta per riprovare
+  const parti = () => {
+    if (!android) return
+    try { if (sessionStorage.getItem('fit-scaricato')) return; sessionStorage.setItem('fit-scaricato', '1') } catch {}
+    setTimeout(() => { location.href = scarica.href }, 700)
+  }
+  fetch('versione.json', { cache: 'no-store' }).then(r => r.json()).then(v => {
+    const kb = v.byte ? ` · ${Math.round(v.byte / 1024)} KB` : ''
+    document.getElementById('versione').textContent = `Versione ${v.versione}${kb}`
+    if (v.apk) scarica.href = v.apk
+  }).catch(() => {}).finally(parti)
+</script>
+</body>
+</html>
