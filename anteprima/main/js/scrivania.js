@@ -12,7 +12,7 @@ import { cornice } from './widget.js'
 import * as extra from './caselle-extra.js'
 import { barraScrivanie } from './scrivanie.js'
 import { progetti, progettiPiccoli, sfoglia } from './progetti.js'
-import { programmi, daChiudere } from './caselle-nuove.js'
+import { programmi, daChiudere, nascosteNelleNote } from './caselle-nuove.js'
 import { casellaTelefoni } from './telefoni.js' // Mirion Fit e Mirion Trainer come sul telefono (25-11)
 import { strisciaCosaManca } from './cosa-manca.js'
 import { MISURA, salva, ordinabile, pulsanteAnnulla, scrivania as scrivaniaAttiva } from './su-misura.js'
@@ -91,7 +91,7 @@ function disegna () {
     scadute: () => extra.scadute(ricarica), accessi: extra.accessi, lavagne: extra.lavagne, cerca: extra.cerca, diario: extra.diario, gestionali: casellaGestionali, conti: casellaConti,
     // Claudio, per ora, non c'è (Marco, 23-11 sera: «per ora Claudio e Turni pulizie toglieli»): la sua card non si disegna
     notizie: casellaNotizie, versioni: () => extra.versioni(pagina === 'versioni'), notifiche: () => casellaNotifiche(s, { tutte: pagina === 'notifiche' }),
-    programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere(), telefoni: casellaTelefoni }
+    programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere(), nascoste: () => nascosteNelleNote(), telefoni: casellaTelefoni }
   // il widget: la card da sola, a tutto schermo (widget.js)
   if (widget && contenuti[widget]) return stanza.replaceChildren(cornice(el('div', { class: 'riquadro widget-riquadro' }, el('div', { class: 'riquadro-corpo' }, contenuti[widget]())), '#scrivania'))
   // la pagina completa di una card che non ha una stanza sua: la card da sola, con tutto lo spazio, e «← Scrivania» per tornare
@@ -218,27 +218,26 @@ function ilPunto (s) {
 
 // l'ultima notifica, in mezzo fra il calendario e i progetti (Marco, 25-11 sera: «in mezzo allo spazio visualizza l'ultima notifica»):
 // una riga sola; un clic porta dove dice la notifica, o a tutte le notifiche
-// le notifiche da leggere, una alla volta con le frecce (Marco, 25-11 sera), come i progetti accanto, e la × per chiuderle
-// tutte (Marco: «dammi la possibilità di chiuderle tutte»): si segnano come lette e spariscono da qui; restano nella pagina
-// delle notifiche. Senza notifiche da leggere qui c'è solo la campanella che porta a quella pagina
+// le ultime notifiche, una alla volta con le frecce (Marco, 25-11 notte: «non darmi la possibilità di annullare le notifiche e
+// dammi la possibilità di scorrerle verso un massimale, non farle ricominciare… dagli una lunghezza limite sempre uguale e centrali,
+// in caso sia la scritta più piccoli, così hanno sempre la stessa posizione»): le ultime 20, lette e da leggere; le frecce si fermano
+// alla prima e all'ultima; il riquadro è largo sempre uguale, il testo centrato, più piccolo se è lungo
+const MAX_NOTIFICHE = 20
 let notificaVista = 0
 function ultimaNotifica () {
-  const posto = el('div', { class: 'ultima-notifica', role: 'status', 'aria-label': 'Le notifiche da leggere' })
-  const campanella = () => el('a', { class: 'ultima-notifica-vuota', href: '#scrivania?pagina=notifiche', title: 'Nessuna notifica da leggere: apri le notifiche', 'aria-label': 'Le notifiche' }, ic('bell'))
-  api('/api/notifiche?quante=30').then(r => {
-    const voci = (r?.voci ?? []).filter(n => !n.letta)
-    if (!voci.length) return posto.replaceChildren(campanella())
+  const posto = el('div', { class: 'ultima-notifica', role: 'status', 'aria-label': 'Le ultime notifiche' })
+  api('/api/notifiche?quante=' + MAX_NOTIFICHE).then(r => {
+    const voci = r?.voci ?? []
+    if (!voci.length) return posto.replaceChildren(el('a', { class: 'ultima-notifica-voce vuota', href: '#scrivania?pagina=notifiche' }, ic('bell'), el('span', { testo: 'Nessuna notifica' })))
     if (notificaVista >= voci.length) notificaVista = 0
     const voce = n => {
       const d = new Date(n.quando), oggi = d.toDateString() === new Date().toDateString()
       const ora = oggi ? d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
-      return el('a', { class: 'ultima-notifica-voce da-leggere', href: n.dove || '#scrivania?pagina=notifiche', title: n.testo },
+      const lunga = n.testo.length > 70 ? ' molto-lunga' : n.testo.length > 40 ? ' lunga' : ''
+      return el('a', { class: 'ultima-notifica-voce' + (n.letta ? '' : ' da-leggere') + lunga, href: n.dove || '#scrivania?pagina=notifiche', title: n.testo },
         ic('bell'), el('small', { testo: ora }), el('span', { testo: n.testo }))
     }
-    const chiudi = el('button', { type: 'button', class: 'sfoglia-freccia chiudi-notifiche', title: voci.length > 1 ? `Chiudi tutte (${voci.length}): restano nella pagina delle notifiche` : 'Chiudi: resta nella pagina delle notifiche',
-      'aria-label': voci.length > 1 ? 'Chiudi tutte le notifiche' : 'Chiudi la notifica',
-      onclick: () => api('/api/notifiche/lette', { ids: voci.map(n => n.id) }).then(() => { notificaVista = 0; posto.replaceChildren(campanella()) }).catch(() => {}) }, ic('x'))
-    posto.replaceChildren(el('span', { class: 'ultima-notifica-fila' }, sfoglia(voci, voce, { prima: 'La notifica prima', dopo: 'La notifica dopo', indice: () => notificaVista, scegli: i => { notificaVista = i } }), chiudi))
+    posto.replaceChildren(sfoglia(voci, voce, { prima: 'La notifica più nuova', dopo: 'La notifica più vecchia', gira: false, indice: () => notificaVista, scegli: i => { notificaVista = i } }))
   }).catch(() => {})
   return posto
 }

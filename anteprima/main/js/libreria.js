@@ -11,7 +11,7 @@ export const COSA = {
   adesso: 'la prossima cosa da fare, con Claude a un clic', giorni: 'i prossimi sette giorni', cervello: 'i numeri di oggi nel cervello', progetti: 'a che punto sono i progetti',
   scadute: 'le task per stato: scadute, da fare, in pausa, archiviate', accessi: 'i siti e le app del tuo lavoro, a un clic', cerca: 'le note per parola',
   diario: 'la nota di oggi, e una riga da scriverci', lavagne: 'la lavagna a schermo intero, e le ultime salvate', programmi: 'i programmi che abbiamo in giro e dove girano',
-  'da-chiudere': 'le cose che il diario dice fatte, e quelle nascoste nelle note', gestionali: 'i programmi che costruiamo (Turni pulizie, Studio PT), aperti qui dentro',
+  'da-chiudere': 'le cose che il diario dice fatte, da chiudere anche tutte insieme', nascoste: 'le cose da fare scritte nelle note senza casella', gestionali: 'i programmi che costruiamo (Turni pulizie, Studio PT), aperti qui dentro',
   conti: 'incassato, da incassare e rinnovi', notifiche: 'quello che aspetta una mano, e tutte le notifiche', notizie: 'le notizie del tuo settore',
   'senza-data': 'le cose da fare senza una data',
 }

@@ -6,7 +6,7 @@ import { ic } from './icone.js'
 import { MISURA, salva, ordinabile, nuovoId, scrivania, avvisa } from './su-misura.js'
 
 export const TITOLI = { adesso: 'Adesso', giorni: 'I prossimi giorni', cervello: 'Oggi nel cervello', progetti: 'I progetti', 'senza-data': 'Senza data',
-  scadute: 'Task', accessi: 'Lavoro', cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'I gestionali', 'studio-pt': 'Claudio', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Le versioni', programmi: 'I programmi', 'da-chiudere': 'Da chiudere e nascoste', telefoni: 'Le app sul telefono' }
+  scadute: 'Task', accessi: 'Lavoro', cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'I gestionali', 'studio-pt': 'Claudio', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Le versioni', programmi: 'I programmi', 'da-chiudere': 'Da chiudere', nascoste: 'Nascoste', telefoni: 'Le app sul telefono' }
 
 // dove stanno le caselle che si disegnano: la scrivania, o un'altra stanza fatta a caselle (la Squadra: Marco, 22-11:
 // «dammi la possibilità di personalizzare come nella scrivania anche queste parti»); la imposta griglia()
@@ -207,7 +207,7 @@ export function mostraCasella (id) {
 // scrivania; un clic la manda sulla scrivania. Così in Personalizza non serve aggiungere.
 const SEGNI = { adesso: 'target', giorni: 'calendar-dots', cervello: 'notebook', progetti: 'folder-simple', 'senza-data': 'check-circle', scadute: 'check-square',
   accessi: 'squares-four', cerca: 'magnifying-glass', diario: 'book-open-text', conti: 'briefcase', gestionali: 'desktop', notizie: 'paper-plane-tilt',
-  notifiche: 'bell', lavagne: 'pencil-simple', versioni: 'arrows-clockwise', programmi: 'sliders-horizontal', 'da-chiudere': 'check',
+  notifiche: 'bell', lavagne: 'pencil-simple', versioni: 'arrows-clockwise', programmi: 'sliders-horizontal', 'da-chiudere': 'check', nascoste: 'eye-slash',
   // la Squadra
   punto: 'target', assegna: 'user-plus', lavoro: 'check-square', chat: 'paper-plane-right', storico: 'clock', persone: 'users-three', tue: 'check-circle',
   // Mirion Fit
@@ -220,7 +220,7 @@ export const segno = id => SEGNI[id] ?? 'squares-four'
 // il nome di una parola sotto l'icona (Marco, 25-11 sera: «dagli il nome di una parola»)
 const PAROLA = { adesso: 'Adesso', giorni: 'Giorni', cervello: 'Cervello', progetti: 'Progetti', 'senza-data': 'Libere', scadute: 'Task', accessi: 'Lavoro',
   cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'Gestionali', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Versioni',
-  programmi: 'Programmi', 'da-chiudere': 'Chiudere', punto: 'Punto', assegna: 'Assegna', lavoro: 'Lavoro', chat: 'Chat', storico: 'Storico', persone: 'Persone', tue: 'Tue' }
+  programmi: 'Programmi', 'da-chiudere': 'Chiudere', nascoste: 'Nascoste', punto: 'Punto', assegna: 'Assegna', lavoro: 'Lavoro', chat: 'Chat', storico: 'Storico', persone: 'Persone', tue: 'Tue' }
 export const parola = (id, titolo = '') => PAROLA[id] ?? (String(titolo).replace(/^(il|lo|la|i|gli|le|l’|l')\s*/i, '').split(/\s+/)[0] || id)
 
 // Marco, 25-11 sera: «le icone in alto servono solo per inviare card sulla scrivania»: un clic e la card va in fondo, accesa

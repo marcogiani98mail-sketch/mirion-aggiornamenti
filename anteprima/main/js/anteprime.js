@@ -30,6 +30,7 @@ const DISEGNI = {
     `<rect x="70" y="12" width="20" height="16" rx="2" fill="var(--presto, #f6bb66)" opacity=".8"/>` + scatola(16, 14, 30, 10, 0.2),
   notizie: () => scatola(6, 6, 34, 26, 0.2) + riga(46, 8, 60, 0.7) + riga(46, 16, 50) + riga(46, 24, 36, 0.2) + scatola(6, 38, 34, 26, 0.2) + riga(46, 40, 64, 0.7) + riga(46, 48, 44) + riga(46, 56, 30, 0.2),
   programmi: () => [10, 26, 42, 58].map((y, i) => `<circle cx="11" cy="${y + 2}" r="3" fill="${i === 2 ? 'var(--presto, #f6bb66)' : 'var(--bene, #87dea0)'}"/>` + riga(19, y, [50, 64, 44, 58][i], 0.6) + riga(84, y, 26, 0.2)).join(''),
+  nascoste: () => [12, 30, 48].map((y, i) => riga(8, y, [80, 64, 72][i]) + `<rect x="92" y="${y - 4}" width="22" height="9" rx="3" fill="none" stroke="var(--viola)" opacity=".6"/>`).join(''),
   'da-chiudere': () => [10, 26, 42, 58].map((y, i) => spunta(8, y - 1.5) + riga(19, y, [64, 50, 72, 40][i]) + (i < 2 ? `<rect x="96" y="${y - 2}" width="16" height="8" rx="3" fill="var(--viola)" opacity=".5"/>` : '')).join(''),
   gestionali: () => [0, 1, 2].map(c => scatola(8 + c * 36, 10, 30, 30, 0.14) + `<rect x="${16 + c * 36}" y="18" width="14" height="14" rx="4" fill="var(--viola)" opacity="${0.9 - c * 0.25}"/>` + riga(8 + c * 36, 48, 26, 0.5)).join(''),
   'senza-data': () => [12, 28, 44, 60].map((y, i) => spunta(8, y - 1.5) + riga(19, y, [60, 76, 48, 66][i])).join(''),

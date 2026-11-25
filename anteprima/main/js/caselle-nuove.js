@@ -36,20 +36,16 @@ export function programmi (tutte = false) {
     lista)
 }
 
-// più piccola (Marco, 25-11 sera: «togli la riga che sembra la barra cerca, che occupa solo spazio, e ordinala in modo che possa
-// farla più piccola»): niente riquadri vuoti; una parte senza niente da mostrare sparisce con il suo titolo, e se sono vuote tutte
-// e due resta una riga sola sotto il titolo della card
+// due card (Marco, 25-11 notte: «le schede da chiudere e nascoste… dividimele come card tra nascoste e fatte»): «Da chiudere»,
+// le cose che il diario dice fatte (con «Segna tutte fatte»), e «Nascoste», le cose da fare scritte nelle note senza casella.
+// Una parte senza niente da mostrare resta una riga sola sotto il titolo
+const vuota = (stato, testo) => n => { stato.hidden = n > 0; if (!n) stato.textContent = testo }
+const aggiorna = () => dispatchEvent(new Event('delion-aggiornami'))
+
 export function daChiudere () {
-  const fatte = el('ul', { class: 'fatte-diario' }), nascoste = el('ul', { class: 'nascoste-lista' })
-  const stato = el('p', { class: 'sopra piccolo da-chiudere-stato', testo: 'Guardo il diario e le note…' })
-  const tFatte = el('h3', { class: 'sopra', testo: 'Il diario dice che sono fatte', hidden: true }), tNascoste = el('h3', { class: 'sopra', testo: 'Nascoste nelle note: sembrano cose da fare ma non sono caselle', hidden: true })
-  let guardate = 0, trovate = 0
-  const fatto = (n, titolo, lista) => {
-    guardate++; trovate += n; titolo.hidden = !n; lista.hidden = !n
-    stato.hidden = guardate === 2 && trovate > 0
-    if (guardate === 2 && !trovate) stato.textContent = 'Niente da chiudere: il diario non racconta cose aperte e nelle note degli ultimi 14 giorni non c’è niente di nascosto.'
-  }
-  const aggiorna = () => dispatchEvent(new Event('delion-aggiornami'))
+  const fatte = el('ul', { class: 'fatte-diario' })
+  const stato = el('p', { class: 'sopra piccolo da-chiudere-stato', testo: 'Guardo il diario…' })
+  const fatto = vuota(stato, 'Niente da chiudere: il diario non racconta cose ancora aperte.')
   ;(async () => {
     const { proposte = [] } = await api('/api/fatte-dal-diario').catch(() => ({}))
     const via = scartate(), qui = proposte.filter(p => !via.has(chiaveFatta(p)))
@@ -66,8 +62,24 @@ export function daChiudere () {
           el('button', { type: 'button', class: 'quieto piccolo', title: 'Non te la ripropone più', onclick: () => { scarta(p); li.remove() } }, 'No')))
       return li
     }) : []))
-    fatto(qui.length, tFatte, fatte)
+    fatto(qui.length)
+    // tutte fatte con un clic (Marco, 25-11 notte: «dammi la possibilità di mettere tutte fatte con un clic»)
+    if (qui.length > 1) fatte.before(el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario piccolo', onclick: async e => {
+      const b = e.currentTarget; b.disabled = true; let fatti = 0
+      for (const p of qui) { try { await api('/api/casella', { nota: p.nota, riga: p.riga, testo: p.testo, stato: 'fatta' }); fatti++ } catch { /* quella resta da chiudere */ } }
+      for (const li of fatte.children) { li.classList.add('fatta'); li.querySelector('.bottoni')?.replaceChildren(el('span', { class: 'segno-bene', testo: '✓ fatta' })) }
+      b.replaceWith(el('span', { class: 'segno-bene', testo: `✓ ${fatti} fatte` })); aggiorna()
+    } }, ic('check'), `Segna tutte fatte (${qui.length})`)))
   })()
+  return el('section', { class: 'fascia da-chiudere', 'aria-label': 'Da chiudere' },
+    el('header', {}, el('h2', { testo: 'Da chiudere' }), el('span', { class: 'sopra piccolo', testo: 'il diario dice che sono fatte' })),
+    stato, fatte)
+}
+
+export function nascosteNelleNote () {
+  const nascoste = el('ul', { class: 'nascoste-lista' })
+  const stato = el('p', { class: 'sopra piccolo da-chiudere-stato', testo: 'Guardo le note…' })
+  const fatto = vuota(stato, 'Niente di nascosto nelle note degli ultimi 14 giorni.')
   ;(async () => {
     const { nascoste: lista = [] } = await api('/api/scansione').catch(() => ({}))
     const via = scartate(), qui = lista.filter(k => !via.has(chiaveFatta(k))) // le nascoste a cui hai detto «No» (25-11)
@@ -82,10 +94,10 @@ export function daChiudere () {
       li._k = k
       return li
     }) : []))
-    fatto(qui.length, tNascoste, nascoste)
+    fatto(qui.length)
     if (qui.length > 1) nascoste.before(el('div', { class: 'bottoni' }, pulsanteTutte(qui.slice(0, 20), nascoste))) // tutte quelle mostrate, in un clic (25-11)
   })()
-  return el('section', { class: 'fascia da-chiudere', 'aria-label': 'Da chiudere e nascoste' },
-    el('header', {}, el('h2', { testo: 'Da chiudere e nascoste' }), el('span', { class: 'sopra piccolo', testo: 'Mirion suggerisce, decidi tu' })),
-    stato, tFatte, fatte, tNascoste, nascoste)
+  return el('section', { class: 'fascia da-chiudere nascoste', 'aria-label': 'Nascoste' },
+    el('header', {}, el('h2', { testo: 'Nascoste' }), el('span', { class: 'sopra piccolo', testo: 'sembrano cose da fare, ma non sono caselle' })),
+    stato, nascoste)
 }

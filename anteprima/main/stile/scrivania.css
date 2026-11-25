@@ -177,11 +177,16 @@
 .sfoglia-conta { flex: none; font-size: .7rem; color: var(--tenue); font-variant-numeric: tabular-nums; margin-left: .15rem; white-space: nowrap; }
 .progetti-piccoli .sfoglia-voce { max-width: 15rem; }
 .ultima-notifica .sfoglia-voce { max-width: 26rem; }
+/* la notifica larga sempre uguale, il testo centrato e più piccolo se è lungo: le frecce non si spostano (Marco, 25-11 notte) */
+.ultima-notifica .sfoglia-voce { width: 19rem; max-width: 100%; }
+.ultima-notifica .ultima-notifica-voce { width: 100%; height: 2.2rem; box-sizing: border-box; justify-content: center; }
+.ultima-notifica .ultima-notifica-voce span { text-align: center; }
+.ultima-notifica .ultima-notifica-voce.lunga span { font-size: .72rem; }
+.ultima-notifica .ultima-notifica-voce.molto-lunga span { font-size: .66rem; white-space: normal; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ultima-notifica .ultima-notifica-voce.vuota { width: 19rem; max-width: 100%; color: var(--tenue); }
+.sfoglia.ferma .sfoglia-freccia:disabled { opacity: .25; cursor: default; background: none; }
 @media (max-width: 1500px) { .sfoglia-conta { display: none; } }
 .ultima-notifica-fila { display: inline-flex; align-items: center; gap: .15rem; min-width: 0; max-width: 100%; }
-.ultima-notifica-vuota { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; color: var(--tenue); border: 1px solid var(--linea); }
-.ultima-notifica-vuota:hover, .ultima-notifica-vuota:focus-visible { color: var(--testo); border-color: var(--viola-bordo, var(--linea-forte)); }
-.ultima-notifica-vuota svg.ic { width: 14px; height: 14px; }
 .progetti-piccoli button.progetto-piccolo { max-width: 100%; }
 @media (max-width: 900px) { .banner > .giorni-piccoli { grid-template-columns: minmax(0, 1fr); } .ultima-notifica { justify-content: flex-start; } .progetti-piccoli { justify-content: flex-start; } }
 .giorni-piccoli-fila { display: flex; align-items: center; gap: .6rem; min-width: 0; }
