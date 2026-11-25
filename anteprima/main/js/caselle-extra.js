@@ -48,6 +48,20 @@ export function accessi () {
     el('a', { class: 'sopra piccolo', href: '#lavoro', testo: 'Tutto il lavoro: le app per il computer, cambia gli accessi' }))
 }
 
+// la Lavagna come card (Marco, 25-11 sera: «togli anche la lavagna dalla sinistra e mettila come card apribile a schermo intero»):
+// il pulsante apre la lavagna a tutto schermo; sotto, le ultime salvate, che si riaprono e si modificano
+export function lavagne () {
+  const lista = el('ul', { class: 'risultati-corti lavagne-corte' }, el('li', { class: 'vuoto', testo: 'Cerco le lavagne salvate…' }))
+  api('/api/disegni').then(tutte => {
+    const mie = tutte.filter(g => g.nome !== 'La lavagna').sort((a, b) => b.modificato - a.modificato).slice(0, 5)
+    lista.replaceChildren(...(mie.length ? mie.map(g => el('li', {}, el('a', { href: '#lavagne?apri=' + encodeURIComponent(g.nome), testo: g.nome }),
+      el('small', { testo: new Date(g.modificato).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) })))
+      : [el('li', { class: 'vuoto', testo: 'Ancora nessuna lavagna salvata.' })]))
+  }).catch(() => lista.replaceChildren(el('li', { class: 'vuoto', testo: 'Non riesco a leggere le lavagne salvate.' })))
+  return fascia('extra-lavagne', 'Lavagna',
+    el('a', { class: 'primario', href: '#lavagne', testo: 'Apri la lavagna a schermo intero' }), lista)
+}
+
 // cerca: le note per parola, senza lasciare la scrivania; un clic apre il lettore
 export function cerca () {
   const lista = el('ul', { class: 'risultati-corti' })

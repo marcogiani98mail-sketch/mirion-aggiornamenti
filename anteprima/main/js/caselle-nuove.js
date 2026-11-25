@@ -36,9 +36,19 @@ export function programmi (tutte = false) {
     lista)
 }
 
+// più piccola (Marco, 25-11 sera: «togli la riga che sembra la barra cerca, che occupa solo spazio, e ordinala in modo che possa
+// farla più piccola»): niente riquadri vuoti; una parte senza niente da mostrare sparisce con il suo titolo, e se sono vuote tutte
+// e due resta una riga sola sotto il titolo della card
 export function daChiudere () {
-  const fatte = el('ul', { class: 'fatte-diario' }, el('li', { class: 'vuoto', testo: 'Guardo il diario…' }))
-  const nascoste = el('ul', { class: 'nascoste-lista' }, el('li', { class: 'vuoto', testo: 'Guardo le note…' }))
+  const fatte = el('ul', { class: 'fatte-diario' }), nascoste = el('ul', { class: 'nascoste-lista' })
+  const stato = el('p', { class: 'sopra piccolo da-chiudere-stato', testo: 'Guardo il diario e le note…' })
+  const tFatte = el('h3', { class: 'sopra', testo: 'Il diario dice che sono fatte', hidden: true }), tNascoste = el('h3', { class: 'sopra', testo: 'Nascoste nelle note: sembrano cose da fare ma non sono caselle', hidden: true })
+  let guardate = 0, trovate = 0
+  const fatto = (n, titolo, lista) => {
+    guardate++; trovate += n; titolo.hidden = !n; lista.hidden = !n
+    stato.hidden = guardate === 2 && trovate > 0
+    if (guardate === 2 && !trovate) stato.textContent = 'Niente da chiudere: il diario non racconta cose aperte e nelle note degli ultimi 14 giorni non c’è niente di nascosto.'
+  }
   const aggiorna = () => dispatchEvent(new Event('delion-aggiornami'))
   ;(async () => {
     const { proposte = [] } = await api('/api/fatte-dal-diario').catch(() => ({}))
@@ -55,7 +65,8 @@ export function daChiudere () {
           bottoneDaValutare(() => api('/api/casella', { nota: p.nota, riga: p.riga, testo: p.testo, stato: 'valutare' })),
           el('button', { type: 'button', class: 'quieto piccolo', title: 'Non te la ripropone più', onclick: () => { scarta(p); li.remove() } }, 'No')))
       return li
-    }) : [el('li', { class: 'vuoto', testo: 'Niente da chiudere: il diario non racconta cose ancora aperte.' })]))
+    }) : []))
+    fatto(qui.length, tFatte, fatte)
   })()
   ;(async () => {
     const { nascoste: lista = [] } = await api('/api/scansione').catch(() => ({}))
@@ -70,11 +81,11 @@ export function daChiudere () {
           el('button', { type: 'button', class: 'quieto piccolo', title: 'Non è una cosa da fare: non te la ripropone più', onclick: () => { scarta(k); li.remove() } }, 'No')))
       li._k = k
       return li
-    }) : [el('li', { class: 'vuoto', testo: 'Nessuna cosa da fare nascosta nelle note degli ultimi 14 giorni.' })]))
+    }) : []))
+    fatto(qui.length, tNascoste, nascoste)
     if (qui.length > 1) nascoste.before(el('div', { class: 'bottoni' }, pulsanteTutte(qui.slice(0, 20), nascoste))) // tutte quelle mostrate, in un clic (25-11)
   })()
   return el('section', { class: 'fascia da-chiudere', 'aria-label': 'Da chiudere e nascoste' },
     el('header', {}, el('h2', { testo: 'Da chiudere e nascoste' }), el('span', { class: 'sopra piccolo', testo: 'Mirion suggerisce, decidi tu' })),
-    el('h3', { class: 'sopra', testo: 'Il diario dice che sono fatte' }), fatte,
-    el('h3', { class: 'sopra', testo: 'Nascoste nelle note: sembrano cose da fare ma non sono caselle' }), nascoste)
+    stato, tFatte, fatte, tNascoste, nascoste)
 }

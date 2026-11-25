@@ -13,11 +13,21 @@ function cartella (sc, id, nome, ids, dopo, larghezza = 12) {
   sc.gruppi = [...(sc.gruppi ?? []).filter(g => g.id !== id), { id, nome, scelto: dentro[0].id }]
   return dentro.at(-1)
 }
+// la card principale (Marco, 25-11 sera: «fai anche una card principale per la squadra e per Mirion Fit»): in cima, larga, accesa,
+// fuori dalle cartelle; da lì si sa tutto, e le card singole restano per chi vuole il dettaglio
+export function puntoInCima (sc, id) {
+  const c = sc.riquadri.find(r => r.id === id)
+  if (!c) return null
+  sc.riquadri.splice(sc.riquadri.indexOf(c), 1)
+  sc.riquadri.unshift(Object.assign(c, { nascosto: false, gruppo: null, larghezza: 12, altezza: null, piccolo: false }))
+  return c
+}
 const spegni = (sc, ids) => { for (const r of sc.riquadri) if (ids.includes(r.id)) { r.nascosto = true; r.gruppo = null } }
 
 // la scrivania di Mirion (Marco, 25-11: «fai rimanere le card però come le hai messe, quindi Agenda ci può stare; fai sì che possa
 // mettere più card in una e darle un nome, non farle preimpostate»): card vere, a incastro. In cima «Adesso», larga; sotto, a
-// sinistra, la cartella «Agenda» (i prossimi giorni, le task, i progetti) e sotto le Notifiche; a destra, alta, Conti.
+// sinistra, la cartella «Agenda» (i prossimi giorni, le task, i progetti), a destra le Notifiche. Conti e le altre card stanno fra le
+// icone in cima alla scrivania e si aprono con un clic (Marco, 25-11 sera).
 // «Agenda» è solo una cartella di partenza come le altre: si rinomina, si scioglie, e ogni card si unisce a un'altra trascinandola
 // sopra o con «Metti in una cartella con» (riquadri.js, tasto-destro.js). La card «tutto» della 0.1.31 non c'è più (Marco, 25-11: «togli le card già unite»).
 export function scrivaniaMinimal (sc) {
@@ -25,7 +35,7 @@ export function scrivaniaMinimal (sc) {
   if (!prendi('adesso')) return sc
   for (const c of r) { c.nascosto = true; c.gruppo = null }
   sc.gruppi = []
-  const misure = { adesso: 12, giorni: 8, scadute: 8, progetti: 8, conti: 4, notifiche: 8 }
+  const misure = { adesso: 12, giorni: 8, scadute: 8, progetti: 8, notifiche: 4 }
   const ordine = Object.keys(misure).map(prendi).filter(Boolean)
   for (const c of ordine) { r.splice(r.indexOf(c), 1); Object.assign(c, { nascosto: false, larghezza: misure[c.id], altezza: null, piccolo: false }) }
   r.unshift(...ordine)
@@ -42,7 +52,7 @@ export function fitMinimal (sc) {
   const oggi = sc.riquadri.find(r => r.id === 'oggi')
   if (!oggi) return sc
   spegni(sc, ['notizie'])
-  oggi.larghezza = 6
+  puntoInCima(sc, 'oggi')
   let dopo = oggi
   dopo = cartella(sc, 'gruppo-pasti', 'I pasti', ['colazione', 'pranzo', 'cena', 'spuntini'], dopo, 6)
   dopo = cartella(sc, 'gruppo-corpo', 'Il corpo', ['peso', 'acqua', 'sonno', 'integratori'], dopo, 6)
@@ -54,7 +64,8 @@ export function fitMinimal (sc) {
 // lavoro); sotto, a due per riga, «La squadra» (la chat, lo storico) e «Le persone» (chi c'è, le tue squadre)
 export function squadraMinimal (sc) {
   for (const r of sc.riquadri) if (!r.gruppo) r.nascosto = false
-  const lavoro = cartella(sc, 'gruppo-lavoro', 'Il lavoro', ['assegna', 'lavoro'], null, 12)
+  const punto = puntoInCima(sc, 'punto')
+  const lavoro = cartella(sc, 'gruppo-lavoro', 'Il lavoro', ['assegna', 'lavoro'], punto, 12)
   const dialogo = cartella(sc, 'gruppo-dialogo', 'La squadra', ['chat', 'storico'], lavoro, 7)
   cartella(sc, 'gruppo-persone', 'Le persone', ['persone', 'tue'], dialogo, 5)
   return sc

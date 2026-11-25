@@ -6,7 +6,7 @@ import { ic } from './icone.js'
 import { MISURA, salva, ordinabile, nuovoId, scrivania, avvisa } from './su-misura.js'
 
 export const TITOLI = { adesso: 'Adesso', giorni: 'I prossimi giorni', cervello: 'Oggi nel cervello', progetti: 'I progetti', 'senza-data': 'Senza data',
-  scadute: 'Task', accessi: 'Lavoro', cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'I gestionali', 'studio-pt': 'Claudio', notizie: 'Notizie', notifiche: 'Notifiche', versioni: 'Le versioni', programmi: 'I programmi', 'da-chiudere': 'Da chiudere e nascoste' }
+  scadute: 'Task', accessi: 'Lavoro', cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'I gestionali', 'studio-pt': 'Claudio', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Le versioni', programmi: 'I programmi', 'da-chiudere': 'Da chiudere e nascoste' }
 
 // dove stanno le caselle che si disegnano: la scrivania, o un'altra stanza fatta a caselle (la Squadra: Marco, 22-11:
 // «dammi la possibilità di personalizzare come nella scrivania anche queste parti»); la imposta griglia()
@@ -48,8 +48,7 @@ export function griglia (contenuti, ridisegna, opz = {}) {
     fatti.add(r.gruppo); g.append(scatola(r.gruppo, membri(r.gruppo), contenuti, ridisegna))
   }
   if (!g.childElementCount && opz.vuoto) g.append(opz.vuoto)
-  else if (!g.childElementCount) g.append(el('div', { class: 'vuoto riquadri-vuoto' }, el('p', { testo: 'Questa scrivania è vuota. Scegli le caselle che ti servono qui.' }),
-    el('button', { type: 'button', class: 'primario', testo: 'Aggiungi caselle', onclick: () => import('./pannello.js').then(m => m.pannello()) })))
+  else if (!g.childElementCount) g.append(el('div', { class: 'vuoto riquadri-vuoto' }, el('p', { testo: 'Questa scrivania è vuota: le card sono fra le icone qui sopra. Un clic ne apre una, e «Sulla scrivania» la mette qui.' })))
   // ogni volta che una casella cambia altezza (contenuto, rimpicciolita, allargata) si ricontano le sue righe
   osserva?.disconnect()
   osserva = new ResizeObserver(voci => voci.forEach(v => adatta(v.target)))
@@ -194,6 +193,64 @@ export function mostraCasella (id) {
   if (cambiato) salva()
   return cambiato
 }
+
+// Le icone delle card (Marco, 25-11 sera: «dalla dashboard principale mi fai delle icone con la card annessa, dove quando la clicco
+// mi viene fuori»): in cima alla scrivania, un'icona per ogni card che non è sulla scrivania. Un clic apre la card sopra la scrivania,
+// con tutto quello che fa; da lì si mette sulla scrivania (📌) o si apre la sua pagina completa. Così in Personalizza non serve aggiungere.
+const SEGNI = { adesso: 'target', giorni: 'calendar-dots', cervello: 'notebook', progetti: 'folder-simple', 'senza-data': 'check-circle', scadute: 'check-square',
+  accessi: 'squares-four', cerca: 'magnifying-glass', diario: 'book-open-text', conti: 'briefcase', gestionali: 'desktop', notizie: 'paper-plane-tilt',
+  notifiche: 'bell', lavagne: 'pencil-simple', versioni: 'arrows-clockwise', programmi: 'sliders-horizontal', 'da-chiudere': 'check',
+  // la Squadra
+  punto: 'target', assegna: 'user-plus', lavoro: 'check-square', chat: 'paper-plane-right', storico: 'clock', persone: 'users-three', tue: 'check-circle',
+  // Mirion Fit
+  oggi: 'target', colazione: 'book-open-text', pranzo: 'book-open-text', cena: 'book-open-text', spuntini: 'book-open-text', pasti: 'book-open-text',
+  peso: 'arrows-vertical', acqua: 'sparkle', sonno: 'clock', integratori: 'plus', allenamento: 'target', attivita: 'arrows-out', settimana: 'calendar-dots' }
+export const segno = id => SEGNI[id] ?? 'squares-four'
+let volante = null // la card aperta dall'icona, finché non la chiudi
+
+// dove: la disposizione delle card (la scrivania, la Squadra, un'app come Mirion Fit: Marco, 25-11 sera: «fai la stessa cosa per
+// una dashboard principale di tutte le aree del programma, con card immettibili dalla dashboard»)
+export function iconeCard (contenuti, ridisegna, { titoli = TITOLI, spazi = {}, dove = scrivania, qui = 'Sulla scrivania' } = {}) {
+  const fuori = (dove()?.riquadri ?? []).filter(r => r.nascosto && contenuti[r.id] && titoli[r.id])
+  if (!fuori.length) return ''
+  return el('nav', { class: 'icone-card', 'aria-label': 'Le altre card: un clic e si aprono' },
+    ...fuori.map(r => el('button', { type: 'button', class: 'icona-card', 'data-id': r.id, title: titoli[r.id], 'aria-haspopup': 'dialog',
+      onclick: () => apriCard(r.id, contenuti, ridisegna, { titoli, spazi, dove, qui }) }, el('span', { class: 'icona-card-segno' }, ic(segno(r.id))), el('span', { class: 'icona-card-nome', testo: titoli[r.id] }))))
+}
+
+export function apriCard (id, contenuti, ridisegna, { titoli = TITOLI, spazi = {}, dove = scrivania, qui = 'Sulla scrivania' } = {}) {
+  chiudiCard()
+  const x = spazi[id], pagina = typeof x === 'function' ? x() : x
+  const chiudi = () => chiudiCard()
+  const fondo = el('div', { class: 'card-volante-fondo', onclick: e => { if (e.target === fondo) chiudi() } })
+  const metti = () => {
+    const lay = dove(), r = lay?.riquadri.find(c => c.id === id)
+    if (!r) return
+    const resto = lay.riquadri.filter(c => c !== r)
+    r.nascosto = false; r.gruppo = null; r.piccolo = false
+    lay.riquadri = [...resto.filter(c => !c.nascosto), r, ...resto.filter(c => c.nascosto)] // in fondo alle card accese
+    chiudi(); salva({ subito: true }); ridisegna()
+  }
+  const card = el('div', { class: 'card-volante riquadro', role: 'dialog', 'aria-modal': 'true', 'aria-label': titoli[id], 'data-id': id },
+    el('header', { class: 'card-volante-cima' },
+      el('span', { class: 'icona-card-segno' }, ic(segno(id))), el('h2', { testo: titoli[id] }),
+      el('div', { class: 'card-volante-tasti' },
+        el('button', { type: 'button', class: 'quieto piccolo', onclick: metti, title: 'Mettila qui, in fondo' }, ic('plus'), qui),
+        pagina ? el('a', { class: 'quieto piccolo', href: pagina, onclick: () => chiudi(), title: 'La pagina completa' }, ic('corners-out'), 'Pagina') : null,
+        el('button', { type: 'button', class: 'riquadro-tasto chiudi-card', 'aria-label': 'Chiudi', title: 'Chiudi (Esc)', onclick: chiudi }, ic('x')))),
+    el('div', { class: 'riquadro-corpo' }, contenuti[id]()))
+  fondo.append(card)
+  document.body.append(fondo)
+  const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); chiudi() } }
+  addEventListener('keydown', esc, true)
+  volante = { fondo, esc }
+  card.querySelector('.chiudi-card').focus()
+}
+export function chiudiCard () {
+  if (!volante) return
+  volante.fondo.remove(); removeEventListener('keydown', volante.esc, true); volante = null
+}
+addEventListener('hashchange', chiudiCard)
 
 // Esc chiude lo schermo intero
 addEventListener('keydown', e => { if (e.key === 'Escape' && intero && !document.querySelector('[aria-modal="true"]:not([hidden])')) { intero = null; dispatchEvent(new CustomEvent('su-misura')) } })

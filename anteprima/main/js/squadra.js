@@ -8,7 +8,8 @@ import { fermaCartella, boxCartella } from './cartella.js'
 import { ic } from './icone.js'
 import { obsidian } from './ia.js'
 import { leTueSquadre, storicoEMessaggi } from './squadre.js'
-import { MISURA } from './su-misura.js'
+import { griglia, iconeCard } from './riquadri.js'
+import { MISURA, salva, pulsanteAnnulla } from './su-misura.js'
 import { apriInvio } from './invio.js'
 import { numerino } from './notifiche-squadra.js'
 
@@ -20,6 +21,7 @@ let ultimo = null
 // rimettono da «Tolte». La disposizione sta con quella della scrivania (squadra, in disposizione.mjs).
 // la chat e il lavoro degli altri erano stati tolti il 22-11; il 23-11 Marco li rivuole qui, nella sezione della scrivania;
 // il 25-11 il lavoro degli altri va via di nuovo («leva il lavoro degli altri e usiamo solo lo storico»)
+const TITOLI_SQUADRA = { punto: 'Il punto', assegna: 'Assegna una task', chat: 'La chat', lavoro: 'Il tuo lavoro', tue: 'Le tue squadre', storico: 'Lo storico', persone: 'Chi c’è' }
 const fascia = (classe, titolo, ...dentro) => el('section', { class: 'fascia ' + classe }, el('header', {}, el('h2', { testo: titolo })), ...dentro)
 let ultima = null
 
@@ -31,7 +33,7 @@ export async function mostra (stanza) {
   const n = await api('/api/squadra/novita').catch(() => ({ novita: [] }))
   ultimo = n.ultimo
   const parti = await storicoEMessaggi(d, rifai)
-  const caselle = { assegna: d.io ? fascia('squadra-assegna', 'Assegna una task', await assegna(d, rifai)) : null, chat: parti.messaggi, lavoro: d.io ? fascia('squadra-lavoro', 'Il tuo lavoro', azioni(d, rifai)) : chiSei(d, rifai), tue, storico: parti.storico,
+  const caselle = { punto: puntoSquadra(d, n, rifai), assegna: d.io ? fascia('squadra-assegna', 'Assegna una task', await assegna(d, rifai)) : null, chat: parti.messaggi, lavoro: d.io ? fascia('squadra-lavoro', 'Il tuo lavoro', azioni(d, rifai)) : chiSei(d, rifai), tue, storico: parti.storico,
     persone: fascia('squadra-persone', 'Chi c’è', albero(d, rifai)) }
   ultima = { stanza, d, caselle, github: parti.github }
   disegna()
@@ -39,16 +41,47 @@ export async function mostra (stanza) {
   if (n.ultimo) api('/api/squadra/visto', { sha: n.ultimo }).then(() => numerino(0)).catch(() => {})
 }
 
+// la card principale della Squadra (Marco, 25-11 sera: «fai anche una card principale per la squadra»): chi sei, quante persone,
+// le novità degli altri, l'ultimo giro con GitHub; ogni numero apre la sua card (anche se è dietro un'altra scheda della cartella,
+// rimpicciolita o tolta), e i due gesti di tutti i giorni: assegnare una task e prendere le novità
+function vedi (id) {
+  const sq = MISURA.d?.squadra, r = sq?.riquadri.find(x => x.id === id)
+  if (!r) return
+  const g = r.gruppo && sq.gruppi?.find(x => x.id === r.gruppo)
+  if (r.nascosto || (g && g.scelto !== id) || r.piccolo) { r.nascosto = false; r.piccolo = false; if (g) g.scelto = id; salva({ subito: true }) }
+  requestAnimationFrame(() => document.querySelector(`.riquadro[data-id="${r.gruppo ?? id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+}
+function puntoSquadra (d, n, rifai) {
+  const voce = (icona, numero, nome, id, attento = false) => el('button', { type: 'button', class: 'punto-voce' + (attento ? ' attento' : ''), title: 'Apri', onclick: () => vedi(id) },
+    ic(icona), el('b', { testo: numero }), el('span', { testo: nome }))
+  const nuove = n?.novita?.length ?? 0, persone = d.persone?.length ?? 0
+  const prendi = el('button', { type: 'button', class: 'secondario piccolo', onclick: async e => {
+    const b = e.currentTarget; b.disabled = true
+    try { const r = await api('/api/squadra/prendi', {}); if (r.errore) throw new Error(r.errore); notifica('Novità prese.'); rifai() } catch (err) { notifica(err.message, { tipo: 'sempre' }); b.disabled = false }
+  } }, ic('arrows-clockwise'), 'Prendi le novità')
+  return el('section', { class: 'fascia punto-squadra' },
+    el('header', {}, el('h2', { testo: d.io ? `Ciao ${d.io.nome}` : 'La squadra' }), el('span', { class: 'sopra piccolo', testo: d.io ? `${d.ruoli?.[d.io.ruolo] ?? d.io.ruolo ?? ''} · ${d.area?.nome ?? ''}` : 'Dimmi chi sei, per sapere dove puoi scrivere' })),
+    el('nav', { class: 'il-punto', 'aria-label': 'Il punto della squadra' },
+      voce('users-three', String(persone), persone === 1 ? 'persona' : 'persone', 'persone'),
+      voce('bell', String(nuove), nuove === 1 ? 'novità dagli altri' : 'novità dagli altri', 'storico', nuove > 0),
+      voce('paper-plane-tilt', 'Chat', 'scrivi alla squadra', 'chat'),
+      voce('clock', d.sync?.quando ? new Date(d.sync.quando).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—', d.sync?.errore ? 'ultimo giro: ' + d.sync.errore : 'ultimo giro con GitHub', 'lavoro', Boolean(d.sync?.errore))),
+    el('div', { class: 'bottoni' }, d.io ? el('button', { type: 'button', class: 'primario piccolo', onclick: () => vedi('assegna') }, ic('user-plus'), 'Assegna una task') : null, prendi))
+}
+
 function disegna () {
   if (!ultima) return
   const { stanza, d, caselle, github } = ultima, sq = MISURA.d?.squadra
-  const testa = testata(d.nome, d.daFuori ? `Dall’area personale · ${d.io ? `sei ${d.io.nome}` : 'dimmi chi sei'} · cambi squadra da «Le tue squadre»` : d.io ? `Sei ${d.io.nome}, ${d.ruoli[d.io.ruolo]?.toLowerCase() ?? d.io.ruolo}` : 'Dimmi chi sei, per sapere dove puoi scrivere')
+  const testa = testata(d.nome, d.daFuori ? `Dall’area personale · ${d.io ? `sei ${d.io.nome}` : 'dimmi chi sei'} · cambi squadra da «Le tue squadre»` : d.io ? `Sei ${d.io.nome}, ${d.ruoli[d.io.ruolo]?.toLowerCase() ?? d.io.ruolo} · trascina le card per spostarle, una sopra l’altra per fare una cartella` : 'Dimmi chi sei, per sapere dove puoi scrivere')
   if (!sq) return stanza.replaceChildren(testa, github ?? '', ...Object.values(caselle).filter(Boolean))
-  // una pagina sola, senza card (Marco, 25-11: «stessa cosa per la squadra: togliamo il concetto di card, deve essere una singola
-  // pagina»): a sinistra il lavoro (assegna, il tuo lavoro) e la chat, a destra chi c'è, le tue squadre e lo storico
-  return stanza.replaceChildren(testa, github ?? '', el('div', { class: 'squadra-pagina' },
-    el('div', { class: 'squadra-colonna' }, caselle.assegna ?? '', caselle.lavoro ?? '', caselle.chat ?? ''),
-    el('div', { class: 'squadra-colonna' }, caselle.persone ?? '', caselle.tue ?? '', caselle.storico ?? '')))
+  const tolte = sq.riquadri.filter(r => r.nascosto && TITOLI_SQUADRA[r.id])
+  // card divise, che si sovrappongono in cartelle con il nome che vuoi (Marco, 25-11 sera: «tutto il lavoro delle card divise e
+  // sovrapponibili… e a squadra»): la pagina unica del pomeriggio torna la griglia di card, con le tre cartelle di partenza
+  const contenuti = Object.fromEntries(Object.entries(caselle).filter(([, x]) => x).map(([id, x]) => [id, () => x]))
+  // le tolte sono icone: un clic apre la card, «Nella Squadra» la rimette (Marco, 25-11 sera)
+  const icone = tolte.length ? iconeCard(contenuti, disegna, { titoli: TITOLI_SQUADRA, dove: () => MISURA.d.squadra, qui: 'Nella Squadra' }) : ''
+  stanza.replaceChildren(testa, github ?? '', el('div', { class: 'squadra-sopra' }, pulsanteAnnulla()), icone, griglia(contenuti, disegna, { dove: () => MISURA.d.squadra, titoli: TITOLI_SQUADRA,
+    vuoto: el('p', { class: 'vuoto', testo: 'Hai tolto tutte le caselle: sono fra le icone qui sopra.' }) }))
 }
 addEventListener('su-misura', () => { if (ultima?.stanza.isConnected) disegna() })
 

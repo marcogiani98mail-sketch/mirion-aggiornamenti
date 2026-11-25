@@ -13,7 +13,7 @@ import { el, api, notifica, quando, $, $$, nomeNota } from './base.js'
 import { ic, haIcona } from './icone.js'
 import { casella } from './casella.js'
 import { conIA, pulsantiIA, obsidian } from './ia.js'
-import { griglia, TITOLI } from './riquadri.js'
+import { griglia, TITOLI, iconeCard } from './riquadri.js'
 import { MISURA, salva, scrivania } from './su-misura.js'
 import { pagina as paginaCompletaPiatto, PAGINE } from './pagine-piatto.js'
 import { cornice } from './widget.js'
@@ -43,6 +43,7 @@ async function fai (p, azione, dopo, detto) {
   try { await api('/api/prodotti/azione', { id: p.id, azione }); if (detto) notifica(detto); dopo?.() } catch (e) { notifica(e.message, { tipo: 'sempre' }) }
 }
 const numero = v => Number.isFinite(+v) ? Math.round(+v).toLocaleString('it-IT') : '—'
+const oreDiSonno = h => { let o = Math.floor(h), m = Math.round((h - o) * 60); if (m === 60) { o++; m = 0 } return m ? `${o} h ${String(m).padStart(2, '0')}` : `${o} h` }
 const barretta = (fatto, obiettivo, classe = '') => { const pc = obiettivo ? Math.min(100, Math.round(fatto / obiettivo * 100)) : 0; return el('span', { class: 'oggi-barra ' + classe, role: 'progressbar', 'aria-valuenow': pc, 'aria-valuemin': 0, 'aria-valuemax': 100 }, el('i', { style: { width: pc + '%' } })) }
 // le card che leggono i numeri del giorno: se mancano, dicono perché (spento, profilo da fare, errore)
 function conNumeri (p, r, fatto) {
@@ -182,7 +183,7 @@ function carta (p, quale, dati, rifai, dove) {
     })
   } else if (quale === 'oggi') {
     // sulla sua scrivania «Oggi» è breve: le calorie che restano e i macro; acqua, peso e allenamento hanno la loro card
-    riempi(async () => dove === 'prodotto' && haOggi(p) ? conNumeri(p, await dati.oggi(), d => vistaBreve(d)) : vistaOggi(p, await dati.oggi(), rifai))
+    riempi(async () => vistaOggi(p, await dati.oggi(), rifai)) // la card principale, completa anche in Mirion Fit (25-11 sera: «fai una card principale… per Mirion Fit»)
   } else if (quale === 'acqua') {
     riempi(async () => conNumeri(p, await dati.oggi(), d => [
       el('div', {}, el('b', { class: 'oggi-medio', testo: numero(d.acqua) }), el('span', { class: 'sopra', testo: ` / ${numero(d.obiettivo?.acqua)} ml` })),
@@ -254,6 +255,7 @@ export function vistaOggi (p, r, rifai) {
     el('div', { class: 'oggi-fila' },
       el('div', {}, el('small', { class: 'sopra', testo: 'Acqua' }), el('b', { testo: `${n(d.acqua)} / ${n(o.acqua)} ml` }), barra(d.acqua, o.acqua, 'acqua')),
       d.peso ? el('div', {}, el('small', { class: 'sopra', testo: 'Peso' }), el('b', { testo: `${d.peso.attuale ?? '—'} kg` }), el('small', { class: 'sopra', testo: [d.peso.obiettivo ? `obiettivo ${d.peso.obiettivo} kg` : null, d.peso.diff30 != null ? `${d.peso.diff30 > 0 ? '+' : ''}${d.peso.diff30} kg in 30 giorni` : null].filter(Boolean).join(' · ') })) : null,
+      d.sonno?.ore ? el('div', {}, el('small', { class: 'sopra', testo: 'Sonno' }), el('b', { testo: oreDiSonno(d.sonno.ore) })) : null,
       d.giorniDiFila ? el('div', {}, el('small', { class: 'sopra', testo: 'Di fila' }), el('b', { testo: `${d.giorniDiFila} ${d.giorniDiFila === 1 ? 'giorno' : 'giorni'}` })) : null),
     // gli esercizi di oggi (Piatto, 23-11: per esercizio serie, ripetizioni in tutto, il carico più alto, il volume kg × ripetizioni;
     // «allenamento» è il totale del giorno)
@@ -339,6 +341,7 @@ export async function mostra (stanza, params) {
   // «la scrivania due»: tutto il programma, a pagina intera dentro Mirion (compare quando il riepilogo dice dov'è)
   // il programma del software, intero, dentro Mirion (le pagine complete delle card le disegna Mirion)
   const intera = el('a', { class: 'quieto piccolo prodotto-intera', href: '#gestionale?id=' + encodeURIComponent(p.id), hidden: haOggi(p) || (!p.programma?.ce && !p.online) }, ic('arrow-square-out'), 'Il programma')
+  const spazi = Object.fromEntries(carteDi(p).map(c => [c, () => paginaDi(p.id, c)]))
   const disegna = () => {
     const tolte = disposizione().riquadri.filter(r => r.nascosto && contenuti[r.id])
     stanza.replaceChildren(
@@ -348,23 +351,15 @@ export async function mostra (stanza, params) {
         // il QR degli integratori sta in Mirion Fit (Marco, 24-11 sera: «l'area apposita mettila in Mirion Fit, non in Mirion Trainer»)
         p.id === 'piatto' ? el('button', { type: 'button', class: 'secondario piccolo', title: 'Un QR con gli integratori da prendere: si inquadra in Mirion Fit → Integratori', onclick: async () => (await import('./clienti.js')).qrIntegratori() }, ic('plus'), 'QR integratori') : null,
         el('span', { class: 'sopra piccolo', testo: 'le card si spostano, si allargano e si tolgono come sulla scrivania; «Metti sulla scrivania» le porta anche su quella principale' })),
-      griglia(contenuti, ridisegna, { dove: disposizione, titoli: CARTE, spazi: Object.fromEntries(carteDi(p).map(c => [c, () => paginaDi(p.id, c)])), vuoto: el('p', { class: 'vuoto', testo: 'Hai tolto tutte le card: rimettile qui sotto.' }) }),
-      // «personalizzabile, ma solo con le cose inerenti alla sezione»: qui si rimettono solo le sue card
-      tolte.length ? el('div', { class: 'cifre-tolte prodotto-tolte' }, el('span', { class: 'sopra piccolo', testo: 'Card tolte:' }),
-        ...tolte.map(r => el('button', { type: 'button', class: 'quieto piccolo', title: 'Rimettila', onclick: () => { r.nascosto = false; salva({ subito: true }); disegna() } }, ic('plus'), CARTE[r.id]))) : null)
+      // «personalizzabile, ma solo con le cose inerenti alla sezione»: le sue card tolte sono icone in cima, un clic le apre
+      // e «Qui» le rimette (Marco, 25-11 sera: «fai la stessa cosa… con card immettibili dalla dashboard»)
+      tolte.length ? iconeCard(contenuti, disegna, { titoli: CARTE, dove: disposizione, spazi, qui: 'Qui' }) : '',
+      griglia(contenuti, ridisegna, { dove: disposizione, titoli: CARTE, spazi, vuoto: el('p', { class: 'vuoto', testo: 'Hai tolto tutte le card: sono fra le icone qui sopra.' }) }))
   }
   disegna()
 }
 
 // «Oggi» breve: le calorie che restano e i macro
-function vistaBreve (d) {
-  const o = d.obiettivo ?? {}, m = d.mangiato ?? {}
-  return el('div', { class: 'oggi' },
-    el('div', { class: 'oggi-kcal' },
-      el('div', {}, el('b', { class: 'oggi-grande', testo: numero(d.restano) }), el('span', { class: 'sopra', testo: ' kcal che restano' })),
-      el('small', { class: 'sopra', testo: `mangiate ${numero(m.kcal)} · bruciate ${numero(d.bruciate)} · obiettivo ${numero(o.kcal)}` }), barretta(m.kcal, o.kcal)),
-    el('div', { class: 'oggi-macro' }, ...[['proteine', 'Proteine'], ['carboidrati', 'Carboidrati'], ['grassi', 'Grassi']].map(([k, t]) => el('div', {}, el('small', { class: 'sopra', testo: `${t} ${numero(m[k])}/${numero(o[k])} g` }), barretta(m[k], o[k], k)))))
-}
 function vistaSettimana (d) {
   const max = Math.max(1, ...(d.settimana ?? []).map(g => +g.kcal || 0), +d.obiettivo?.kcal || 0)
   return d.settimana?.length ? el('div', { class: 'oggi-settimana', 'aria-label': 'Le calorie della settimana' }, ...d.settimana.map(g => el('div', { class: 'oggi-giorno', title: `${g.giorno}: ${numero(g.kcal)} kcal` },

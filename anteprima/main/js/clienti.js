@@ -112,7 +112,7 @@ export async function mostra (stanza, params) {
         porta ? el('button', { type: 'button', class: d.online?.acceso ? 'secondario' : 'primario', onclick: () => invita(fai) }, ic('user-plus'), d.online?.acceso ? 'Invita sulla Wi-Fi' : 'Invita un cliente')
           : el('button', { type: 'button', class: 'primario', title: 'Il QR porta alla porta del telefono (Impostazioni → «Il telefono»)', onclick: async () => { await api('/api/telefono', { azione: 'accendi' }).catch(e => notifica(e.message, { tipo: 'sempre' })); rifai() } }, ic('user-plus'), 'Accendi la porta per invitare'),
         // l'app Mirion Fit per Android: il QR porta alla pagina su GitHub, che la scarica e la installa (25-11, senza Netlify né porta)
-        el('button', { type: 'button', class: 'secondario', title: 'Un QR che chiunque inquadra col telefono Android: scarica e installa Mirion Fit da GitHub', onclick: () => invita(fai, 'qr-app') }, ic('arrow-down'), 'QR per installare l’app'),
+        el('button', { type: 'button', class: 'secondario', title: 'Un QR che chiunque inquadra col telefono Android: scarica e installa Mirion Fit da GitHub', onclick: () => qrApp(fai) }, ic('arrow-down'), 'QR per installare l’app'),
         el('button', { type: 'button', class: 'secondario', onclick: async () => { await fai({ azione: demo ? 'via-demo' : 'demo' }, demo ? 'Tolti i clienti inventati.' : (d.claudio?.ce ? 'Ecco i clienti inventati, anche quelli della demo del gestionale.' : 'Ecco quattro clienti inventati, per provare.')); rifai() } }, demo ? 'Togli la prova' : 'Prova con clienti inventati'))),
     el('div', { class: 'clienti-cifre' },
       ...[[clienti.length, 'clienti'], [attivi, 'attivi negli ultimi 3 giorni'], [fermi, 'fermi da 3 giorni o più', fermi ? 'presto' : ''], [novita, 'messaggi nelle ultime 24 ore', novita ? 'bene' : '']].map(([v, t, cls], i) =>
@@ -246,11 +246,47 @@ async function invita (fai, azione = 'invita') {
   const t = document.createElement('template'); t.innerHTML = r.qr
   const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) fondo.remove() } },
     el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Invita un cliente' },
-      el('h2', { testo: r.app ? 'Installa Mirion Fit' : 'Fallo inquadrare al cliente' }),
+      el('h2', { testo: 'Fallo inquadrare al cliente' }),
       el('div', { class: 'invito-qr' }, t.content.firstChild),
-      el('p', { class: 'sopra', testo: r.app ? 'Chi lo inquadra con un telefono Android scarica l’app da GitHub e la installa: da qualunque rete, anche senza la porta del telefono accesa. Gli aggiornamenti glieli propone l’app da sola.' : r.online ? 'Piatto online: è il suo link personale, vale finché non smetti di seguirlo. Su iPhone lo apre con Safari e lo aggiunge alla schermata Home; su Android «Installa». Compare qui quando ha dato il consenso.' : `Col telefono sulla stessa rete Wi-Fi. Vale una volta, fino a domani alle ${new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.` }),
+      el('p', { class: 'sopra', testo: r.online ? 'Piatto online: è il suo link personale, vale finché non smetti di seguirlo. Su iPhone lo apre con Safari e lo aggiunge alla schermata Home; su Android «Installa». Compare qui quando ha dato il consenso.' : `Col telefono sulla stessa rete Wi-Fi. Vale una volta, fino a domani alle ${new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.` }),
       el('code', { class: 'telefono-indirizzo invito-url', testo: r.url }),
       el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario', onclick: () => { fondo.remove(); location.hash = '#clienti'; dispatchEvent(new HashChangeEvent('hashchange')) } }, 'Fatto'))))
+  document.body.append(fondo)
+}
+
+// il QR che installa e apre l'app Mirion Fit per Android (25-11, Marco: «il qr code lo metti in mirion trainer, assicurati che
+// nessuno possa copiare l'app»): porta alla pagina su GitHub con dentro il codice firmato che apre l'app (server/licenza-fit.mjs).
+// L'app scaricata senza questo QR resta chiusa. Senza licenza qui si vede il codice trainer da mandare a Marco e dove incollarla;
+// sulla Mirion di Marco anche come dare la licenza a un altro trainer.
+async function qrApp (fai) {
+  const r = await fai({ azione: 'qr-app' }); if (!r) return
+  const chiudi = () => fondo.remove()
+  const corpo = []
+  if (r.qr) {
+    const t = document.createElement('template'); t.innerHTML = r.qr
+    corpo.push(el('div', { class: 'invito-qr' }, t.content.firstChild),
+      el('p', { class: 'sopra', testo: 'Il cliente lo inquadra con il telefono Android: scarica Mirion Fit da GitHub, la installa, e con «Attiva l’app» la apre. Il QR vale 14 giorni; l’app scaricata in un altro modo resta chiusa.' }))
+  } else {
+    const s = r.stato ?? {}, campo = el('textarea', { rows: 3, class: 'licenza-campo', placeholder: 'Incolla qui la licenza che ti ha dato Marco', 'aria-label': 'La licenza di Mirion Trainer' })
+    corpo.push(el('p', { class: 'sopra', testo: s.licenza?.scaduta ? `La tua licenza di Mirion Trainer è scaduta il ${s.licenza.scade}: chiedine una nuova a Marco.` : 'Per dare l’app ai tuoi clienti serve la licenza di Mirion Trainer. Manda a Marco questo codice trainer: lui ti dà la licenza da incollare qui sotto.' }),
+      el('code', { class: 'telefono-indirizzo invito-url', testo: s.codiceTrainer ?? '' }),
+      campo,
+      el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario', onclick: async () => { if (await fai({ azione: 'licenza-fit', licenza: campo.value }, 'Licenza salvata.')) { chiudi(); qrApp(fai) } } }, 'Salva la licenza')))
+  }
+  // sulla Mirion di Marco: la licenza per un altro trainer
+  if (r.stato?.marco) {
+    const codice = el('input', { placeholder: 'Il codice trainer (43 caratteri)', 'aria-label': 'Il codice del trainer' }), nome = el('input', { placeholder: 'Il nome del trainer', maxlength: 60, 'aria-label': 'Il nome del trainer' })
+    const scade = el('input', { type: 'date', 'aria-label': 'Vale fino al' }), esito = el('code', { class: 'telefono-indirizzo invito-url', hidden: true })
+    corpo.push(el('details', { class: 'licenza-altro' }, el('summary', { testo: 'Dai la licenza a un altro trainer' }),
+      el('p', { class: 'sopra piccolo', testo: 'Lui ti manda il codice trainer che vede nella sua Mirion; tu gli mandi la licenza. Senza data vale per sempre.' }),
+      codice, nome, scade,
+      el('button', { type: 'button', class: 'secondario', onclick: async () => { const x = await fai({ azione: 'licenza-fit-per', codice: codice.value, nome: nome.value, scade: scade.value }); if (x) { esito.textContent = x.licenza; esito.hidden = false; navigator.clipboard?.writeText(x.licenza).then(() => notifica('Licenza copiata: mandala al trainer.')).catch(() => {}) } } }, 'Fai la licenza'),
+      esito))
+  }
+  const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) chiudi() } },
+    el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Installa Mirion Fit' },
+      el('h2', { testo: 'Installa Mirion Fit' }), ...corpo,
+      el('div', { class: 'bottoni' }, el('button', { type: 'button', class: r.qr ? 'primario' : 'secondario', onclick: chiudi }, r.qr ? 'Fatto' : 'Chiudi'))))
   document.body.append(fondo)
 }
 

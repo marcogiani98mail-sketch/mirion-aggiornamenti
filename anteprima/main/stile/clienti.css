@@ -130,3 +130,8 @@
 .conti-riga-prev { display: grid; grid-template-columns: 1fr 4rem 6rem; gap: .4rem; }
 .conti-aggiungi summary { cursor: pointer; margin-top: .6rem; }
 @media (max-width: 600px) { .conti-riga { grid-template-columns: 1fr auto; } }
+
+/* il QR di Mirion Fit senza licenza: il campo per incollarla; sulla Mirion di Marco, la licenza per un altro trainer (25-11) */
+.invito-scatola .licenza-campo, .licenza-altro input { width: 100%; margin: 6px 0; box-sizing: border-box; font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--linea-forte); background: var(--carta-2); color: var(--testo); }
+.licenza-altro { margin-top: 12px; text-align: left; }
+.licenza-altro summary { cursor: pointer; color: var(--testo-2); }

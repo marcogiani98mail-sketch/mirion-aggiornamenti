@@ -144,3 +144,24 @@
 .banner-cifra b { font: 700 1rem var(--titoli); color: var(--testo); }
 .banner-cifra span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .banner-cifra:hover, .banner-cifra:focus-visible { border-color: var(--viola); color: var(--testo); }
+
+/* i prossimi giorni in piccolo, in cima ad «Adesso», su tutta la larghezza (25-11 sera): un clic su un giorno apre sotto le sue cose */
+.banner > .giorni-piccoli { grid-column: 1 / -1; display: grid; gap: .5rem; padding-bottom: .8rem; border-bottom: 1px solid var(--linea-forte); min-width: 0; }
+.giorni-piccoli-fila { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+.giorni-piccoli-fila > .sopra { flex: none; }
+.giorni-piccoli .giorni-schede { flex: 1 1 auto; margin: 0; padding: 6px 6px 2px 0; }
+.giorni-piccoli .giorni-schede button { min-width: 40px; padding: .22rem .4rem; border-radius: 10px; }
+.giorni-piccoli .giorni-schede button b { font-size: .9rem; }
+.giorni-piccoli .giorno-lista { max-height: 14rem; overflow: auto; }
+@media (max-width: 600px) { .giorni-piccoli-fila > .sopra { display: none; } }
+
+/* il punto: in «Adesso», un numero per ogni cosa, e ognuno porta alla sua pagina (25-11 sera) */
+.banner > .il-punto { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: .4rem; }
+.punto-voce { display: flex; align-items: center; gap: .45rem; min-width: 0; padding: .4rem .6rem; border-radius: 10px; text-decoration: none; color: var(--tenue); font-size: .76rem;
+  background: color-mix(in srgb, var(--testo) 5%, transparent); border: 1px solid var(--linea); animation: mappaNuova .25s ease-out; }
+.punto-voce svg.ic { width: 15px; height: 15px; flex: none; color: var(--lilla); }
+.punto-voce b { font: 700 .95rem var(--titoli); color: var(--testo); white-space: nowrap; }
+.punto-voce span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.punto-voce:hover, .punto-voce:focus-visible { border-color: var(--viola); color: var(--testo); }
+.punto-voce.attento { border-color: color-mix(in srgb, var(--scaduto) 55%, transparent); }
+.punto-voce.attento svg.ic, .punto-voce.attento b { color: var(--scaduto); }

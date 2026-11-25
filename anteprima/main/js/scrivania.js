@@ -7,7 +7,7 @@ import { ic } from './icone.js'
 import { casella } from './casella.js'
 import { bollino, avvisaCalendario } from './app.js'
 import { conIA, pulsantiIA, obsidian } from './ia.js'
-import { griglia, mostraCasella, TITOLI } from './riquadri.js'
+import { griglia, mostraCasella, TITOLI, iconeCard } from './riquadri.js'
 import { cornice } from './widget.js'
 import * as extra from './caselle-extra.js'
 import { barraScrivanie } from './scrivanie.js'
@@ -64,7 +64,7 @@ let ultima = null
 // la pagina completa di ogni card, dove portano ⛶ e il doppio clic (Marco, 23-11: «mettere card tipo widget per ogni cosa e poi
 // farle aprire a schermo intero con un apparato dedicato… deve essere tutto widget e apribile per la vera pagina, completa»):
 // la sua stanza se ce l'ha; se no la sua pagina dentro la scrivania (#scrivania?pagina=…), con tutto lo spazio
-const SPAZI = { conti: '#conti', adesso: '#scadute', giorni: '#calendario', scadute: '#scadute', 'senza-data': '#scadute?vista=senzadata', accessi: '#lavoro', cerca: '#cerca', diario: '#diario', 'studio-pt': '#gestionale?id=studio-pt', notizie: '#notizie',
+const SPAZI = { conti: '#conti', adesso: '#scadute', giorni: '#calendario', scadute: '#scadute', 'senza-data': '#scadute?vista=senzadata', accessi: '#lavoro', lavagne: '#lavagne', cerca: '#cerca', diario: '#diario', 'studio-pt': '#gestionale?id=studio-pt', notizie: '#notizie',
   notifiche: '#scrivania?pagina=notifiche', versioni: '#scrivania?pagina=versioni', programmi: '#scrivania?pagina=programmi', cervello: '#scrivania?pagina=cervello', progetti: '#scrivania?pagina=progetti', gestionali: '#scrivania?pagina=gestionali' }
 let pagina = null // la card aperta come pagina completa, se c'è
 let widget = null // la card aperta da sola, come widget del telefono (widget.js)
@@ -82,7 +82,7 @@ function disegna () {
   const deiSoftware = {}, spaziSoftware = {}
   for (const r of scrivaniaAttiva()?.riquadri ?? []) if (/^p\./.test(r.id)) { deiSoftware[r.id] = () => software.cartaPerScrivania(r.id, ricarica); spaziSoftware[r.id] = () => software.paginaCompleta(r.id) }
   const contenuti = { ...deiSoftware, adesso: () => banner(s, ricarica), giorni: () => giorni(s, ricarica), cervello: () => cervello(s), progetti: () => progetti(s.progetti, stanza),
-    scadute: () => extra.scadute(ricarica), accessi: extra.accessi, cerca: extra.cerca, diario: extra.diario, gestionali: casellaGestionali, conti: casellaConti,
+    scadute: () => extra.scadute(ricarica), accessi: extra.accessi, lavagne: extra.lavagne, cerca: extra.cerca, diario: extra.diario, gestionali: casellaGestionali, conti: casellaConti,
     // Claudio, per ora, non c'è (Marco, 23-11 sera: «per ora Claudio e Turni pulizie toglieli»): la sua card non si disegna
     notizie: casellaNotizie, versioni: () => extra.versioni(pagina === 'versioni'), notifiche: () => casellaNotifiche(s, { tutte: pagina === 'notifiche' }),
     programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere() }
@@ -95,7 +95,9 @@ function disegna () {
       el('header', { class: 'pagina-cima' }, el('a', { class: 'secondario piccolo', href: '#scrivania' }, ic('arrow-left'), 'Scrivania'), el('h1', { testo: TITOLI[pagina] ?? pagina })),
       el('div', { class: 'pagina-corpo' }, contenuti[pagina]())))
   }
-  stanza.replaceChildren(manca ?? '', fila, griglia(contenuti, disegna, { spazi: { ...SPAZI, ...spaziSoftware } }))
+  // le card che non sono sulla scrivania: icone in cima, un clic e si aprono (Marco, 25-11 sera)
+  const spazi = { ...SPAZI, ...spaziSoftware }
+  stanza.replaceChildren(manca ?? '', fila, iconeCard(contenuti, disegna, { spazi }), griglia(contenuti, disegna, { spazi }))
 }
 addEventListener('su-misura', () => { if (ultima && !ultima.stanza.hidden && sezione !== 'squadra') disegna() })
 
@@ -124,8 +126,7 @@ function banner (s, ricarica) {
     el('p', { class: 'sopra', testo: new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }) }),
     el('h1', { testo: `${saluto()}${nome ? ', ' + nome : ''}` }),
     el('p', { class: 'sopra' }, `${oggi ? `${oggi} ${oggi === 1 ? 'cosa' : 'cose'} per oggi` : 'niente in scadenza oggi'} · ${s.prossime.length} nei prossimi giorni`,
-      s.scadute ? [' · ', el('a', { href: '#scadute', testo: `${s.scadute} scadute` })] : null),
-    oggiNelCervello(s))
+      s.scadute ? [' · ', el('a', { href: '#scadute', testo: `${s.scadute} scadute` })] : null))
   const centro = el('div', { class: 'banner-adesso' }, el('h2', { testo: 'Adesso' }))
   if (prima) {
     const altre = fila.length - 1
@@ -175,22 +176,36 @@ function banner (s, ricarica) {
         el('button', { type: 'button', class: 'secondario altro-adesso', title: 'Rimandala, mettila in pausa, archiviala, segnala come «non serve più», aggiungi una sotto task', 'aria-haspopup': 'menu',
           onclick: e => { e.stopPropagation(); gesti.apriMenu(e.currentTarget) } }, ic('dots-three'), 'Altro')))
   } else centro.append(el('p', { class: 'grande', testo: 'Niente in coda.' }), el('p', { class: 'sopra', testo: 'Quando scrivi «- [ ]» in una nota, la cosa da fare compare qui.' }))
-  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, sinistra, centro)
+  // in cima, fissi, su tutta la larghezza, i prossimi giorni in piccolo (Marco, 25-11 sera: «i numeri del cervello mettimeli dentro
+  // la card principale in modo permanente, in alto» · poi «oggi nel cervello lo sostituisci con i prossimi giorni: fammi in piccolo
+  // i giorni e la fai funzionare da lì»): un clic su un giorno apre sotto le sue cose, un altro clic lo richiude
+  return el('section', { class: 'banner', 'aria-label': 'Adesso' }, giorni(s, ricarica, { compatta: true }), ilPunto(s), sinistra, centro)
 }
 
-// «Oggi nel cervello» dentro «Adesso» (Marco, 25-11: «oggi nel cervello me lo aggiungi nella dashboard principale e la card la levi»):
-// le quattro cifre del giorno, piccole, sotto il saluto; un clic apre cosa c'è dentro, come nella card (che resta, spenta, per i widget)
-const CIFRE_OGGI = { toccate: 'note toccate', nuove: 'note nuove', chiuse: 'cose chiuse', ia: 'con l’IA' }
-function oggiNelCervello (s) {
-  const n = s.notiziario ?? {}, a = n.azioni ?? {}, v = { toccate: n.aggiornate, nuove: n.nuove, chiuse: a.fatta, ia: a.ia }
-  return el('div', { class: 'banner-cervello', role: 'group', 'aria-label': 'Oggi nel cervello' },
-    el('span', { class: 'sopra piccolo', testo: 'Oggi nel cervello' }),
-    el('div', { class: 'banner-cifre' }, ...Object.entries(CIFRE_OGGI).map(([id, nome]) => el('button', { type: 'button', class: 'banner-cifra', title: 'Apri: cosa c’è dentro, e i giorni passati', onclick: () => apriCifra(id) },
-      el('b', { testo: Number(v[id] ?? 0).toLocaleString('it-IT') }), el('span', { testo: nome })))))
+// il punto (Marco, 25-11 sera: «l'idea è implementare tutto nella card principale, in modo tale che da lì si sappia tutto, e poi si
+// possono avere le card singole più specifiche»): in «Adesso» una riga con un numero per ogni cosa (task, notifiche, conti, rinnovi,
+// progetti, cervello); ognuno porta alla sua pagina, e la card singola resta per chi la vuole più grande. I conti e le notifiche
+// arrivano dopo, con la loro richiesta: se non rispondono, quel numero non c'è.
+const euro = n => Number(n || 0).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+function ilPunto (s) {
+  const voce = (icona, numero, nome, dove, { attento = false, titolo } = {}) => el('a', { class: 'punto-voce' + (attento ? ' attento' : ''), href: dove, title: titolo ?? `Apri: ${nome}` },
+    ic(icona), el('b', { testo: numero }), el('span', { testo: nome }))
+  const n = s.notiziario ?? {}, attivi = (s.progetti ?? []).filter(p => p.aperte > 0)
+  const riga = el('nav', { class: 'il-punto', 'aria-label': 'Il punto' },
+    voce('check-square', String(s.scadute ?? 0), s.scadute === 1 ? 'task scaduta' : 'task scadute', '#scadute', { attento: s.scadute > 0 }),
+    voce('folder-simple', String(attivi.length), attivi.length === 1 ? 'progetto aperto' : 'progetti aperti', '#scrivania?pagina=progetti'),
+    voce('notebook', String(n.aggiornate ?? 0), 'note toccate oggi', '#scrivania?pagina=cervello'))
+  api('/api/notifiche?quante=1').then(d => { if (d?.nonLette != null) riga.append(voce('bell', String(d.nonLette), d.nonLette === 1 ? 'notifica da leggere' : 'notifiche da leggere', '#scrivania?pagina=notifiche', { attento: d.nonLette > 0 })) }).catch(() => {})
+  api('/api/nucleo').then(d => {
+    if (!d) return
+    riga.append(voce('briefcase', euro(d.daIncassare?.totale), 'da incassare', '#conti', { attento: d.daIncassare?.scadute > 0, titolo: d.daIncassare?.scadute ? `Da incassare: ${d.daIncassare.scadute} scadut${d.daIncassare.scadute === 1 ? 'a' : 'e'}` : undefined }),
+      voce('arrows-clockwise', String(d.rinnovi?.voci?.length ?? 0), `rinnov${d.rinnovi?.voci?.length === 1 ? 'o' : 'i'} in ${d.rinnovi?.giorni ?? 60} giorni`, '#conti'))
+  }).catch(() => {})
+  return riga
 }
 
-// 2. i prossimi giorni: a sinistra le caselle dei giorni, a destra le cose del giorno, in fila orizzontale
-function giorni (s, ricarica) {
+let giornoAperto = null // nella fila piccola in cima ad «Adesso»: il giorno aperto, o nessuno
+function giorni (s, ricarica, { compatta = false } = {}) {
   const elenco = []
   for (let d = new Date(s.oggi + 'T12:00'); d.toISOString().slice(0, 10) <= s.fine; d.setDate(d.getDate() + 1)) elenco.push(d.toISOString().slice(0, 10))
   if (!elenco.includes(giornoScelto)) giornoScelto = s.oggi
@@ -210,16 +225,22 @@ function giorni (s, ricarica) {
     visto.querySelector('.banner-adesso .ia')?.focus({ preventScroll: true })
   }
   const disegna = () => {
-    schede.replaceChildren(...elenco.map(g => el('button', { type: 'button', role: 'tab', 'aria-selected': String(g === giornoScelto), onclick: () => { giornoScelto = g; disegna() } },
+    const scelto = compatta ? giornoAperto : giornoScelto
+    schede.replaceChildren(...elenco.map(g => el('button', { type: 'button', role: 'tab', 'aria-selected': String(g === scelto), onclick: () => { if (compatta) giornoAperto = giornoAperto === g ? null : g; else giornoScelto = g; disegna() } },
       el('span', { testo: g === s.oggi ? 'Oggi' : quando(g) === 'domani' ? 'Domani' : new Date(g + 'T12:00').toLocaleDateString('it-IT', { weekday: 'short' }) }),
       el('b', { testo: new Date(g + 'T12:00').getDate() }), conta(g) ? el('i', { testo: conta(g) }) : null)))
-    const cose = s.prossime.filter(k => k.data === giornoScelto).sort((a, b) => (a.ora ?? '99').localeCompare(b.ora ?? '99')), impegni = eventi.filter(e => e.giorno === giornoScelto)
+    lista.hidden = !scelto
+    if (!scelto) return lista.replaceChildren()
+    const cose = s.prossime.filter(k => k.data === scelto).sort((a, b) => (a.ora ?? '99').localeCompare(b.ora ?? '99')), impegni = eventi.filter(e => e.giorno === scelto)
     lista.replaceChildren(el('ul', { class: 'caselle in-fila' },
       ...impegni.map(e => el('li', { class: 'impegno' }, el('b', { testo: e.ora ?? 'tutto il giorno' }), el('span', { testo: e.titolo ?? 'Impegno' }))),
       ...cose.map(k => { const r = casella(k, { mostraData: false, dopo: ricarica, scegli: inAdesso }); r.classList.toggle('in-adesso', chiave(k) === scelta); return r }),
       !cose.length && !impegni.length && el('li', { class: 'vuoto', testo: 'Niente in programma.' })))
   }
   disegna()
+  if (compatta) return el('div', { class: 'giorni-piccoli', role: 'group', 'aria-label': 'I prossimi giorni' },
+    el('div', { class: 'giorni-piccoli-fila' }, el('span', { class: 'sopra piccolo', testo: 'I prossimi giorni' }), schede,
+      el('a', { class: 'quieto piccolo', href: '#calendario', title: 'Il mese, con le task' }, ic('calendar-dots'))), lista)
   return el('section', { class: 'fascia giorni', 'aria-labelledby': 'giorni-t' },
     // il giorno scelto si apre in Google Calendar (Marco, 21-11: «sui giorni dammi modo di poterlo aprire con Google Calendar»)
     el('header', {}, el('h2', { id: 'giorni-t', testo: 'I prossimi giorni' }), !s.calendario?.collegato && el('a', { class: 'sopra piccolo', href: '#impostazioni', testo: 'Collega il calendario di Google' }),
