@@ -1,0 +1,25 @@
+{
+  "name": "Mirion Fit",
+  "short_name": "Mirion Fit",
+  "description": "Il diario di pasti e allenamenti, collegato al tuo trainer.",
+  "lang": "it",
+  "start_url": "./#/diario",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f0a11",
+  "theme_color": "#0f0a11",
+  "icons": [
+    {
+      "src": "icona.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icona.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

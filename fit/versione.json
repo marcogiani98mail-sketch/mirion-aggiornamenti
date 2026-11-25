@@ -1,9 +1,9 @@
 {
-  "versione": "1.0.5",
-  "codice": 5,
-  "note": "Mirion Fit si apre solo con il QR del tuo trainer; gli aggiornamenti arrivano da GitHub",
-  "byte": 211514,
-  "sha256": "ca69f4c52077c75899da39c31841d3dbe585d41813edf408eacf42a7b6e8d37a",
-  "quando": "2026-11-25T22:50:37.164Z",
-  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=5"
+  "versione": "1.0.6",
+  "codice": 6,
+  "note": "Mirion Fit anche come web app: su iPhone da Safari, Aggiungi alla schermata Home",
+  "byte": 211513,
+  "sha256": "98f687dce86f7da74f98eae0b845eda332b6601727b5db43840128c384db2e65",
+  "quando": "2026-11-25T22:58:30.815Z",
+  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=6"
 }

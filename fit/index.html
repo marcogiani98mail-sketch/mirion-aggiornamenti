@@ -55,9 +55,14 @@
     <p class="versione" id="versione">&nbsp;</p>
   </div>
 
-  <section class="carta avviso" id="iphone" hidden>
-    <h2>Questa è l'app per Android</h2>
-    <p class="nota">Su iPhone non si installa. Chiedi al tuo trainer il link di Mirion Fit online: lo apri con Safari e lo aggiungi alla schermata Home.</p>
+  <section class="carta attiva" id="iphone" hidden>
+    <h2>Su iPhone: la web app</h2>
+    <ol>
+      <li>Premi <b>Apri Mirion Fit</b>: si apre in Safari, già attiva con il tuo trainer.</li>
+      <li>Tocca <b>Condividi</b> (il quadrato con la freccia in su), poi <b>Aggiungi alla schermata Home</b>.</li>
+      <li>Da lì si apre come un'app, anche senza rete. I tuoi dati restano sul telefono.</li>
+    </ol>
+    <a class="bottone" id="iphone-apri" href="app/">Apri Mirion Fit</a>
   </section>
 
   <section class="carta avviso" id="computer" hidden>
@@ -92,9 +97,14 @@
     <p class="nota">Mirion Fit si apre solo con il QR che ti mostra il tuo personal trainer da Mirion Trainer. Inquadralo con la fotocamera del telefono: installi e attivi l'app in un colpo.</p>
   </section>
 
+  <section class="carta" id="browser" hidden>
+    <h2>Senza installare niente</h2>
+    <p class="nota">Mirion Fit c'è anche come web app: <a id="browser-link" href="app/" style="color:var(--lilla)">aprila nel browser</a>, poi dal menu di Chrome scegli <b>Aggiungi a schermata Home</b>. L'app installata però fa di più: legge sonno e passi dal telefono e manda il riepilogo al trainer.</p>
+  </section>
+
   <section class="carta">
     <h2>Gli aggiornamenti</h2>
-    <p class="nota">Quando esce una versione nuova, l'app te lo dice da sola: premi <b>Aggiorna</b> e si installa sopra. I tuoi dati restano sul telefono.</p>
+    <p class="nota" id="aggiornamenti">Quando esce una versione nuova, l'app te lo dice da sola: premi <b>Aggiorna</b> e si installa sopra. I tuoi dati restano sul telefono.</p>
   </section>
 
   <p class="piccolo">Mirion Fit per Android · <a href="https://github.com/marcogiani98mail-sketch/mirion-aggiornamenti/releases">tutte le versioni</a></p>
@@ -103,7 +113,8 @@
   const ua = navigator.userAgent
   const iphone = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   const android = /Android/.test(ua)
-  if (iphone) { document.getElementById('iphone').hidden = false; document.getElementById('scarica').setAttribute('aria-disabled', 'true') }
+  // 25-11 sera, Marco: «falla funzionare come web app sull'iPhone, su Android la stessa cosa»: la web app sta in app/ (crea-web.mjs)
+  if (iphone) { document.getElementById('iphone').hidden = false; document.getElementById('scarica').hidden = true; document.querySelector('.carta:not([id])').hidden = true; document.getElementById('aggiornamenti').textContent = 'La web app si aggiorna da sola: quando esce una versione nuova, la prendi alla prossima apertura. I tuoi dati restano sul telefono.' }
   else if (!android) document.getElementById('computer').hidden = false
   const scarica = document.getElementById('scarica')
   // il codice firmato che apre l'app (25-11, Marco: «assicurati che nessuno possa copiare l'app»): arriva nel QR di Mirion Trainer,
@@ -112,7 +123,14 @@
   if (codice) {
     document.getElementById('attiva').hidden = iphone
     document.getElementById('attiva-link').href = 'piatto://attiva?codice=' + encodeURIComponent(codice)
-  } else if (!iphone) document.getElementById('senza-codice').hidden = false
+    const web = 'app/?a=' + encodeURIComponent(codice) + '#/diario'
+    document.getElementById('iphone-apri').href = web
+    document.getElementById('browser-link').href = web
+    document.getElementById('browser').hidden = iphone
+  } else {
+    document.getElementById('senza-codice').hidden = false
+    document.getElementById('iphone-apri').hidden = true
+  }
   // Marco, 25-11: «se una persona prende il qr code gli fa installare l'apk»: su Android il download parte da solo, una volta
   // per apertura; il pulsante resta per riprovare
   const parti = () => {
