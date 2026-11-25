@@ -1,0 +1,23 @@
+{
+  "name": "Mirion",
+  "short_name": "Mirion",
+  "description": "La scrivania che lavora con te: note, task, notizie, squadra e i software, collegata al computer.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0a11",
+  "theme_color": "#0f0a11",
+  "lang": "it",
+  "icons": [
+    { "src": "./icone/mirion-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icone/mirion-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./marchio.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Acqua", "url": "/#prodotto?id=piatto&widget=acqua", "icons": [{ "src": "./icone/mirion-192.png", "sizes": "192x192" }] },
+    { "name": "Peso", "url": "/#prodotto?id=piatto&widget=peso", "icons": [{ "src": "./icone/mirion-192.png", "sizes": "192x192" }] },
+    { "name": "Oggi", "url": "/#prodotto?id=piatto&widget=oggi", "icons": [{ "src": "./icone/mirion-192.png", "sizes": "192x192" }] },
+    { "name": "Clienti", "url": "/#clienti", "icons": [{ "src": "./icone/mirion-192.png", "sizes": "192x192" }] }
+  ]
+}
