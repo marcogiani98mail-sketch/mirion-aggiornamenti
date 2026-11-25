@@ -1,0 +1,52 @@
+// I progetti della scrivania (prima in scrivania.js): le cartelle con cose da fare, un clic apre il resoconto con tutte le task
+// (Marco, 21-11: «i progetti fammeli aprire e fammi visualizzare tutte le task che ci sono»).
+import { el, api, quando, nomeNota, STATO, apri, notifica } from './base.js'
+import { ic } from './icone.js'
+import { casella } from './casella.js'
+import { conIA, pulsantiIA, obsidian } from './ia.js'
+
+// 4. i progetti in fila; un clic apre il resoconto
+export function progetti (lista, stanza) {
+  return el('section', { class: 'fascia progetti', 'aria-labelledby': 'prog-t' }, el('header', {}, el('h2', { id: 'prog-t', testo: 'I progetti' }), el('span', { class: 'sopra piccolo', testo: 'un clic per il resoconto' })),
+    lista.length ? el('ul', { class: 'progetti-fila' }, ...lista.map((p, i) => el('li', { class: 'entra', style: { '--i': i } }, el('button', { type: 'button', onclick: () => resoconto(p.cartella), 'aria-label': `Resoconto di ${p.nome}` },
+      el('div', { class: 'anello', style: { '--p': p.percento } }, el('span', { testo: p.percento + '%' })),
+      el('div', {}, el('b', { testo: p.nome }), el('small', { testo: `${p.fatte} fatte, ${p.aperte} aperte` }), el('small', { testo: `toccato ${quando(p.ultima)}` }))))))
+      : el('p', { class: 'vuoto', testo: 'Nessuna cartella di progetto con cose da fare.' }))
+}
+
+// le principali con sotto le loro sotto task (padre = la riga della principale, nella stessa nota)
+function albero (lista, principale, figlia) {
+  const qui = new Set(lista.map(k => k.nota + '|' + k.riga)), figli = new Map()
+  for (const k of lista) if (k.padre && qui.has(k.nota + '|' + k.padre)) figli.set(k.nota + '|' + k.padre, [...(figli.get(k.nota + '|' + k.padre) ?? []), k])
+  const ramo = (k, sotto) => [sotto ? figlia(k, true) : principale(k), ...(figli.get(k.nota + '|' + k.riga) ?? []).flatMap(f => ramo(f, true))]
+  return lista.filter(k => !(k.padre && qui.has(k.nota + '|' + k.padre))).flatMap(k => ramo(k, false))
+}
+
+// il resoconto di un progetto: di cosa si tratta, cosa resta, le note, e il punto con l'IA
+async function resoconto (cartella) {
+  const d = await api('/api/progetto?c=' + encodeURIComponent(cartella))
+  const fondo = el('div', { class: 'cassetto-fondo', onclick: e => { if (e.target === fondo) fondo.remove() } })
+  const chiudi = () => fondo.remove()
+  fondo.append(el('aside', { class: 'cassetto', role: 'dialog', 'aria-modal': 'true', 'aria-label': `Resoconto di ${d.nome}` },
+    el('header', {}, el('div', { class: 'anello grande-anello', style: { '--p': d.percento } }, el('span', { testo: d.percento + '%' })),
+      el('div', {}, el('h2', { testo: d.nome }), el('p', { class: 'sopra', testo: `${d.fatte} cose fatte, ${d.aperte} aperte · ${d.settimana} note toccate negli ultimi 7 giorni` })),
+      el('button', { type: 'button', class: 'quieto chiudi', 'aria-label': 'Chiudi', onclick: chiudi }, ic('x'))),
+    d.descrizione && el('p', { class: 'descrizione', testo: d.descrizione.replace(/^`|`$/g, '') }),
+    el('div', { class: 'bottoni' }, ...pulsantiIA(ia => conIA.progetto(cartella, ia), { testo: 'Il punto con' }), d.note[0] && obsidian(d.note[0].nota)),
+    // le istruzioni del progetto per Claude (le legge «Claude lavora da solo»), e con l'API le chat del progetto (claude.js, 25-11)
+    STATO.app?.claude !== false || STATO.claudeApiAttiva ? el('div', { class: 'bottoni' },
+      STATO.claudeApi && STATO.claudeApiAttiva ? el('a', { class: 'bottone secondario piccolo', href: '#claude?progetto=' + encodeURIComponent(cartella), onclick: chiudi }, ic('sparkle'), 'Le chat del progetto con Claude') : null,
+      el('button', { type: 'button', class: 'secondario piccolo', onclick: async () => { try { const r = await api('/api/claude/istruzioni', { progetto: cartella }); await apri.obsidian(r.nota) } catch (e) { notifica(e.message, { tipo: 'sempre' }) } } }, ic('notebook'), 'Istruzioni per Claude')) : null,
+    // tutte le task, le sotto task sotto la loro principale (Marco, 21-11: «fammi visualizzare tutte le task che ci sono»)
+    el('h3', { testo: `Da fare (${d.aperte}), prima quelle con la data` }),
+    d.task.length ? el('ul', { class: 'caselle' }, ...albero(d.task, k => casella(k, { dopo: () => {} }), (k, f) => casella(k, { dopo: () => {}, figlia: f }))) : el('p', { class: 'vuoto', testo: 'Niente da fare: il progetto è in pari.' }),
+    d.fatteLista.length ? el('details', { class: 'fatte-progetto' }, el('summary', { testo: `Fatte (${d.fatte})${d.fatte > d.fatteLista.length ? `, qui le ultime ${d.fatteLista.length}` : ''}` }),
+      el('ul', { class: 'caselle' }, ...d.fatteLista.map(k => el('li', { class: 'casella-riga stato-fatta' }, el('span', { class: 'spunta ferma', 'aria-hidden': 'true' }), el('div', { class: 'casella-testo' }, el('s', { testo: k.testo.replace(/📅\s*\S+/, '').trim() }), el('small', { testo: nomeNota(k.nota) })))))) : null,
+    el('h3', { testo: 'Le note, dalla più recente' }),
+    el('ul', { class: 'note-progetto' }, ...d.note.map(n => el('li', {}, el('a', { href: '#cerca?n=' + encodeURIComponent(n.nota), onclick: chiudi, testo: n.nome }),
+      el('span', { class: 'note-lati' }, el('small', { testo: `${quando(n.modificata)} · ${n.aperte} aperte, ${n.fatte} fatte` }), obsidian(n.nota, '')))))))
+  document.body.append(fondo)
+  addEventListener('keydown', function esc (e) { if (e.key === 'Escape') { chiudi(); removeEventListener('keydown', esc) } })
+  fondo.querySelector('.chiudi').focus()
+}
+
