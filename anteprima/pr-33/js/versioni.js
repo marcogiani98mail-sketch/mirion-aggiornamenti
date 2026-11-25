@@ -4,6 +4,15 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.33', data: '2026-11-25', titolo: 'Adesso dice tutto; le card sono icone a un clic', novita: [
+    'In «Adesso» ci sono i prossimi giorni e un numero per ogni cosa: task scadute, progetti, note di oggi, notifiche, da incassare, rinnovi. Ogni numero apre la sua pagina.',
+    'Tocchi un giorno in cima ad «Adesso» e sotto la task da fare compaiono le cose di quel giorno.',
+    'Le card che non sono sulla scrivania stanno come icone in alto: un clic e vanno sulla scrivania; chiudi la card e l’icona torna.',
+    'La barra a sinistra è più pulita: restano la Scrivania e le estensioni. Conti e Lavoro sono icone, la Lavagna è una card che si apre a schermo intero.',
+    'Personalizza è a schede (le card, tema e logo, la barra, altro) e mostra con una grafica com’è la scrivania.',
+    'La Squadra ha la card «Il punto» in cima; in Mirion Fit «Oggi» è la card principale, con anche il sonno.',
+    'Mirion Fit si apre solo con il QR di Mirion Trainer e si scarica da GitHub.',
+  ] },
   { versione: '0.1.32', data: '2026-11-25', titolo: 'Le card tornano, le cartelle le fai tu; l’installatore di Mirion', novita: [
     'La scrivania torna a card vere, a incastro: in cima «Adesso», a sinistra la cartella «Agenda» con sotto le Notifiche, a destra Conti.',
     'Le cartelle le fai tu: trascini una card sopra un’altra (o tasto destro, «Metti in una cartella con») e le dai il nome che vuoi; «Agenda» si rinomina e si scioglie come le altre.',
