@@ -41,12 +41,14 @@ function coloriDiAurora (d) {
   }
   const gradi = x => x + '°', per = x => x + '%'
   return el('div', {},
-    el('div', { class: 'temi', role: 'radiogroup', 'aria-label': 'Le sfumature di Aurora' }, ...Object.entries(SFUMATURE).map(([id, [nome, a, b, forza]]) =>
-      el('button', { type: 'button', role: 'radio', 'aria-checked': String((d.tema ?? 'aurora') === id), style: { '--c': hex(0.64, forza, a), '--c2': hex(0.7, forza * 0.95, b) },
+    el('div', { class: 'temi', role: 'radiogroup', 'aria-label': 'Le sfumature di Aurora' }, ...Object.entries(SFUMATURE).map(([id, [nome, a, b, forza, buio]]) =>
+      el('button', { type: 'button', role: 'radio', 'aria-checked': String((d.tema ?? 'aurora') === id), style: { '--c': buio ? hex(0.62 - buio / 250, forza, a) : hex(0.64, forza, a), '--c2': buio ? hex(0.12, 0, 0) : hex(0.7, forza * 0.95, b) },
         onclick: () => { d.tema = id; const { trasparenza, aurora } = d.colori ?? {}; d.colori = { trasparenza, aurora }; salva({ subito: true }) } }, el('i', { 'aria-hidden': 'true' }), nome))),
     el('div', { class: 'sfumature-fine' },
       cursore('accento', 'Il colore principale', 0, 360, k.accento, gradi, true),
       cursore('secondo', 'Il secondo colore, nelle sfumature', 0, 360, k.secondo, gradi, true),
+      cursore('saturazione', 'La saturazione', 0, 200, k.saturazione, x => x === 0 ? '0% · in grigio' : x === 100 ? '100% · com\'è' : per(x)),
+      cursore('buio', 'Quanto è nero lo sfondo', 0, 100, k.buio, x => x === 0 ? '0% · come sempre' : x === 100 ? '100% · nero' : per(x)),
       cursore('trasparenza', 'Quanto coprono le caselle', 20, 100, k.trasparenza, x => x <= 45 ? `${x}% · molto trasparenti` : x >= 90 ? `${x}% · piene` : per(x)),
       cursore('aurora', 'Quanto si vede l\'aurora', 0, 100, k.aurora, per),
       el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'quieto', testo: 'Rimetti la sfumatura com\'era', onclick: () => { d.colori = { trasparenza: DI_BASE.trasparenza, aurora: DI_BASE.aurora }; salva({ subito: true }) } }))))

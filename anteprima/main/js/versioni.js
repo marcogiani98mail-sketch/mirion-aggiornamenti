@@ -4,6 +4,13 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.34', data: '2026-11-25', titolo: 'Adesso più ricco, tutti i colori, la Squadra che assegna', novita: [
+    'In cima ad «Adesso», accanto al calendario, ci sono i progetti aperti con il loro anello, e in mezzo l’ultima notifica.',
+    'Le card dei prossimi giorni e dei progetti sono uscite dalla scrivania: tutto sta in «Adesso», e restano disponibili fra le icone.',
+    'Aurora ha molti più colori, il Nero per lo sfondo scuro e due selettori nuovi: la saturazione e quanto è nero lo sfondo.',
+    'Nella Squadra «Assegna una task» apre subito il modulo, e lo Storico non ha più la riga di istruzioni.',
+    '«Piatto» ora si chiama Mirion Fit ovunque, e l’app per i clienti si scarica da GitHub con il QR.',
+  ] },
   { versione: '0.1.33', data: '2026-11-25', titolo: 'Adesso dice tutto; le card sono icone a un clic', novita: [
     'In «Adesso» ci sono i prossimi giorni e un numero per ogni cosa: task scadute, progetti, note di oggi, notifiche, da incassare, rinnovi. Ogni numero apre la sua pagina.',
     'Tocchi un giorno in cima ad «Adesso» e sotto la task da fare compaiono le cose di quel giorno.',

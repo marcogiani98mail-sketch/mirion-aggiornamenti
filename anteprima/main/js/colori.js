@@ -12,8 +12,14 @@ export const SFUMATURE = {
   oceano: ['Oceano', 255, 195, 0.16], ghiacciaio: ['Ghiacciaio', 220, 175, 0.12], laguna: ['Laguna', 185, 150, 0.13],
   foresta: ['Foresta', 150, 95, 0.15], ambra: ['Ambra', 75, 40, 0.15], tramonto: ['Tramonto', 50, 15, 0.17],
   corallo: ['Corallo', 18, 340, 0.17], rosa: ['Rosa', 345, 290, 0.17], grafite: ['Grafite', 270, 270, 0.05],
+  // Marco, 25-11 sera: «aggiungi altri colori… fammi tutti i colori, dammi anche il nero per Aurora»: il giro completo dei toni,
+  // e il Nero (quinto numero: quanto è nero lo sfondo, da 0 a 100)
+  rosso: ['Rosso', 25, 355, 0.19], arancio: ['Arancio', 55, 25, 0.17], giallo: ['Giallo', 95, 60, 0.16], lime: ['Lime', 125, 165, 0.17],
+  verde: ['Verde', 145, 185, 0.17], menta: ['Menta', 170, 210, 0.13], turchese: ['Turchese', 195, 160, 0.13], cielo: ['Cielo', 235, 200, 0.14],
+  blu: ['Blu', 262, 225, 0.19], indaco: ['Indaco', 278, 315, 0.18], lavanda: ['Lavanda', 300, 260, 0.13], magenta: ['Magenta', 330, 15, 0.2],
+  nero: ['Nero', 285, 320, 0.06, 100], notte: ['Notte', 262, 300, 0.15, 70],
 }
-export const DI_BASE = { trasparenza: 58, aurora: 70 } // caselle al 58% di copertura, aurora al 70%
+export const DI_BASE = { trasparenza: 58, aurora: 70, saturazione: 100, buio: 0 } // caselle al 58% di copertura, aurora al 70%, colori pieni, sfondo di sempre
 
 // ---- OKLCH → sRGB (Björn Ottosson, Oklab, 2020) e il contrasto WCAG 2 ----
 const gamma = x => x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055
@@ -39,17 +45,21 @@ const PROFILO = [0.1, 0.16, 0.26, 0.34, 0.4, 0.46, 0.55, 0.68, 1, 1, 0.82, 0.32]
 // in basso e scuri in alto; l'accento si scurisce dove fa da testo (lilla), perché si legga sul bianco
 const L_GRIGI_CHIARI = [0.962, 0.978, 0.995, 0.948, 0.93, 0.9, 0.85, 0.78, 0.64, 0.52, 0.4, 0.21]
 const L_ACCENTO_CHIARI = [0.985, 0.97, 0.945, 0.92, 0.89, 0.85, 0.79, 0.7, 0.57, 0.52, 0.45, 0.28]
-const scala = (h, C, neutra, chiaro = false) => (neutra ? (chiaro ? L_GRIGI_CHIARI : L_GRIGI) : (chiaro ? L_ACCENTO_CHIARI : L_ACCENTO)).map((L, i) => hex(L, neutra ? C * (i < 8 ? 1 : i < 10 ? 1.1 : 0.7) : C * PROFILO[i], h))
+// buio (0-100): gli sfondi scuri (i primi gradini) scendono verso il nero; il testo resta com'è, quindi si legge ancora meglio
+const scura = (L, i, buio) => i < 8 && buio ? L * (1 - 0.6 * buio / 100 * (1 - i / 10)) : L
+const scala = (h, C, neutra, chiaro = false, buio = 0) => (neutra ? (chiaro ? L_GRIGI_CHIARI : L_GRIGI) : (chiaro ? L_ACCENTO_CHIARI : L_ACCENTO)).map((L, i) => hex(chiaro ? L : scura(L, i, buio), neutra ? C * (i < 8 ? 1 : i < 10 ? 1.1 : 0.7) * (1 - 0.7 * buio / 100) : C * PROFILO[i], h))
 // i temi (stili) di Mirion: Classica è Aurora com'era; Carta è chiara; Netto è scura, piatta, senza aurora (stili.css)
 export const STILI = { classica: 'Classica', carta: 'Carta', netto: 'Netto' }
 
 // la scelta salvata ({ tema, colori }) → i numeri veri
 export function numeri ({ tema, colori, stile } = {}) {
-  const [, accento, secondo, forza] = SFUMATURE[tema] ?? SFUMATURE.aurora
+  const [, accento, secondo, forza, buio = DI_BASE.buio] = SFUMATURE[tema] ?? SFUMATURE.aurora
   const c = colori ?? {}, n = (v, min, max, base) => Number.isFinite(+v) && v !== null && v !== '' ? Math.min(max, Math.max(min, +v)) : base
+  // la saturazione (Marco, 25-11 sera: «mettimi anche un selettore per la saturazione»): da 0 (grigio) a 200% della sfumatura
+  const saturazione = n(c.saturazione, 0, 200, DI_BASE.saturazione)
   return {
-    accento: n(c.accento, 0, 360, accento), secondo: n(c.secondo, 0, 360, secondo), forza,
-    trasparenza: n(c.trasparenza, 20, 100, DI_BASE.trasparenza), aurora: n(c.aurora, 0, 100, DI_BASE.aurora), stile: STILI[stile] ? stile : 'classica',
+    accento: n(c.accento, 0, 360, accento), secondo: n(c.secondo, 0, 360, secondo), forza: Math.min(0.37, forza * saturazione / 100), saturazione,
+    trasparenza: n(c.trasparenza, 20, 100, DI_BASE.trasparenza), aurora: n(c.aurora, 0, 100, DI_BASE.aurora), buio: n(c.buio, 0, 100, buio), stile: STILI[stile] ? stile : 'classica',
   }
 }
 
@@ -57,7 +67,7 @@ export function numeri ({ tema, colori, stile } = {}) {
 export function variabili (scelta) {
   const k = numeri(scelta)
   const chiaro = k.stile === 'carta', netto = k.stile === 'netto'
-  const grigio = scala(k.accento, netto ? 0.004 : k.forza < 0.08 ? 0.008 : chiaro ? 0.012 : 0.018, true, chiaro), a = scala(k.accento, k.forza, false, chiaro)
+  const grigio = scala(k.accento, (netto ? 0.004 : k.forza < 0.08 ? 0.008 : chiaro ? 0.012 : 0.018) * Math.min(1.5, k.saturazione / 100), true, chiaro, k.buio), a = scala(k.accento, k.forza, false, chiaro)
   const stato = h => scala(h, 0.15, false, chiaro), verde = stato(152), ambra = stato(75), rosso = stato(25), blu = stato(250)
   // Netto: caselle piene e niente aurora; Carta: caselle quasi piene e l'aurora appena accennata
   if (netto) { k.trasparenza = 100; k.aurora = 0 } else if (chiaro) { k.trasparenza = Math.max(92, k.trasparenza); k.aurora = Math.round(k.aurora * 0.45) }
