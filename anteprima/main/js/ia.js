@@ -8,8 +8,11 @@ import { ic } from './icone.js'
 
 const CLAUDE = { id: 'claude', nome: 'Claude', colori: ['#d9643a', '#f2a37f'] }
 export const mie = () => STATO.preset?.ia?.length ? STATO.preset.ia : [CLAUDE]
-// Claude e Codex lavorano dentro il vault; le altre IA nella chat
-export const sulVault = id => String(id ?? 'claude').startsWith('claude') || id === 'codex'
+// Claude e Codex lavorano dentro il vault; le altre IA nella chat. Con l'account gratuito (Marco, 25-11 sera: «utilizzandolo
+// dall'account gratis può lo stesso fare le task, quelle possibili») anche Claude e Codex vanno nella chat, con la task e il pezzo di nota
+export const gratis = () => MISURA.d?.gratis === true
+export const GRATIS_SPIEGA = 'Con l’account gratuito «Fallo con…» apre la chat con la task e il pezzo di nota già scritti: l’IA ti aiuta a farla e tu copi il risultato. Per farla lavorare da sola dentro il cervello serve il piano a pagamento.'
+export const sulVault = id => !gratis() && (String(id ?? 'claude').startsWith('claude') || id === 'codex')
 const copia = t => navigator.clipboard?.writeText(t).then(() => true, () => false) ?? Promise.resolve(false)
 
 async function manda (url, corpo, { appunti = true } = {}) {
@@ -48,7 +51,8 @@ export function pulsantiIA (fai, { testo = 'Fallo con' } = {}) {
       const r = scegli.getBoundingClientRect()
       apriMenu(r.left, r.bottom + 4, [
         ...tutte.map(ia => ({ testo: `${testo} ${ia.nome}`, img: `./icone/${ia.id}.png`, colore: ia.colori[1], scelta: ia.id === pre.id, fai: () => fai(ia.id) })),
-        '-', { testo: 'La predefinita', segno: '✎', sotto: tutte.map(ia => ({ testo: ia.nome, img: `./icone/${ia.id}.png`, colore: ia.colori[1], scelta: ia.id === pre.id, fai: () => { MISURA.d.ia = ia.id; salva({ subito: true }); notifica(`${ia.nome} è la tua IA predefinita.`) } })) },
+        '-', { testo: 'Uso l’account gratuito', scelta: gratis(), fai: () => { MISURA.d.gratis = !gratis(); salva({ subito: true }); notifica(gratis() ? GRATIS_SPIEGA : 'Piano a pagamento: «Fallo con Claude» lavora dentro il cervello.', { tipo: 'sempre', durata: 9000 }) } },
+        { testo: 'La predefinita', segno: '✎', sotto: tutte.map(ia => ({ testo: ia.nome, img: `./icone/${ia.id}.png`, colore: ia.colori[1], scelta: ia.id === pre.id, fai: () => { MISURA.d.ia = ia.id; salva({ subito: true }); notifica(`${ia.nome} è la tua IA predefinita.`) } })) },
       ], 'Con quale IA')
     } }, ic('caret-down'))
   return [el('span', { class: 'ia-gruppo' }, pulsanteIA(pre, testo, fai), scegli)]

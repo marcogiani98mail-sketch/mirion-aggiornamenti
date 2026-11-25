@@ -4,6 +4,12 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.35', data: '2026-11-25', titolo: 'Card libere, Fallo con Claude nel progetto, installatore nuovo', novita: [
+    'Le card della scrivania restano nella colonna dove le lasci, e le altre si incastrano intorno.',
+    '«Fallo con Claude» apre Claude dentro il progetto della task, con le sue istruzioni; se la task non ha un progetto, Claude lo crea e ce la porta.',
+    '«Adesso» è di vetro come le altre card, senza le luci dell’aurora.',
+    'L’installatore per Windows è tutto nello stile di Mirion, con il fondo scuro in ogni pagina.',
+  ] },
   { versione: '0.1.34', data: '2026-11-25', titolo: 'Adesso più ricco, tutti i colori, la Squadra che assegna', novita: [
     'In cima ad «Adesso», accanto al calendario, ci sono i progetti aperti con il loro anello, e in mezzo l’ultima notifica.',
     'Le card dei prossimi giorni e dei progetti sono uscite dalla scrivania: tutto sta in «Adesso», e restano disponibili fra le icone.',

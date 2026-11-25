@@ -56,29 +56,52 @@ export function attivazione (s) {
     }
   }
   disegnaObsidian(s.obsidian, s.installaObsidian?.inCorso ? ASPETTA : null)
-  // Claude (Marco, 23-11: «nell'installazione ci deve essere tutto quello che riguarda l'utilizzo con Claude, anche il piano
-  // gratuito»): l'app con un clic, e l'account, che per cominciare può essere quello gratuito
-  const passoClaude = el('li', {})
+  // L'intelligenza artificiale (Marco, 23-11: «nell'installazione ci deve essere tutto quello che riguarda l'utilizzo con Claude, anche
+  // il piano gratuito»; 25-11 sera: «metti anche la possibilità di usare un'altra app oltre a Claude, come Codex»): si sceglie quale,
+  // diventa la predefinita di «Fallo con…», e l'app scelta si installa con un clic; l'account per cominciare può essere gratuito
+  const APP = {
+    claude: { nome: 'Claude', chi: 'di Anthropic', installa: '/api/attivazione/claude', sito: 'https://claude.ai/download', account: 'https://claude.ai/login', c: 'claude', inCorso: 'installaClaude' },
+    codex: { nome: 'Codex', chi: 'di OpenAI, nell’app ChatGPT', installa: '/api/attivazione/codex', sito: 'https://chatgpt.com/download', account: 'https://chatgpt.com/auth/login', c: 'codex', inCorso: 'installaCodex' },
+  }
+  const passoClaude = el('li', { class: 'passo-ia' })
+  let scelta = s.ia === 'codex' ? 'codex' : 'claude', stato = { ...s }, messaggio = null, gratis = s.gratis === true
   const ASPETTA_C = 'La sto installando. Se Windows chiede il permesso, rispondi «Sì».'
-  const disegnaClaude = (c, testo = null) => passoClaude.replaceChildren(...[
-    el('b', {}, c ? ic('check-circle') : null, 'Claude'),
-    el('span', { testo: c ? 'C’è. Se non hai ancora l’account, crealo: per cominciare basta quello gratuito.' : testo ?? 'È l’intelligenza artificiale che lavora nel cervello. Installa l’app e crea l’account: per cominciare basta quello gratuito.' }),
-    el('span', { class: 'bottoni' },
-      !c && !testo ? el('button', { type: 'button', class: 'secondario piccolo', onclick: installaClaude }, ic('arrow-down'), 'Installa Claude') : null,
-      el('button', { type: 'button', class: 'quieto piccolo', onclick: () => window.open('https://claude.ai/login', '_blank', 'noopener') }, 'Account gratuito'))].filter(Boolean))
+  const disegnaClaude = () => {
+    const a = APP[scelta], c = stato[a.c] === true
+    passoClaude.replaceChildren(...[
+      el('b', {}, c ? ic('check-circle') : null, 'L’intelligenza artificiale'),
+      el('span', { class: 'scelta-ia', role: 'radiogroup', 'aria-label': 'Con quale intelligenza artificiale lavori' },
+        ...Object.entries(APP).map(([id, x]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(id === scelta), class: 'scelta-ia-voce' + (id === scelta ? ' scelta' : ''),
+          onclick: () => { if (id === scelta) return; scelta = id; messaggio = null; disegnaClaude(); api('/api/attivazione/ia', { ia: id, gratis }).catch(e => mostra(e.message)) } },
+          el('img', { src: `./icone/${id}.png`, alt: '' }), el('span', {}, el('b', { testo: x.nome }), el('small', { testo: x.chi }))))),
+      el('span', { testo: c ? `${a.nome} c’è: «Fallo con ${a.nome}» lavora nel cervello. Se non hai ancora l’account, crealo: per cominciare basta quello gratuito.`
+        : messaggio ?? `È l’intelligenza artificiale che lavora nel cervello con «Fallo con ${a.nome}». Installa l’app e crea l’account: per cominciare basta quello gratuito.` }),
+      // l'account gratuito (Marco, 25-11 sera): «Fallo con…» fa lo stesso le task, nella chat invece che dentro il cervello
+      el('label', { class: 'gratis-ia' }, el('input', { type: 'checkbox', checked: gratis, onchange: e => { gratis = e.target.checked; disegnaClaude(); api('/api/attivazione/ia', { ia: scelta, gratis }).catch(err => mostra(err.message)) } }),
+        el('span', {}, el('b', { testo: 'Uso l’account gratuito' }), el('small', { testo: gratis ? `«Fallo con ${a.nome}» apre la chat con la task e il pezzo di nota già scritti: ${a.nome} ti aiuta a farla. Per farlo lavorare da solo dentro il cervello serve il piano a pagamento; lo cambi quando vuoi dalla freccina accanto a «Fallo con».` : 'Con il piano a pagamento lavora da solo dentro il cervello.' }))),
+      el('span', { class: 'bottoni' },
+        !c && !messaggio ? el('button', { type: 'button', class: 'secondario piccolo', onclick: installaClaude }, ic('arrow-down'), `Installa ${a.nome}`) : null,
+        el('button', { type: 'button', class: 'quieto piccolo', onclick: () => window.open(a.account, '_blank', 'noopener') }, 'Account gratuito'))].filter(Boolean))
+  }
   async function installaClaude () {
-    const r = await api('/api/attivazione/claude', {}).catch(e => ({ via: 'sito', sito: 'https://claude.ai/download', perche: e.message }))
-    if (r.via === 'winget') disegnaClaude(false, ASPETTA_C)
-    else { window.open(r.sito, '_blank', 'noopener'); disegnaClaude(false, `${r.perche ? r.perche[0].toUpperCase() + r.perche.slice(1) + ': i' : 'I'}nstallala dalla pagina che si è aperta.`) }
+    const id = scelta, a = APP[id]
+    const r = await api(a.installa, {}).catch(e => ({ via: 'sito', sito: a.sito, perche: e.message }))
+    if (r.via === 'winget') messaggio = ASPETTA_C
+    else { window.open(r.sito, '_blank', 'noopener'); messaggio = `${r.perche ? r.perche[0].toUpperCase() + r.perche.slice(1) + ': i' : 'I'}nstallala dalla pagina che si è aperta.` }
+    disegnaClaude()
     for (let i = 0; i < 180; i++) {
       await new Promise(ok => setTimeout(ok, 5000))
       const t = await api('/api/attivazione').catch(() => null)
-      if (t?.claude) return disegnaClaude(true)
-      if (t?.installaClaude && t.installaClaude !== 'in corso' && t.installaClaude !== 'finita') return disegnaClaude(false, `Claude: ${t.installaClaude}. La trovi su claude.ai/download.`)
       if (t && !t.serve) return
+      if (t) stato = t
+      if (scelta !== id) return // ha cambiato idea: la finestra mostra l'altra
+      if (t?.[a.c]) { messaggio = null; return disegnaClaude() }
+      const fine = t?.[a.inCorso]
+      if (fine && fine !== 'in corso' && fine !== 'finita') { messaggio = `${a.nome}: ${fine}. La trovi su ${a.sito.replace('https://', '')}.`; return disegnaClaude() }
     }
   }
-  disegnaClaude(s.claude === true, s.installaClaude === 'in corso' ? ASPETTA_C : null)
+  if (s.installaClaude === 'in corso' && scelta === 'claude') messaggio = ASPETTA_C
+  disegnaClaude()
   const mostra = t => { errore.textContent = t; errore.hidden = !t }
   const vai = async () => {
     if (partito) return

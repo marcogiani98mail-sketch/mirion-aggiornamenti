@@ -53,8 +53,15 @@ export function griglia (contenuti, ridisegna, opz = {}) {
   osserva?.disconnect()
   osserva = new ResizeObserver(voci => voci.forEach(v => adatta(v.target)))
   for (const box of g.querySelectorAll(':scope > .riquadro')) osserva.observe(box)
-  ordinabile(g, { fatto: ids => { riordina(ids); salva() }, unisci: (a, b) => { unisci(a, b); salva(); ridisegna() } })
+  // le caselle si lasciano nella colonna che vuoi (Marco, 25-11 sera: «il posizionamento delle card deve essere più libero… si devono
+  // incastrare ma con più libertà»): dove la lasci resta la sua colonna, e le altre salgono a riempire i buchi (su-misura.css, dense)
+  ordinabile(g, { colonne: 12, fatto: (ids, posto) => { riordina(ids); if (posto) colonna(posto.id, posto.colonna); salva() }, unisci: (a, b) => { unisci(a, b); salva(); ridisegna() } })
   return g
+}
+
+// la colonna dove comincia una casella (o tutte quelle di una cartella)
+function colonna (id, n) {
+  for (const r of gruppo(id) ? membri(id) : [riq(id)].filter(Boolean)) r.colonna = n
 }
 
 // il nuovo ordine: una cartella porta con sé le sue caselle; le nascoste restano in fondo
@@ -86,7 +93,7 @@ function scatola (id, lista, contenuti, ridisegna) {
   const box = el('div', { class: 'riquadro' + (capo.piccolo ? ' piccolo' : '') + (cart ? ' cartella' : '') + (intero === id ? ' intero' : ''), 'data-id': id, 'data-colore': capo.colore ?? null,
     // «Adesso» (Marco, 24-11 sera: «fai che la prima si adatti veramente, se la metto piccola c'è tantissimo spazio vuoto sotto»): è
     // alta quanto il suo contenuto, sempre; l'altezza tirata con l'angolo vale per le altre caselle
-    style: { '--larghezza': capo.larghezza, height: capo.altezza && !capo.piccolo && intero !== id && id !== 'adesso' ? capo.altezza + 'px' : null }, 'data-non-trascinare': intero === id ? '' : null })
+    style: { '--larghezza': capo.larghezza, '--colonna': capo.colonna ? Math.max(1, Math.min(capo.colonna, 13 - (capo.larghezza ?? 12))) : null, height: capo.altezza && !capo.piccolo && intero !== id && id !== 'adesso' ? capo.altezza + 'px' : null }, 'data-non-trascinare': intero === id ? '' : null })
   const tasto = (segno, etichetta, fai) => el('button', { type: 'button', class: 'riquadro-tasto', 'aria-label': `${etichetta}: ${titolo}`, title: etichetta, onclick: fai }, ic(segno))
   const comandi = el('div', { class: 'riquadro-comandi', 'data-non-trascinare': '' },
     tasto('sparkle', 'Colore', e => colori(e.currentTarget, capo.colore, colore => { misure({ colore }); ridisegna() })),
@@ -163,9 +170,11 @@ function angolo (box, misure) {
     e.preventDefault(); e.stopPropagation()
     const g = box.parentElement, gr = g.getBoundingClientRect(), b = box.getBoundingClientRect()
     const passo = (gr.width + parseFloat(getComputedStyle(g).columnGap || 0)) / 12
+    // non oltre il bordo destro: la casella comincia dove l'hai messa
+    const inizio = Math.max(1, Math.round((b.left - gr.left) / passo) + 1), massimo = Math.max(3, 13 - inizio)
     box.classList.add('si-allarga')
     const muovi = m => {
-      const col = Math.min(12, Math.max(3, Math.round((m.clientX - b.left) / passo))), alto = Math.min(2400, Math.max(100, Math.round((m.clientY - b.top) / 20) * 20))
+      const col = Math.min(massimo, Math.max(3, Math.round((m.clientX - b.left) / passo))), alto = Math.min(2400, Math.max(100, Math.round((m.clientY - b.top) / 20) * 20))
       box.style.setProperty('--larghezza', col); box.style.height = alto + 'px'; box.dataset.misura = `${col}/12 · ${alto}px`
     }
     const lascia = () => {

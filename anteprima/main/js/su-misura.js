@@ -85,7 +85,8 @@ const alCentro = (m, f) => { const r = f.getBoundingClientRect(); return Math.ab
 // Con unisci(id, suId): lasciata al centro di un'altra casella, le due vanno insieme (una cartella).
 // Con fuori(id): lasciata fuori dal contenitore, esce (una scheda tirata fuori dalla sua cartella). Tastiera: Alt + frecce.
 // data-non-trascinare su un elemento dentro il contenitore lo lascia a chi ci sta dentro (le schede hanno il loro ordinabile).
-export function ordinabile (contenitore, { fatto, unisci = null, fuori = null, asse = 'libero', puoUnire = () => true }) {
+// colonne: la griglia a colonne (la scrivania, 12): oltre all'ordine conta la colonna dove la lasci, e fatto riceve anche { id, colonna }
+export function ordinabile (contenitore, { fatto, unisci = null, fuori = null, asse = 'libero', puoUnire = () => true, colonne = 0 }) {
   const figli = () => [...contenitore.children].filter(f => f.dataset.id)
   contenitore.addEventListener('pointerdown', e => {
     if (e.button !== 0) return
@@ -113,7 +114,14 @@ export function ordinabile (contenitore, { fatto, unisci = null, fuori = null, a
     const ferma = ev => ev.preventDefault()
     if (dito) { document.addEventListener('touchmove', ferma, { passive: false }); cosa.classList.add('presa'); navigator.vibrate?.(15) }
     const via = cosa.getBoundingClientRect(), dx = e.clientX - via.left, dy = e.clientY - via.top
-    let fantasma = null, mosso = false, bersaglio = null, ultimo = null
+    let fantasma = null, mosso = false, bersaglio = null, ultimo = null, posto = null
+    // la colonna sotto il bordo sinistro della casella che porti, finché la griglia ha davvero più colonne (sul telefono no)
+    const aColonna = sx => {
+      if (!colonne || getComputedStyle(cosa).gridColumnEnd === '-1') return null
+      const g = contenitore.getBoundingClientRect(), gap = parseFloat(getComputedStyle(contenitore).columnGap) || 0, passo = (g.width + gap) / colonne
+      const larga = Math.min(colonne, parseInt(getComputedStyle(cosa).getPropertyValue('--larghezza')) || colonne)
+      return Math.max(1, Math.min(colonne - larga + 1, Math.round((sx - g.left) / passo) + 1))
+    }
     const segna = b => { if (bersaglio !== b) { bersaglio?.classList.remove('da-unire'); bersaglio = b; b?.classList.add('da-unire') } }
     const muovi = m => {
       if (!mosso && Math.hypot(m.clientX - e.clientX, m.clientY - e.clientY) < 6) return
@@ -125,6 +133,8 @@ export function ordinabile (contenitore, { fatto, unisci = null, fuori = null, a
       mosso = true; ultimo = m
       fantasma.style.left = (asse === 'verticale' ? via.left : m.clientX - dx) + 'px'
       fantasma.style.top = (asse === 'orizzontale' ? via.top : m.clientY - dy) + 'px'
+      const c = aColonna(m.clientX - dx)
+      if (c && c !== posto) { posto = c; cosa.style.setProperty('--colonna', c) }
       const sotto = figli().find(f => f !== cosa && sopra(m, f))
       if (!sotto) return segna(null)
       if (unisci && alCentro(m, sotto) && puoUnire(cosa, sotto)) return segna(sotto) // al centro: si mettono insieme
@@ -143,7 +153,7 @@ export function ordinabile (contenitore, { fatto, unisci = null, fuori = null, a
       addEventListener('click', ferma, { capture: true, once: true }); setTimeout(() => removeEventListener('click', ferma, true), 0)
       const b = bersaglio; segna(null)
       if (fuori && ultimo && !sopra(ultimo, contenitore.parentElement ?? contenitore)) return fuori(cosa.dataset.id, ultimo)
-      if (b) unisci(cosa.dataset.id, b.dataset.id); else fatto(figli().map(f => f.dataset.id))
+      if (b) unisci(cosa.dataset.id, b.dataset.id); else fatto(figli().map(f => f.dataset.id), posto ? { id: cosa.dataset.id, colonna: posto } : null)
     }
     addEventListener('pointermove', muovi); addEventListener('pointerup', lascia); addEventListener('pointercancel', lascia)
   }
