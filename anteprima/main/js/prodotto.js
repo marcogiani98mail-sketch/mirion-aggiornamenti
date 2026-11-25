@@ -209,7 +209,7 @@ function carta (p, quale, dati, rifai, dove) {
       ? el('ul', { class: 'pasto-voci' }, ...d.integratori.map((x, i) => el('li', {},
         el('button', { type: 'button', class: 'quieto piccolo', 'aria-pressed': String(x.presi >= x.dosi), onclick: () => fai(p, { tipo: 'integratore', indice: i }, rifai) }, ic(x.presi >= x.dosi ? 'check-circle' : 'plus'), x.nome),
         el('small', { class: 'sopra' + (x.finisce ? ' presto' : ''), testo: [x.dose, x.dosi > 1 ? `${x.presi}/${x.dosi}` : null, x.finisce ? 'sta finendo' : null].filter(Boolean).join(' · ') }))))
-      : el('p', { class: 'vuoto', testo: 'Nessun integratore: si aggiungono in Piatto, anche con il codice a barre o il QR del trainer.' })))
+      : el('p', { class: 'vuoto', testo: 'Nessun integratore: si aggiungono in Mirion Fit, anche con il codice a barre o il QR del trainer.' })))
   } else if (quale === 'peso') {
     riempi(async () => conNumeri(p, await dati.oggi(), d => {
       const campo = el('input', { type: 'number', step: '0.1', min: 20, max: 350, value: d.peso?.attuale ?? '', class: 'numero-breve', 'aria-label': 'Il peso di oggi, in kg' })

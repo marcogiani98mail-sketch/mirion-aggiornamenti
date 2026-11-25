@@ -146,7 +146,16 @@
 .banner-cifra:hover, .banner-cifra:focus-visible { border-color: var(--viola); color: var(--testo); }
 
 /* i prossimi giorni in piccolo, in cima ad «Adesso», su tutta la larghezza (25-11 sera): un clic su un giorno apre sotto le sue cose */
-.banner > .giorni-piccoli { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: center; gap: .5rem 1.4rem; padding-bottom: .8rem; border-bottom: 1px solid var(--linea-forte); min-width: 0; }
+.banner > .giorni-piccoli { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto); align-items: center; gap: .5rem 1.4rem; padding-bottom: .8rem; border-bottom: 1px solid var(--linea-forte); min-width: 0; }
+/* l'ultima notifica, in mezzo (Marco, 25-11 sera) */
+.ultima-notifica { min-width: 0; display: flex; justify-content: center; }
+.ultima-notifica-voce { display: inline-flex; align-items: center; gap: .45rem; min-width: 0; max-width: 100%; padding: .35rem .7rem; border-radius: 10px; text-decoration: none;
+  color: var(--tenue); font-size: .8rem; border: 1px solid var(--linea); background: color-mix(in srgb, var(--testo) 4%, transparent); }
+.ultima-notifica-voce:hover, .ultima-notifica-voce:focus-visible { color: var(--testo); border-color: var(--viola-bordo, var(--linea-forte)); }
+.ultima-notifica-voce.da-leggere { border-color: color-mix(in oklch, var(--presto, #f6bb66) 45%, transparent); color: var(--testo); }
+.ultima-notifica-voce svg.ic { width: 14px; height: 14px; flex: none; color: var(--lilla, var(--viola)); }
+.ultima-notifica-voce small { flex: none; color: var(--tenue); }
+.ultima-notifica-voce span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* i progetti in piccolo, a destra dei giorni (Marco, 25-11 sera) */
 .progetti-piccoli { display: flex; align-items: center; justify-content: flex-end; gap: .6rem; min-width: 0; }
 .progetti-piccoli > a.sopra { flex: none; text-decoration: none; }
@@ -159,7 +168,7 @@
 .progetti-piccoli .anello { width: 16px; height: 16px; flex: none; border-radius: 50%; -webkit-mask: radial-gradient(circle, transparent 4px, #000 4.5px); mask: radial-gradient(circle, transparent 4px, #000 4.5px); }
 .progetti-piccoli .anello::after, .progetti-piccoli .anello span { display: none; }
 .giorno-lista.giorno-in-adesso { grid-column: auto; }
-@media (max-width: 900px) { .banner > .giorni-piccoli { grid-template-columns: minmax(0, 1fr); } .progetti-piccoli { justify-content: flex-start; } .progetti-piccoli ul { justify-content: flex-start; } }
+@media (max-width: 900px) { .banner > .giorni-piccoli { grid-template-columns: minmax(0, 1fr); } .ultima-notifica { justify-content: flex-start; } .progetti-piccoli { justify-content: flex-start; } .progetti-piccoli ul { justify-content: flex-start; } }
 .giorni-piccoli-fila { display: flex; align-items: center; gap: .6rem; min-width: 0; }
 .giorni-piccoli-fila > .sopra { flex: none; }
 .giorni-piccoli .giorni-schede { flex: 1 1 auto; margin: 0; padding: 6px 6px 2px 0; }

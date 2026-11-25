@@ -208,6 +208,21 @@ function ilPunto (s) {
   return riga
 }
 
+// l'ultima notifica, in mezzo fra il calendario e i progetti (Marco, 25-11 sera: «in mezzo allo spazio visualizza l'ultima notifica»):
+// una riga sola; un clic porta dove dice la notifica, o a tutte le notifiche
+function ultimaNotifica () {
+  const posto = el('div', { class: 'ultima-notifica', role: 'status', 'aria-label': 'L\'ultima notifica' })
+  api('/api/notifiche?quante=1').then(r => {
+    const n = r?.voci?.[0]
+    if (!n) return
+    const d = new Date(n.quando), oggi = d.toDateString() === new Date().toDateString()
+    const ora = oggi ? d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+    posto.replaceChildren(el('a', { class: 'ultima-notifica-voce' + (n.letta ? '' : ' da-leggere'), href: n.dove || '#scrivania?pagina=notifiche', title: n.testo },
+      ic('bell'), el('small', { testo: ora }), el('span', { testo: n.testo })))
+  }).catch(() => {})
+  return posto
+}
+
 let giornoAperto = null // nella fila piccola in cima ad «Adesso»: il giorno aperto, o nessuno
 function giorni (s, ricarica, { compatta = false } = {}) {
   const elenco = []
@@ -251,7 +266,7 @@ function giorni (s, ricarica, { compatta = false } = {}) {
     return Object.assign(el('div', { class: 'giorni-piccoli', role: 'group', 'aria-label': 'I prossimi giorni e i progetti' },
       el('div', { class: 'giorni-piccoli-fila' }, el('span', { class: 'sopra piccolo', testo: 'I prossimi giorni' }), schede,
         el('a', { class: 'quieto piccolo', href: '#calendario', title: 'Il mese, con le task' }, ic('calendar-dots'))),
-      progettiPiccoli(s.progetti)), { listaGiorno: lista })
+      ultimaNotifica(), progettiPiccoli(s.progetti)), { listaGiorno: lista })
   }
   return el('section', { class: 'fascia giorni', 'aria-labelledby': 'giorni-t' },
     // il giorno scelto si apre in Google Calendar (Marco, 21-11: «sui giorni dammi modo di poterlo aprire con Google Calendar»)

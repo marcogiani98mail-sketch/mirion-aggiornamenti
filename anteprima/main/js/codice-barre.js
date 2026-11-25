@@ -27,7 +27,7 @@ export function campoCodice (p, aggiungi) {
       const g = el('input', { type: 'number', min: 1, max: 3000, value: a.porzione?.grammi ?? 100, class: 'numero-breve', 'aria-label': `Grammi di ${a.nome}` })
       esito.replaceChildren(el('div', { class: 'codice-trovato' }, el('b', { testo: a.nome }), el('small', { class: 'sopra', testo: [a.marca, `${n(a.per100?.kcal)} kcal/100 g`].filter(Boolean).join(' · ') }),
         el('span', { class: 'riga-form' }, g, el('span', { testo: 'g' }), el('button', { type: 'button', class: 'primario piccolo', onclick: () => aggiungi(a, +g.value || 100) }, ic('plus'), 'Aggiungi'))))
-    } catch (e) { esito.replaceChildren(el('p', { class: 'vuoto', testo: /404|non ha ancora|sconosciut/.test(e.message) ? 'Il programma di Piatto è vecchio: riaccendilo per cercare con il codice.' : e.message })) }
+    } catch (e) { esito.replaceChildren(el('p', { class: 'vuoto', testo: /404|non ha ancora|sconosciut/.test(e.message) ? 'Il programma di Mirion Fit è vecchio: riaccendilo per cercare con il codice.' : e.message })) }
   }
   // una foto o uno screenshot dell'etichetta: si legge qui, se il browser sa leggere i codici (Android, Mac); se no, le cifre a mano
   const file = el('input', { type: 'file', accept: 'image/*', hidden: true, onchange: async e => {

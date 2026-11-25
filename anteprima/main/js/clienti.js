@@ -26,7 +26,7 @@ const giorno = g => {
   return tra === 0 ? 'oggi' : tra === 1 ? 'domani' : tra === -1 ? 'ieri' : d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 // da dove arrivano i dati di un cliente
-const fonti = c => [c.piatto ? 'Piatto' : null, c.claudio ? 'gestionale' : null, c.checkin?.length ? 'check-in' : null, c.daNota ? 'la sua nota' : null].filter(Boolean)
+const fonti = c => [c.piatto ? 'Mirion Fit' : null, c.claudio ? 'gestionale' : null, c.checkin?.length ? 'check-in' : null, c.daNota ? 'la sua nota' : null].filter(Boolean)
 // il pallino di Mirion Trainer (Marco, 24-11 sera): verde chi ha l'app Mirion Fit (online o Piatto collegato), grigio chi c'è solo nelle note
 const conApp = c => Boolean(c.online || c.collegato)
 const pallino = c => el('span', { class: 'pallino-fit ' + (conApp(c) ? 'si' : 'no'), title: conApp(c) ? 'Ha l’app Mirion Fit' : 'Senza l’app Mirion Fit: i dati arrivano dalla sua nota', 'aria-label': conApp(c) ? 'con Mirion Fit' : 'senza Mirion Fit' })
@@ -104,10 +104,10 @@ export async function mostra (stanza, params) {
   stanza.replaceChildren(el('div', { class: 'clienti' },
     schedeFit(d, 'clienti'),
     el('header', { class: 'clienti-cima' },
-      el('div', {}, el('p', { class: 'sopra', testo: d.online?.io && !d.online.io.titolare ? `I tuoi clienti · trainer di ${d.online.io.club ?? 'Piatto online'}` : d.claudio?.clienti ? 'I clienti che condividono con te e quelli del gestionale della palestra' : 'I clienti che condividono con te' }), nome),
+      el('div', {}, el('p', { class: 'sopra', testo: d.online?.io && !d.online.io.titolare ? `I tuoi clienti · trainer di ${d.online.io.club ?? 'Mirion Fit online'}` : d.claudio?.clienti ? 'I clienti che condividono con te e quelli del gestionale della palestra' : 'I clienti che condividono con te' }), nome),
       el('div', { class: 'bottoni' },
         // Piatto online (24-11): il link personale, da fuori casa; l'invito di sempre resta per chi è sulla stessa Wi-Fi
-        d.online?.acceso ? el('button', { type: 'button', class: 'primario', title: 'Un link personale per Piatto online: il cliente lo apre dal telefono, ovunque', onclick: () => invita(fai, 'invita-online') }, ic('user-plus'), 'Invita su Piatto online') : null,
+        d.online?.acceso ? el('button', { type: 'button', class: 'primario', title: 'Un link personale per Mirion Fit online: il cliente lo apre dal telefono, ovunque', onclick: () => invita(fai, 'invita-online') }, ic('user-plus'), 'Invita su Mirion Fit online') : null,
         d.online?.errore ? el('span', { class: 'sopra piccolo attenzione', testo: d.online.errore }) : null,
         porta ? el('button', { type: 'button', class: d.online?.acceso ? 'secondario' : 'primario', onclick: () => invita(fai) }, ic('user-plus'), d.online?.acceso ? 'Invita sulla Wi-Fi' : 'Invita un cliente')
           : el('button', { type: 'button', class: 'primario', title: 'Il QR porta alla porta del telefono (Impostazioni → «Il telefono»)', onclick: async () => { await api('/api/telefono', { azione: 'accendi' }).catch(e => notifica(e.message, { tipo: 'sempre' })); rifai() } }, ic('user-plus'), 'Accendi la porta per invitare'),
@@ -120,7 +120,7 @@ export async function mostra (stanza, params) {
     clienti.some(c => !conApp(c)) && clienti.some(conApp) || clienti.some(c => c.soloNota) ? el('p', { class: 'sopra piccolo legenda-fit' },
       el('span', { class: 'pallino-fit si' }), ` ${clienti.filter(conApp).length} con l’app Mirion Fit`, ' · ', el('span', { class: 'pallino-fit no' }), ` ${clienti.filter(c => !conApp(c)).length} senza (i dati dai check-in, dal gestionale o dalla sua nota)`) : null,
     clienti.length ? el('div', { class: 'clienti-griglia' }, ...clienti.map((c, i) => cartaCliente(c, i)))
-      : el('section', { class: 'fascia clienti-vuoto' }, el('h2', { testo: 'Ancora nessun cliente' }), el('p', { class: 'sopra', testo: porta ? 'Premi «Invita un cliente»: esce un QR, il cliente lo inquadra col telefono, scrive il nome e dà il consenso. Da lì ti manda peso, allenamenti e come sta, e può collegare il suo Piatto.' : 'Per invitare i clienti serve la porta del telefono accesa: il QR porta lì. Vanno sulla stessa rete Wi-Fi del computer.' })),
+      : el('section', { class: 'fascia clienti-vuoto' }, el('h2', { testo: 'Ancora nessun cliente' }), el('p', { class: 'sopra', testo: porta ? 'Premi «Invita un cliente»: esce un QR, il cliente lo inquadra col telefono, scrive il nome e dà il consenso. Da lì ti manda peso, allenamenti e come sta, e può collegare il suo Mirion Fit.' : 'Per invitare i clienti serve la porta del telefono accesa: il QR porta lì. Vanno sulla stessa rete Wi-Fi del computer.' })),
     el('p', { class: 'sopra piccolo clienti-nota', testo: `I dati di chi condivide da qui stanno solo su questo computer, in «Delion/Clienti PT/<nome>» (non vanno su GitHub, non li vede nessun altro): la scheda e i check-in si leggono anche in Obsidian. ${d.claudio?.ce ? 'Quelli del gestionale della palestra (peso e misure, allenamenti, abbonamento) Mirion li legge dal gestionale su questo computer, senza copiarli nel cervello; lo stesso cliente si unisce dal nome. ' : ''}Sono dati sulla salute: si condividono solo con il consenso del cliente, che può smettere quando vuole.` }),
     d.claudio?.errore ? el('p', { class: 'sopra piccolo presto', testo: d.claudio.errore }) : null))
 }
@@ -142,7 +142,7 @@ function cartaCliente (c, i) {
       el('div', { class: 'cliente-macro' }, ...[['proteine', 'P'], ['carboidrati', 'C'], ['grassi', 'G']].map(([k, t]) =>
         el('div', {}, el('small', { class: 'sopra', testo: `${t} ${n(p.mangiato?.[k])}/${n(p.obiettivo?.[k])} g` }), barra(p.mangiato?.[k], p.obiettivo?.[k], k))),
         el('div', {}, el('small', { class: 'sopra', testo: `Acqua ${virgola((p.acqua ?? 0) / 1000)}/${virgola((p.obiettivo?.acqua ?? 2000) / 1000)} l` }), barra(p.acqua, p.obiettivo?.acqua ?? 2000, 'acqua'))))
-      : c.soloNota ? rigaNota(c.daNota) : k ? null : el('p', { class: 'sopra cliente-senza', testo: 'Piatto non collegato: arrivano solo i check-in.' }),
+      : c.soloNota ? rigaNota(c.daNota) : k ? null : el('p', { class: 'sopra cliente-senza', testo: 'Mirion Fit non collegato: arrivano solo i check-in.' }),
     k ? el('div', { class: 'cliente-palestra' + (ab?.presto ? ' presto' : '') },
       ab ? el('div', {}, el('small', { class: 'sopra', testo: ab.testo }), ab.su ? barra(ab.fatto, ab.su, 'abbonamento') : null) : el('small', { class: 'sopra', testo: 'Nessun abbonamento nel gestionale' }),
       el('small', { class: 'sopra', testo: [`${k.ingressi28} ${k.ingressi28 === 1 ? 'giorno' : 'giorni'} in palestra in 4 settimane`, pross ? `prossimo: ${giorno(pross.data)}${pross.ora ? ' ' + pross.ora : ''}, ${pross.cosa}` : null].filter(Boolean).join(' · ') })) : null,
@@ -150,7 +150,7 @@ function cartaCliente (c, i) {
       el('div', {}, el('small', { class: 'sopra', testo: 'Peso' }), el('b', { testo: `${virgola(pesi.at(-1)?.kg ?? p?.peso?.attuale)} kg` }),
         d30 != null ? el('small', { class: 'sopra', testo: `${segno(d30)} in 30 g` }) : null),
       linea(pesi.slice(-12)),
-      settimana ? el('div', { class: 'cliente-settimana', title: 'Gli ultimi 7 giorni: allenamenti in Piatto, ingressi e allenamenti nel gestionale' }, el('small', { class: 'sopra', testo: 'Allenamenti' }), el('span', {}, ...settimana.map(si => el('i', { class: si ? 'si' : '' })))) : null),
+      settimana ? el('div', { class: 'cliente-settimana', title: 'Gli ultimi 7 giorni: allenamenti in Mirion Fit, ingressi e allenamenti nel gestionale' }, el('small', { class: 'sopra', testo: 'Allenamenti' }), el('span', {}, ...settimana.map(si => el('i', { class: si ? 'si' : '' })))) : null),
     fitRiga(p),
     ck ? el('div', { class: 'cliente-checkin' }, el('span', { class: 'cliente-umore', testo: UMORI[ck.umore] || '💬' }),
       el('div', {}, el('small', { class: 'sopra', testo: 'Check-in · ' + quando(ck.quando) }), el('p', { testo: ck.messaggio || [ck.allenamento, ck.peso ? ck.peso + ' kg' : null].filter(Boolean).join(' · ') || 'senza note' }))) : null)
@@ -232,8 +232,8 @@ function chiaveTrainer (r, rifai) {
   const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) chiudi() } },
     el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Il trainer nuovo' },
       el('h2', { testo: `${r.nome} è nella palestra` }),
-      el('p', { class: 'sopra', testo: `Nella Mirion di ${r.nome}: Impostazioni → «Collegamenti e chiavi» → Piatto online. Scrivi questi due valori e salva: da lì invita i suoi clienti, e li vede solo lui.` }),
-      el('small', { class: 'sopra', testo: 'L’indirizzo di Piatto online' }), el('code', { class: 'telefono-indirizzo invito-url', testo: r.sito }),
+      el('p', { class: 'sopra', testo: `Nella Mirion di ${r.nome}: Impostazioni → «Collegamenti e chiavi» → Mirion Fit online. Scrivi questi due valori e salva: da lì invita i suoi clienti, e li vede solo lui.` }),
+      el('small', { class: 'sopra', testo: 'L’indirizzo di Mirion Fit online' }), el('code', { class: 'telefono-indirizzo invito-url', testo: r.sito }),
       el('small', { class: 'sopra', testo: 'La chiave del trainer' }), el('code', { class: 'telefono-indirizzo invito-url', testo: r.chiave }),
       el('p', { class: 'sopra piccolo presto', testo: 'La chiave si vede solo adesso: dagliela di persona o in un messaggio privato. Se la perde, toglilo e aggiungilo di nuovo.' }),
       el('div', { class: 'bottoni' }, copia, el('button', { type: 'button', class: 'primario', onclick: chiudi }, 'Fatto'))))
@@ -248,7 +248,7 @@ async function invita (fai, azione = 'invita') {
     el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Invita un cliente' },
       el('h2', { testo: 'Fallo inquadrare al cliente' }),
       el('div', { class: 'invito-qr' }, t.content.firstChild),
-      el('p', { class: 'sopra', testo: r.online ? 'Piatto online: è il suo link personale, vale finché non smetti di seguirlo. Su iPhone lo apre con Safari e lo aggiunge alla schermata Home; su Android «Installa». Compare qui quando ha dato il consenso.' : `Col telefono sulla stessa rete Wi-Fi. Vale una volta, fino a domani alle ${new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.` }),
+      el('p', { class: 'sopra', testo: r.online ? 'Mirion Fit online: è il suo link personale, vale finché non smetti di seguirlo. Su iPhone lo apre con Safari e lo aggiunge alla schermata Home; su Android «Installa». Compare qui quando ha dato il consenso.' : `Col telefono sulla stessa rete Wi-Fi. Vale una volta, fino a domani alle ${new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.` }),
       el('code', { class: 'telefono-indirizzo invito-url', testo: r.url }),
       el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario', onclick: () => { fondo.remove(); location.hash = '#clienti'; dispatchEvent(new HashChangeEvent('hashchange')) } }, 'Fatto'))))
   document.body.append(fondo)
@@ -311,7 +311,7 @@ async function paginaCliente (stanza, id) {
     pesi.length || !k ? carta('Peso', { sopra: [d30 != null ? `${segno(d30)} kg in 30 giorni` : null, `da ${fonti(c).join(', ')}`].filter(Boolean).join(' · ') }, grafico(pesi, p?.peso?.obiettivo)) : null,
     ...carteFit(c, p, comp, () => paginaCliente(stanza, id)),
     ...(k ? carteClaudio(k) : []),
-    giorni.length ? carta(k ? 'Allenamenti in Piatto: 4 settimane' : 'Allenamento: le ultime 4 settimane', { sopra: 'kg sollevati per settimana' }, colonne(settimane.map((s, i) => ({ etichetta: i === 3 ? 'questa' : `−${3 - i}`, valore: s.reduce((t, x) => t + (+x.allenamento?.volume || 0), 0) })))) : null,
+    giorni.length ? carta(k ? 'Allenamenti in Mirion Fit: 4 settimane' : 'Allenamento: le ultime 4 settimane', { sopra: 'kg sollevati per settimana' }, colonne(settimane.map((s, i) => ({ etichetta: i === 3 ? 'questa' : `−${3 - i}`, valore: s.reduce((t, x) => t + (+x.allenamento?.volume || 0), 0) })))) : null,
     p?.esercizi?.length ? carta('Gli esercizi di oggi', {}, el('ul', { class: 'pasto-voci' }, ...p.esercizi.map(e => el('li', {}, el('span', { testo: e.nome }), el('small', { class: 'sopra', testo: (e.elenco ?? []).map(s => `${s.ripetizioni}×${s.kg || 0}`).join(', ') || `${e.serie} serie` }))))) : null,
     giorni.length ? carta('Acqua: gli ultimi 7 giorni', { sopra: 'litri' }, colonne(giorni.slice(-7).map(x => ({ etichetta: new Date(x.giorno + 'T12:00').toLocaleDateString('it-IT', { weekday: 'narrow' }), valore: x.acqua })), ob.acqua)) : null,
     // le card in più, dai check-in: come sta, e quello che scrive
@@ -364,7 +364,7 @@ function carteFit (c, p, comp, rifai) {
     comp.integratori?.length ? carta('Integratori di oggi', { sopra: `${comp.integratori.filter(i => i.presi >= i.dosi).length} di ${comp.integratori.length} presi` }, el('ul', { class: 'pasto-voci' }, ...comp.integratori.map(i => el('li', { class: 'fit-voce' },
       el('span', { testo: `${i.presi >= i.dosi ? '✓ ' : ''}${i.nome}${i.dose ? ' · ' + i.dose : ''}` }),
       el('small', { class: 'sopra' + (i.finisce ? ' presto' : ''), testo: [MOMENTI[i.quando], i.dosi > 1 ? `${i.presi}/${i.dosi} dosi` : null, i.scorta != null ? `restano ${i.scorta}` : null, i.finisce ? 'sta finendo' : null].filter(Boolean).join(' · ') }))))) : null,
-    misure.length ? carta('Le misure', { sopra: `da Piatto · ${misure.length} ${misure.length === 1 ? 'volta' : 'volte'}` }, el('div', { class: 'cliente-misure' }, ...MISURE_FIT.filter(([k]) => misure.some(m => Number.isFinite(m[k]))).map(([k, t]) => {
+    misure.length ? carta('Le misure', { sopra: `da Mirion Fit · ${misure.length} ${misure.length === 1 ? 'volta' : 'volte'}` }, el('div', { class: 'cliente-misure' }, ...MISURE_FIT.filter(([k]) => misure.some(m => Number.isFinite(m[k]))).map(([k, t]) => {
       const s = misure.filter(m => Number.isFinite(m[k])), u = s.at(-1), diff = s.length >= 2 ? Math.round((u[k] - s[0][k]) * 10) / 10 : null
       return el('div', { class: 'cliente-misura' }, el('small', { class: 'sopra', testo: t }), el('b', { testo: `${virgola(u[k])} cm` }), el('small', { class: 'sopra', testo: diff != null ? `${diff === 0 ? 'uguale' : segno(diff)} dal ${new Date(s[0].data + 'T12:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}` : 'una volta sola' }))
     }))) : null,
@@ -477,15 +477,15 @@ function cartaPiano (c, rifai) {
     e.preventDefault()
     const f = new FormData(modulo), num = k => { const v = String(f.get(k) ?? '').trim().replace(',', '.'); return v === '' ? null : +v }
     const piano = { kcal: num('kcal'), proteine: num('proteine'), carboidrati: num('carboidrati'), grassi: num('grassi'), acqua: num('acqua') != null ? Math.round(num('acqua') * 1000) : null, sonno: num('sonno'), nota: String(f.get('nota') ?? '') }
-    try { await api('/api/clienti', { azione: 'piano', id: c.id, piano }); notifica(`Il piano è arrivato a ${c.nome}: lo vede alla prossima apertura di Piatto.`); rifai() } catch (err) { notifica(err.message, { tipo: 'sempre' }) }
+    try { await api('/api/clienti', { azione: 'piano', id: c.id, piano }); notifica(`Il piano è arrivato a ${c.nome}: lo vede alla prossima apertura di Mirion Fit.`); rifai() } catch (err) { notifica(err.message, { tipo: 'sempre' }) }
   } },
   el('div', { class: 'piano-campi' }, campo('kcal', 'Calorie al giorno', pi.kcal, { placeholder: 'es. 1800' }), campo('proteine', 'Proteine (g)', pi.proteine), campo('carboidrati', 'Carboidrati (g)', pi.carboidrati), campo('grassi', 'Grassi (g)', pi.grassi),
     campo('acqua', 'Acqua (litri)', pi.acqua ? pi.acqua / 1000 : null, { placeholder: 'es. 2,5' }), campo('sonno', 'Sonno (ore)', pi.sonno, { placeholder: 'es. 8' })),
   el('label', { class: 'campo-piano' }, el('small', { class: 'sopra', testo: 'Una nota per il cliente' }), el('textarea', { name: 'nota', rows: 2, maxlength: 600, placeholder: 'es. pasta solo a pranzo, niente alcol in settimana', testo: pi.nota ?? '' })),
   el('div', { class: 'bottoni' }, el('button', { type: 'submit', class: 'primario' }, pi.kcal || pi.sonno || pi.acqua ? 'Aggiorna il piano' : 'Manda il piano'),
-    c.piano ? el('button', { type: 'button', class: 'secondario', onclick: async () => { try { await api('/api/clienti', { azione: 'piano', id: c.id, piano: null }); notifica('Piano tolto: Piatto torna ai suoi calcoli.'); rifai() } catch (err) { notifica(err.message, { tipo: 'sempre' }) } } }, 'Togli il piano') : null))
-  return carta('Il piano', { larga: true, sopra: c.piano?.quando ? `mandato il ${new Date(c.piano.quando).toLocaleDateString('it-IT')}` : 'calorie, macro, acqua e sonno per Piatto' },
-    el('p', { class: 'sopra piccolo', testo: 'Quello che scrivi vale in Piatto al posto del calcolo: i campi vuoti restano calcolati (con le sole calorie, grassi e carboidrati si rifanno). Il cliente lo vede nella scheda «Io».' }), modulo)
+    c.piano ? el('button', { type: 'button', class: 'secondario', onclick: async () => { try { await api('/api/clienti', { azione: 'piano', id: c.id, piano: null }); notifica('Piano tolto: Mirion Fit torna ai suoi calcoli.'); rifai() } catch (err) { notifica(err.message, { tipo: 'sempre' }) } } }, 'Togli il piano') : null))
+  return carta('Il piano', { larga: true, sopra: c.piano?.quando ? `mandato il ${new Date(c.piano.quando).toLocaleDateString('it-IT')}` : 'calorie, macro, acqua e sonno per Mirion Fit' },
+    el('p', { class: 'sopra piccolo', testo: 'Quello che scrivi vale in Mirion Fit al posto del calcolo: i campi vuoti restano calcolati (con le sole calorie, grassi e carboidrati si rifanno). Il cliente lo vede nella scheda «Io».' }), modulo)
 }
 
 // il QR con gli integratori (un protocollo): il cliente lo inquadra in Piatto, nella card Integratori, e li trova già scritti
@@ -505,7 +505,7 @@ export function qrIntegratori () {
     try {
       const r = await api('/api/clienti', { azione: 'qr-integratori', titolo: titolo.value, voci })
       const t = document.createElement('template'); t.innerHTML = r.qr
-      esito.replaceChildren(t.content.firstChild, el('p', { class: 'sopra piccolo', testo: `${voci.length} ${voci.length === 1 ? 'integratore' : 'integratori'}: il cliente apre Piatto → Integratori → + → «Inquadra il codice» e li trova già scritti. Si può anche stampare.` }))
+      esito.replaceChildren(t.content.firstChild, el('p', { class: 'sopra piccolo', testo: `${voci.length} ${voci.length === 1 ? 'integratore' : 'integratori'}: il cliente apre Mirion Fit → Integratori → + → «Inquadra il codice» e li trova già scritti. Si può anche stampare.` }))
     } catch (err) { notifica(err.message, { tipo: 'sempre' }) }
   }
   const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) fondo.remove() } },
@@ -564,7 +564,7 @@ function chatCliente (c, id) {
   const ora = q => new Date(q).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   const disegna = messaggi => {
     fila.replaceChildren(...messaggi.map(m => el('div', { class: `bolla ${m.da === 'trainer' ? 'mia' : 'sua'}` }, m.da === 'trainer' ? null : el('small', { class: 'strumenti', testo: c.nome }), el('p', { testo: m.testo }), el('time', { testo: ora(m.quando) }))),
-      messaggi.length ? '' : el('p', { class: 'vuoto', testo: `Ancora nessun messaggio. Scrivi a ${c.nome}: gli arriva su Piatto.` }))
+      messaggi.length ? '' : el('p', { class: 'vuoto', testo: `Ancora nessun messaggio. Scrivi a ${c.nome}: gli arriva su Mirion Fit.` }))
     fila.scrollTop = fila.scrollHeight
   }
   disegna(c.messaggi ?? [])
@@ -576,10 +576,10 @@ function chatCliente (c, id) {
   setTimeout(giro, 30_000)
   const testo = el('textarea', { rows: 1, placeholder: `Scrivi a ${c.nome}`, 'aria-label': 'Il messaggio', maxlength: 1000, onkeydown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.target.form.requestSubmit() } } })
   return el('section', { class: 'fascia squadra-chat cliente-messaggi' },
-    el('header', {}, el('h2', { testo: 'I messaggi' }), el('span', { class: 'sopra piccolo', testo: 'su Piatto online' })), fila,
+    el('header', {}, el('h2', { testo: 'I messaggi' }), el('span', { class: 'sopra piccolo', testo: 'su Mirion Fit online' })), fila,
     el('form', { class: 'chat-scrivi', onsubmit: async e => {
       e.preventDefault(); const b = e.target.querySelector('button'); if (b.disabled || !testo.value.trim()) return; b.disabled = true
-      try { const r = await api('/api/clienti', { azione: 'messaggio', id, testo: testo.value }); testo.value = ''; const n = await api('/api/clienti/uno?id=' + encodeURIComponent(id)); disegna(n.messaggi ?? []); if (!r.notifiche) notifica(`Mandato. ${c.nome} lo vede quando apre Piatto (non ha le notifiche attive).`) }
+      try { const r = await api('/api/clienti', { azione: 'messaggio', id, testo: testo.value }); testo.value = ''; const n = await api('/api/clienti/uno?id=' + encodeURIComponent(id)); disegna(n.messaggi ?? []); if (!r.notifiche) notifica(`Mandato. ${c.nome} lo vede quando apre Mirion Fit (non ha le notifiche attive).`) }
       catch (err) { notifica(err.message, { tipo: 'sempre' }) } finally { b.disabled = false }
     } }, testo, el('button', { class: 'primario tondo', 'aria-label': 'Manda' }, ic('paper-plane-right'))))
 }
