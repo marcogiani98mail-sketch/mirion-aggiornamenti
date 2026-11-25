@@ -1,0 +1,45 @@
+// Più scrivanie, rinominabili (Marco, 20-11: «fai creare più scrivanie e rendile rinominabili»): in cima alla stanza
+// Scrivania una fila di nomi. Un clic cambia scrivania; ✎ (o doppio clic) la rinomina; ✕ la elimina, con un secondo clic
+// per conferma; «+ Nuova» ne fa una vuota. Si trascinano per cambiare l'ordine. Ognuna tiene le sue caselle e cartelle.
+import { el, notifica } from './base.js'
+import { ic } from './icone.js'
+import { MISURA, salva, ordinabile, nuovoId, scrivania } from './su-misura.js'
+import { TITOLI } from './riquadri.js'
+
+// fuori: sei in un'altra sezione della scrivania (la Squadra): nessun nome è acceso, e un clic su un nome torna alle caselle
+export function barraScrivanie (ridisegna, { fuori = false } = {}) {
+  const d = MISURA.d, attiva = fuori ? null : scrivania()
+  const cambia = id => { d.attiva = id; salva(); if (fuori) location.hash = 'scrivania'; else ridisegna() }
+  const rinomina = (s, pill) => {
+    const campo = el('input', { class: 'nome-scrivania', value: s.nome, 'aria-label': 'Nome della scrivania', size: Math.max(8, s.nome.length) })
+    const fatto = () => { const t = campo.value.trim(); if (t && t !== s.nome) { s.nome = t.slice(0, 30); salva() } ridisegna() }
+    campo.addEventListener('keydown', e => { if (e.key === 'Enter') campo.blur(); if (e.key === 'Escape') { campo.value = s.nome; campo.blur() } })
+    campo.addEventListener('blur', fatto, { once: true })
+    pill.replaceWith(campo); campo.focus(); campo.select()
+  }
+  const pill = s => {
+    const attivo = s === attiva
+    const nome = el('button', { type: 'button', class: 'scrivania-nome', 'aria-pressed': String(attivo), testo: s.nome, onclick: () => attivo || cambia(s.id), ondblclick: () => rinomina(s, box) })
+    let conferma = false
+    const via = el('button', { type: 'button', class: 'scrivania-tasto', title: 'Elimina questa scrivania', 'aria-label': `Elimina la scrivania ${s.nome}`,
+      onclick: () => {
+        if (!conferma) { conferma = true; via.replaceChildren('Elimina?'); via.classList.add('conferma'); setTimeout(() => { conferma = false; via.replaceChildren(ic('trash')); via.classList.remove('conferma') }, 3000); return }
+        d.scrivanie = d.scrivanie.filter(x => x !== s); d.attiva = d.scrivanie[0].id; salva(); ridisegna(); notifica(`Scrivania «${s.nome}» eliminata.`)
+      } }, ic('trash'))
+    const box = el('span', { class: 'scrivania-pill' + (attivo ? ' attiva' : ''), 'data-id': s.id }, nome,
+      attivo && el('button', { type: 'button', class: 'scrivania-tasto', title: 'Rinomina', 'aria-label': `Rinomina la scrivania ${s.nome}`, onclick: () => rinomina(s, box) }, ic('pencil-simple')),
+      attivo && d.scrivanie.length > 1 && via)
+    return box
+  }
+  const nuova = () => {
+    if (d.scrivanie.length >= 12) return notifica('Al massimo dodici scrivanie.')
+    const id = nuovoId('scrivania').slice(0, 24)
+    d.scrivanie.push({ id, nome: `Scrivania ${d.scrivanie.length + 1}`, gruppi: [], riquadri: Object.keys(TITOLI).map(c => ({ id: c, larghezza: 12, altezza: null, piccolo: false, nascosto: true, gruppo: null })) })
+    d.attiva = id; salva(); ridisegna()
+    requestAnimationFrame(() => document.querySelector(`.scrivania-pill[data-id="${id}"] .scrivania-tasto`)?.click()) // subito il nome da scrivere
+  }
+  const fila = el('nav', { class: 'scrivanie', 'aria-label': 'Le tue scrivanie' }, ...d.scrivanie.map(pill),
+    fuori ? null : el('button', { type: 'button', class: 'scrivania-nuova', onclick: nuova }, ic('plus'), 'Nuova scrivania'))
+  ordinabile(fila, { asse: 'orizzontale', fatto: ids => { d.scrivanie = ids.map(id => d.scrivanie.find(s => s.id === id)).filter(Boolean); salva() } })
+  return fila
+}
