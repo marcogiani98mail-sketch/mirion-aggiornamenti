@@ -606,6 +606,7 @@ img.cliente-faccia.con-foto { object-fit: cover; padding: 0; background: none; }
 .schede-fit a.attiva { background: var(--tasto, var(--viola)); border-color: transparent; color: #fff; }
 .schede-fit .ic { width: 1.1em; height: 1.1em; }
 .trainer-lista li.trainer-tu { border-style: dashed; }
+.trainer-lista li.trainer-fermo { opacity: .62; }
 
 /* la scheda di allenamento del trainer (clienti.js, cartaScheda): una riga per esercizio */
 .scheda-righe { display: grid; gap: .4rem; }

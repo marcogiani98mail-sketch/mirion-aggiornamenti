@@ -115,7 +115,7 @@ export async function mostra (stanza, params) {
         // l'app Mirion Fit per Android: il QR porta alla pagina su GitHub, che la scarica e la installa (25-11, senza Netlify né porta)
         el('button', { type: 'button', class: 'secondario', title: 'Un QR che il cliente inquadra col telefono (iPhone o Android): apre e installa Mirion Fit da GitHub, già attiva', onclick: () => qrApp(fai) }, ic('arrow-down'), 'QR per installare l’app'),
         // l'app unica (26-11): Mirion Fit con l'accesso del trainer, da qualunque rete; solo con Mirion Fit online e la licenza
-        d.online?.acceso ? el('button', { type: 'button', class: 'secondario', title: 'Apri i tuoi clienti dentro Mirion Fit, sul telefono o su un altro computer, da qualunque rete', onclick: () => accessoApp(fai) }, ic('device-mobile'), 'Mirion Fit da trainer') : null,
+        d.online?.acceso ? el('button', { type: 'button', class: 'secondario', title: 'Il tuo link personale di Mirion Trainer: i tuoi clienti sul telefono o su un altro computer, da qualunque rete', onclick: () => accessoApp(fai) }, ic('device-mobile'), 'Il tuo link di Mirion Trainer') : null,
         el('button', { type: 'button', class: 'secondario', title: 'Mirion Trainer sul telefono: i clienti, quello da guardare oggi, la chat e le schede', onclick: () => trainerTelefono(fai) }, ic('device-mobile'), 'Sul telefono'),
         el('button', { type: 'button', class: 'secondario', onclick: async () => { await fai({ azione: demo ? 'via-demo' : 'demo' }, demo ? 'Tolti i clienti inventati.' : (d.claudio?.ce ? 'Ecco i clienti inventati, anche quelli della demo del gestionale.' : 'Ecco quattro clienti inventati, per provare.')); rifai() } }, demo ? 'Togli la prova' : 'Prova con clienti inventati'))),
     el('div', { class: 'clienti-cifre' },
@@ -165,9 +165,9 @@ async function accessoApp (fai) {
   const copia = el('button', { type: 'button', class: 'secondario', onclick: async () => { try { await navigator.clipboard.writeText(r.url); copia.textContent = 'Copiato' } catch { copia.textContent = 'Selezionalo a mano' } } }, 'Copia il link')
   const togli = el('button', { type: 'button', class: 'secondario', title: 'I link dati finora smettono di funzionare su tutti i telefoni', onclick: async () => { if (await fai({ azione: 'togli-accessi-app' }, 'Accessi tolti: i link di prima non aprono più niente.')) chiudi() } }, 'Togli tutti gli accessi')
   const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) chiudi() } },
-    el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Mirion Fit da trainer' },
-      el('h2', { testo: 'Mirion Fit da trainer' }),
-      el('p', { class: 'sopra piccolo', testo: 'La stessa app dei tuoi clienti, con il tuo accesso: vedi i clienti, commenti i progressi, mandi le schede e rispondi in chat. Funziona da qualunque rete.' }),
+    el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Il tuo link di Mirion Trainer' },
+      el('h2', { testo: 'Mirion Trainer, ovunque' }),
+      el('p', { class: 'sopra piccolo', testo: 'Mirion Trainer sul telefono o su un altro computer, con il tuo accesso: vedi i clienti, commenti i progressi, mandi le schede e rispondi in chat. Funziona da qualunque rete.' }),
       el('div', { class: 'invito-qr' }, t.content.firstChild), el('code', { class: 'telefono-indirizzo invito-url', testo: r.url }),
       el('ol', { class: 'sopra trainer-passi' }, el('li', { testo: 'Inquadralo con il tuo telefono, o apri il link sul computer.' }),
         el('li', { testo: 'Su iPhone apri con Safari e «Aggiungi alla schermata Home»; su Android dal menu «Installa app».' }),
@@ -262,22 +262,31 @@ function schedeFit (d, attiva) { eTitolare(d); accendiVoce(); return schedeTrain
 // Mirion si è collegata). Chi sono i clienti e come li segue lo vede solo lui: qui non arriva nessun nome e nessun dato dei clienti
 function vistaPalestra (stanza, d, rifai) {
   const fai = async (corpo, detto) => { try { const r = await api('/api/clienti', corpo); if (detto) notifica(detto); return r } catch (e) { notifica(e.message, { tipo: 'sempre' }) } }
-  const lista = d.online?.trainer ?? [], mie = d.online?.io?.numeri ?? { clienti: 0, attivi7: 0, invitati: 0 }
-  const tot = lista.reduce((t, x) => ({ clienti: t.clienti + (x.clienti ?? 0), attivi7: t.attivi7 + (x.attivi7 ?? 0), invitati: t.invitati + (x.invitati ?? 0) }), { ...mie })
+  // il cruscotto di Marco (26-11: «vedo quanti utenti la stanno usando e le informazioni… per togliere o dare accessi»): quanti usano
+  // Mirion Fit (solo numeri), e per ogni trainer come entra e gli accessi da sospendere, spegnere, togliere o riaprire
+  const tutti = d.online?.trainer ?? [], lista = tutti.filter(t => !t.tolto), tolti = tutti.filter(t => t.tolto)
+  const zero = { clienti: 0, attivi1: 0, attivi7: 0, attivi30: 0, invitati: 0 }, mie = { ...zero, ...(d.online?.io?.numeri ?? {}) }
+  const tot = lista.reduce((t, x) => Object.fromEntries(Object.keys(zero).map(k => [k, t[k] + (x[k] ?? 0)])), { ...mie })
+  const attivi = lista.filter(t => !t.sospeso)
   stanza.replaceChildren(el('div', { class: 'clienti palestra-fit' },
     schedeFit(d, 'palestra'),
-    el('header', { class: 'clienti-cima' }, el('div', {}, el('p', { class: 'sopra', testo: TRAINER + ' · la palestra' }), el('h1', { class: 'clienti-club', testo: d.club }))),
+    el('header', { class: 'clienti-cima' }, el('div', {}, el('p', { class: 'sopra', testo: TRAINER + ' · la palestra' }), el('h1', { class: 'clienti-club', testo: d.club })),
+      el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'secondario', title: 'La licenza di Mirion Trainer per un altro trainer: dentro «Dai la licenza a un altro trainer»', onclick: () => qrApp(fai) }, ic('user-plus'), 'Dai una licenza'))),
     el('div', { class: 'clienti-cifre' },
-      ...[[lista.length + 1, 'personal trainer, tu compreso'], [tot.clienti, 'clienti in tutto'], [tot.attivi7, 'attivi negli ultimi 7 giorni', tot.attivi7 ? 'bene' : ''], [tot.invitati, 'inviti non ancora accettati']].map(([v, t, cls], i) =>
+      ...[[tot.attivi1, 'clienti attivi oggi', tot.attivi1 ? 'bene' : ''], [tot.attivi7, 'attivi negli ultimi 7 giorni'], [tot.attivi30, 'attivi negli ultimi 30 giorni'], [tot.clienti, 'clienti in tutto'],
+        [attivi.length + 1, 'personal trainer attivi, tu compreso'], [tot.invitati, 'inviti non ancora accettati', tot.invitati ? 'presto' : '']].map(([v, t, cls], i) =>
         el('div', { class: 'cifra clienti-cifra ' + (cls ?? ''), style: { '--i': i } }, conta(el('b'), v), el('span', { testo: t })))),
     el('section', { class: 'fascia clienti-trainer' },
-      el('header', {}, el('h2', { testo: 'I personal trainer' }), el('span', { class: 'sopra piccolo', testo: 'ognuno con la sua Mirion e i suoi clienti' })),
+      el('header', {}, el('h2', { testo: 'I personal trainer e i loro accessi' }), el('span', { class: 'sopra piccolo', testo: 'come entrano, quando si sono collegati, quanti telefoni hanno' })),
       el('ul', { class: 'trainer-lista' },
-        el('li', { class: 'trainer-tu' }, el('b', { testo: 'Tu (' + d.club + ')' }), el('small', { class: 'sopra', testo: numeriTrainer(mie) }), el('a', { class: 'secondario piccolo', href: '#clienti' }, 'I tuoi clienti')),
+        el('li', { class: 'trainer-tu' }, el('b', { testo: 'Tu (' + d.club + ')' }), el('small', { class: 'sopra', testo: numeriTrainer(mie) + (d.online?.io?.accessiApp ? ` · ${d.online.io.accessiApp} accessi dalla web app` : '') }), el('a', { class: 'secondario piccolo', href: '#clienti' }, 'I tuoi clienti')),
         ...lista.map(t => trainerRiga(t, fai, rifai))),
-      lista.length ? null : el('p', { class: 'vuoto', testo: 'Ancora nessun personal trainer: aggiungilo qui sotto, poi gli dai l’indirizzo e la chiave per la sua Mirion.' }),
+      lista.length ? null : el('p', { class: 'vuoto', testo: 'Ancora nessun personal trainer: dagli una licenza (in alto) o aggiungilo qui sotto con una chiave.' }),
       aggiungiTrainer(fai, rifai)),
-    el('p', { class: 'sopra piccolo clienti-nota', testo: 'Della palestra vedi i personal trainer e i loro numeri. Chi sono i loro clienti, i loro dati e i messaggi li vede solo il loro trainer, nella sua Mirion: i clienti hanno dato il consenso a lui. Il cliente usa l’app Mirion Fit, il trainer Mirion Trainer, la palestra questa scheda.' })))
+    tolti.length ? el('section', { class: 'fascia clienti-trainer' },
+      el('header', {}, el('h2', { testo: 'Tolti' }), el('span', { class: 'sopra piccolo', testo: 'chi entrava con la licenza si può riaprire (senza i clienti di prima)' })),
+      el('ul', { class: 'trainer-lista' }, ...tolti.map(t => trainerRiga(t, fai, rifai)))) : null,
+    el('p', { class: 'sopra piccolo clienti-nota', testo: 'Qui vedi solo numeri: quanti clienti ha ogni trainer e quanti usano l’app. Chi sono i clienti, i loro dati e i messaggi li vede solo il loro trainer: i clienti hanno dato il consenso a lui. Sospendere ferma il trainer e lascia i clienti; togliere chiude anche i link dei suoi clienti e cancella i loro dati online.' })))
 }
 const numeriTrainer = x => `${x.clienti} ${x.clienti === 1 ? 'cliente' : 'clienti'} · ${x.attivi7} attivi in 7 giorni${x.invitati ? ` · ${x.invitati} inviti in attesa` : ''}`
 function aggiungiTrainer (fai, rifai) {
@@ -287,16 +296,27 @@ function aggiungiTrainer (fai, rifai) {
 }
 
 // i trainer della palestra (Marco, 24-11: «fai che Piatto regga più trainer»): solo nella Mirion del titolare. Ogni trainer ha la
-// sua Mirion con la sua chiave e i suoi clienti; qui solo il nome e quanti clienti segue (il consenso i clienti l'hanno dato a lui)
+// sua Mirion e i suoi clienti; qui il nome, come entra (licenza o chiave), i numeri e i bottoni degli accessi (26-11)
 function trainerRiga (t, fai, rifai) {
-  let sicuro = false
-  const b = el('button', { type: 'button', class: 'secondario piccolo', testo: 'Togli' })
-  b.onclick = async () => {
-    if (!sicuro) { sicuro = true; b.textContent = t.clienti ? `Sì, togli ${t.nome}: i suoi ${t.clienti} clienti perdono il link` : `Sì, togli ${t.nome}`; return }
-    b.disabled = true; const r = await fai({ azione: 'trainer-togli', id: t.id }, `${t.nome} non è più nella palestra.`); if (r) rifai(); else b.disabled = false
+  const quando = x => new Date(x).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const bottone = (testo, corpo, detto, conferma) => {
+    let sicuro = !conferma
+    const b = el('button', { type: 'button', class: 'secondario piccolo', testo })
+    b.onclick = async () => {
+      if (!sicuro) { sicuro = true; b.textContent = conferma; return }
+      b.disabled = true; const r = await fai(corpo, detto); if (r) rifai(); else b.disabled = false
+    }
+    return b
   }
-  const visto = t.visto ? 'Mirion collegata ' + new Date(t.visto).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'la sua Mirion non si è ancora collegata'
-  return el('li', {}, el('b', { testo: t.nome }), el('small', { class: 'sopra', testo: `${numeriTrainer({ clienti: t.clienti ?? 0, attivi7: t.attivi7 ?? 0, invitati: t.invitati ?? 0 })} · ${visto} · dal ${new Date(t.creato).toLocaleDateString('it-IT')}` }), b)
+  const entra = t.firma ? (t.scade ? `licenza fino al ${new Date(t.scade).toLocaleDateString('it-IT')}` : 'licenza senza scadenza') : 'chiave'
+  const stato = t.tolto ? `tolto il ${new Date(t.tolto).toLocaleDateString('it-IT')}` : t.sospeso ? `sospeso dal ${new Date(t.sospeso).toLocaleDateString('it-IT')}` : t.visto ? 'collegato ' + quando(t.visto) : 'non si è ancora collegato'
+  const testo = [t.tolto ? null : numeriTrainer({ clienti: t.clienti ?? 0, attivi7: t.attivi7 ?? 0, invitati: t.invitati ?? 0 }), entra, stato, t.accessiApp ? `${t.accessiApp} ${t.accessiApp === 1 ? 'accesso' : 'accessi'} dalla web app` : null, `dal ${new Date(t.creato).toLocaleDateString('it-IT')}`].filter(Boolean).join(' · ')
+  const bottoni = t.tolto
+    ? [t.firma ? bottone('Riapri', { azione: 'trainer-riattiva', id: t.id }, `${t.nome} può entrare di nuovo.`) : null]
+    : [t.sospeso ? bottone('Riattiva', { azione: 'trainer-riattiva', id: t.id }, `${t.nome} può entrare di nuovo.`) : bottone('Sospendi', { azione: 'trainer-sospendi', id: t.id }, `${t.nome} è sospeso: i suoi clienti restano.`, `Sì, sospendi ${t.nome}`),
+      t.accessiApp ? bottone('Spegni la web app', { azione: 'trainer-togli-app', id: t.id }, `Gli accessi di ${t.nome} dalla web app non valgono più.`, 'Sì, spegni i suoi link') : null,
+      bottone('Togli', { azione: 'trainer-togli', id: t.id }, `${t.nome} non è più nella palestra.`, t.clienti ? `Sì, togli ${t.nome}: i suoi ${t.clienti} clienti perdono il link` : `Sì, togli ${t.nome}`)]
+  return el('li', { class: t.sospeso || t.tolto ? 'trainer-fermo' : '' }, el('b', { testo: t.nome }), el('small', { class: 'sopra', testo }), ...bottoni.filter(Boolean))
 }
 // la chiave del trainer nuovo: si vede solo adesso, va scritta nella sua Mirion
 function chiaveTrainer (r, rifai) {

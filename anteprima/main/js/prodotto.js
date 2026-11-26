@@ -80,11 +80,13 @@ export async function vociProdotti () {
   // mettili assieme: sarebbe la prima estensione di Mirion»): un gruppo con il suo nome e due voci, «Fit» (la scrivania del diario,
   // l'app del cliente) e «Trainer» (i clienti, la loro analisi con Claude, la palestra: schede-trainer.js). Gli altri software sotto
   const voce = p => el('a', { href: '#prodotto?id=' + encodeURIComponent(p.id), 'data-prodotto': p.id, title: p.descrizione || p.nome }, segno(p), el('span', { testo: p.nome }))
+  // 26-11 (Marco: «mirion fit non deve avere l'area clienti, solo mirion trainer»): due voci separate, Mirion Fit (il diario del
+  // cliente) e Mirion Trainer (i clienti e la palestra); i clienti stanno solo in Mirion Trainer
   const trainer = voceTrainer(), fit = lista.find(p => p.id === 'piatto')
-  trainer.querySelector('span:last-child').textContent = 'Trainer'
-  const vFit = fit ? voce(fit) : null; if (vFit) vFit.querySelector('span:last-child').textContent = 'Fit'
+  trainer.querySelector('span:last-child').textContent = 'Mirion Trainer'
+  const vFit = fit ? voce(fit) : null; if (vFit) vFit.querySelector('span:last-child').textContent = 'Mirion Fit'
   const box = el('div', { class: 'voci-prodotti', role: 'group', 'aria-label': 'Le estensioni' }, el('span', { class: 'voci-titolo', testo: 'Estensioni' }),
-    el('div', { class: 'voci-estensione', role: 'group', 'aria-label': 'Mirion Fit' }, el('span', { class: 'voci-estensione-nome', testo: 'Mirion Fit' }), vFit, trainer),
+    vFit, trainer,
     ...lista.filter(p => p.id !== 'piatto').map(voce))
   $('.in-fondo', nav)?.before(box)
   const [nome, resto] = location.hash.slice(1).split('?') // aperta direttamente su un software: la sua voce si accende subito
