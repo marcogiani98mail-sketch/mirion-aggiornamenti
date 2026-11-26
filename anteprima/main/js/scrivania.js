@@ -59,7 +59,8 @@ export async function mostra (stanza, params) {
   // se il vault è cambiato ma la scrivania no (Claude scrive una nota che qui non si vede, git), non si ridisegna niente
   // (Marco, 25-11 notte: «continua ad aggiornarsi la pagina»): stessi dati, stessa stanza già disegnata, stessa pagina
   const firma = JSON.stringify([s, manca ? manca.textContent : null, pagina, widget, location.hash])
-  if (ultima?.stanza === stanza && ultima.firma === firma && stanza.isConnected && stanza.childElementCount) return
+  // solo se quello che c'è è ancora quello disegnato da qui: tornando dalla Squadra (o da un'altra vista) si ridisegna
+  if (ultima?.stanza === stanza && ultima.firma === firma && stanza.isConnected && ultima.disegnato?.parentNode === stanza) return
   avvisaCalendario(s)
   ultima = { stanza, s, ricarica, manca, firma }
   disegna()
@@ -87,25 +88,28 @@ function disegna () {
   // le card dei software messe qui con «Metti sulla scrivania» (prodotto.js, 23-11)
   const deiSoftware = {}, spaziSoftware = {}
   for (const r of scrivaniaAttiva()?.riquadri ?? []) if (/^p\./.test(r.id)) { deiSoftware[r.id] = () => software.cartaPerScrivania(r.id, ricarica); spaziSoftware[r.id] = () => software.paginaCompleta(r.id) }
-  const contenuti = { ...deiSoftware, adesso: () => banner(s, ricarica), giorni: () => giorni(s, ricarica), cervello: () => cervello(s), progetti: () => progetti(s.progetti, stanza),
+  const contenuti = { ...deiSoftware, adesso: () => banner(s, ricarica), giorni: () => giorni(s, ricarica), cervello: () => cervello(s), progetti: () => progetti(s.progetti, stanza, { completa: pagina === 'progetti', task: [...s.prossime, ...s.senzaData] }),
     scadute: () => extra.scadute(ricarica), accessi: extra.accessi, lavagne: extra.lavagne, cerca: extra.cerca, diario: extra.diario, gestionali: casellaGestionali, conti: casellaConti,
     // Claudio, per ora, non c'è (Marco, 23-11 sera: «per ora Claudio e Turni pulizie toglieli»): la sua card non si disegna
     notizie: casellaNotizie, versioni: () => extra.versioni(pagina === 'versioni'), notifiche: () => casellaNotifiche(s, { tutte: pagina === 'notifiche' }),
     programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere(), nascoste: () => nascosteNelleNote(), telefoni: casellaTelefoni }
   // il widget: la card da sola, a tutto schermo (widget.js)
-  if (widget && contenuti[widget]) return stanza.replaceChildren(cornice(el('div', { class: 'riquadro widget-riquadro' }, el('div', { class: 'riquadro-corpo' }, contenuti[widget]())), '#scrivania'))
+  const metti = nodo => { stanza.replaceChildren(nodo); if (ultima) ultima.disegnato = nodo }
+  if (widget && contenuti[widget]) return metti(cornice(el('div', { class: 'riquadro widget-riquadro' }, el('div', { class: 'riquadro-corpo' }, contenuti[widget]())), '#scrivania'))
   // la pagina completa di una card che non ha una stanza sua: la card da sola, con tutto lo spazio, e «← Scrivania» per tornare
   if (pagina && contenuti[pagina] && !/^p\./.test(pagina)) {
     if (paginaVista !== pagina) scrollTo(0, 0) // in cima solo quando la apri, non quando si ridisegna da sola
     paginaVista = pagina
-    return stanza.replaceChildren(el('div', { class: 'pagina-completa', 'data-pagina': pagina },
+    return metti(el('div', { class: 'pagina-completa', 'data-pagina': pagina },
       el('header', { class: 'pagina-cima' }, el('a', { class: 'secondario piccolo', href: '#scrivania' }, ic('arrow-left'), 'Scrivania'), el('h1', { testo: TITOLI[pagina] ?? pagina })),
       el('div', { class: 'pagina-corpo' }, contenuti[pagina]())))
   }
   paginaVista = null
   // le card che non sono sulla scrivania: icone in cima, un clic e si aprono (Marco, 25-11 sera)
   const spazi = { ...SPAZI, ...spaziSoftware }
-  stanza.replaceChildren(manca ?? '', fila, iconeCard(contenuti, disegna), griglia(contenuti, disegna, { spazi }))
+  const g = griglia(contenuti, disegna, { spazi })
+  stanza.replaceChildren(manca ?? '', fila, iconeCard(contenuti, disegna), g)
+  if (ultima) ultima.disegnato = g
 }
 addEventListener('su-misura', () => { if (ultima && !ultima.stanza.hidden && sezione !== 'squadra') disegna() })
 

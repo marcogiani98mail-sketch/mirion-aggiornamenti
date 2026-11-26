@@ -135,6 +135,7 @@ async function vistaCliente (v, id) {
         s.nota ? el('blockquote', { testo: s.nota }) : null))))) : null,
     pc ? carta('Il suo percorso', pc.oggi ? `oggi ${pc.oggi}` : '', el('p', { class: 't-nota forte', testo: pc.titolo }),
       el('ul', { class: 't-righe semplici' }, ...(pc.sedute ?? []).map(s => el('li', {}, el('b', { testo: s.nome }), el('small', { testo: (s.esercizi ?? []).join(' · ') }))))) : null,
+    cartaProgressi(c, () => vistaCliente(v, id)),
     cartaScheda(c),
     cartaChat(c))
 }
@@ -146,7 +147,19 @@ function cartaScheda (c) {
   const righe = el('textarea', { rows: 6, name: 'righe', placeholder: 'Squat 4x8 80\nPanca piana 4x8 60\nLat machine 3x10 50\nPlank 3x45', 'aria-label': 'Gli esercizi, uno per riga' })
   righe.value = (s?.esercizi ?? []).map(e => `${e.nome} ${e.serie ?? 3}x${e.rip ?? 10}${e.kg ? ' ' + String(e.kg).replace('.', ',') : ''}`).join('\n')
   const titolo = el('input', { name: 'titolo', placeholder: 'Il titolo (es. Forza A)', value: s?.titolo ?? '', maxlength: 60, 'aria-label': 'Il titolo della scheda' })
-  return carta('La scheda', s ? `ora: ${s.titolo || 'senza titolo'}` : 'nessuna', el('form', { class: 't-modulo', onsubmit: async e => {
+  // in base a come va (26-11-2026): «Proponi» riscrive le righe con i kg da provare (dall'ultima volta); se è vuota, con gli
+  // esercizi che fa di più
+  const andamento = Array.isArray(c.piatto?.andamento) ? c.piatto.andamento : []
+  const rigaDi = a => `${a.nome} ${a.serie?.length || 3}x${a.rip ?? 10}${(a.proposta?.kg ?? a.kg) ? ' ' + String(a.proposta?.kg ?? a.kg).replace('.', ',') : ''}`
+  const proponi = () => {
+    const perNome = new Map(andamento.map(a => [a.nome.toLowerCase(), a]))
+    const scritte = righe.value.split('\n').map(r => r.trim()).filter(Boolean)
+    righe.value = scritte.length ? scritte.map(r => { const a = [...perNome.entries()].find(([n]) => r.toLowerCase().startsWith(n))?.[1]; return a ? rigaDi(a) : r }).join('\n') : andamento.slice(0, 6).map(rigaDi).join('\n')
+    dimmi('Ecco i kg da provare, da come è andata l’ultima volta.')
+  }
+  const comeVa = andamento.length ? el('ul', { class: 't-righe semplici' }, ...andamento.slice(0, 6).map(a => el('li', {}, el('b', { testo: a.nome }),
+    el('small', { testo: `ultima: ${(a.serie ?? []).map(x => x.kg ? `${String(x.kg).replace('.', ',')} kg × ${x.rip}` : `${x.rip} rip.`).join(' · ')}${a.proposta ? ` → ${String(a.proposta.kg).replace('.', ',')} kg` : ''}` })))) : null
+  return carta('La scheda', s ? `ora: ${s.titolo || 'senza titolo'}` : 'nessuna', comeVa, el('form', { class: 't-modulo', onsubmit: async e => {
     e.preventDefault()
     const esercizi = righe.value.split('\n').map(r => r.trim()).filter(Boolean).slice(0, 20).map(r => {
       const m = /^(.*?)\s+(\d{1,2})\s*[x×]\s*([\d-]{1,7})(?:\s+(\d+(?:[.,]\d+)?))?\s*(?:kg)?$/i.exec(r)
@@ -154,7 +167,22 @@ function cartaScheda (c) {
     })
     if (!esercizi.length) return dimmi('Scrivi almeno un esercizio.')
     try { await api('/api/clienti', { azione: 'scheda', id: c.id, scheda: { titolo: titolo.value.trim(), nota: '', esercizi } }); dimmi(`La scheda è arrivata a ${c.nome}.`) } catch (err) { dimmi(err.message) }
-  } }, titolo, righe, el('div', { class: 't-bottoni' }, el('button', { class: 't-primario' }, 'Manda la scheda'))))
+  } }, titolo, righe, el('div', { class: 't-bottoni' }, andamento.length ? el('button', { type: 'button', onclick: proponi }, 'Proponi in base a come va') : null, el('button', { class: 't-primario' }, 'Manda la scheda'))))
+}
+
+// i progressi che il cliente condivide (26-11-2026): li commenti dal telefono, il commento gli arriva in Mirion Fit
+function cartaProgressi (c, rifai) {
+  if (!c.online) return null
+  const lista = Array.isArray(c.progressi) ? c.progressi : []
+  const da = lista.filter(x => !(x.commenti ?? []).length).length
+  return carta('I progressi', lista.length ? (da ? `${da} da commentare` : 'tutti commentati') : 'nessuno ancora', lista.length ? el('ul', { class: 't-guarda' }, ...lista.slice(0, 8).map(x => {
+    const testo = el('input', { maxlength: 600, placeholder: 'Il tuo commento', 'aria-label': 'Il commento' })
+    return el('li', { class: (x.commenti ?? []).length ? '' : 'nuovo' },
+      el('div', {}, el('small', { testo: quandoBreve(x.quando) }), el('p', {}, el('b', { testo: x.titolo })), x.testo ? el('small', { testo: x.testo }) : null, x.nota ? el('blockquote', { testo: x.nota }) : null,
+        ...(x.commenti ?? []).map(k => el('div', { class: 't-bolla mia' }, el('p', { testo: k.testo }))),
+        el('form', { class: 't-scrivi', onsubmit: async e => { e.preventDefault(); if (!testo.value.trim()) return; try { await api('/api/clienti', { azione: 'commenta', id: c.id, progresso: x.id, testo: testo.value }); dimmi(`Commento mandato a ${c.nome}.`); rifai() } catch (err) { dimmi(err.message) } } },
+          testo, el('button', { class: 't-primario t-tondo', 'aria-label': 'Commenta' }, '➤'))))
+  })) : el('p', { class: 't-vuoto', testo: `Quando ${c.nome} condivide un progresso da Mirion Fit, lo commenti da qui.` }))
 }
 
 // la chat con il cliente, con le risposte veloci per gli avvisi

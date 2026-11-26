@@ -7,7 +7,7 @@ import { el, api, notifica } from './base.js'
 import { ic } from './icone.js'
 import { campoCodice } from './codice-barre.js'
 
-export const PAGINE = { oggi: 'Calorie e macro', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', acqua: 'Acqua', attivita: 'Attività', peso: 'Peso', allenamento: 'Allenamento', settimana: 'La settimana' }
+export const PAGINE = { oggi: 'Calorie e macro', cibo: 'Cibo', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', acqua: 'Acqua', attivita: 'Attività', peso: 'Peso', allenamento: 'Allenamento', settimana: 'La settimana' }
 const PASTI = [['colazione', 'Colazione'], ['pranzo', 'Pranzo'], ['cena', 'Cena'], ['spuntini', 'Spuntini']]
 const n = v => Number.isFinite(+v) ? Math.round(+v).toLocaleString('it-IT') : '—'
 const virgola = (v, c = 1) => Number.isFinite(+v) ? (+v).toLocaleString('it-IT', { maximumFractionDigits: c }) : '—'
@@ -64,7 +64,7 @@ export async function pagina (stanza, p, quale, giorno) {
   if (d.pronto === false) return corpo.replaceChildren(el('p', { class: 'vuoto', testo: 'Per cominciare serve il profilo (peso, altezza, obiettivo): scrivilo nella card «Peso».' }))
   const c = d.completo ?? {}
   if (!d.completo) corpo.before(el('p', { class: 'sopra piccolo', testo: `Il programma di ${p.nome} è di prima: per vedere tutto, fermalo e riaccendilo (lo fa Mirion riaprendo ${p.nome}).` }))
-  const DISEGNA = { oggi: paginaCalorie, colazione: paginaPasto, pranzo: paginaPasto, cena: paginaPasto, spuntini: paginaPasto, pasti: paginaPasti, acqua: paginaAcqua, attivita: paginaAttivita, peso: paginaPeso, allenamento: paginaAllenamento, settimana: paginaSettimana }
+  const DISEGNA = { oggi: paginaCalorie, colazione: paginaPasto, pranzo: paginaPasto, cena: paginaPasto, spuntini: paginaPasto, pasti: paginaPasti, cibo: paginaPasti, acqua: paginaAcqua, attivita: paginaAttivita, peso: paginaPeso, allenamento: paginaAllenamento, settimana: paginaSettimana }
   corpo.replaceChildren(...[].concat((DISEGNA[quale] ?? paginaCalorie)({ p, d, c, g, oggi, quale, fai, rifai })).filter(Boolean))
 }
 

@@ -30,6 +30,8 @@ export function daGuardare (clienti = [], { ore = 72 } = {}) {
     // un messaggio a cui non hai ancora risposto
     const m = c.ultimoMessaggio
     if (m && m.da === 'cliente' && giorniDa(m.quando) <= 7) fuori.push({ ...base, tipo: 'messaggio', peso: m.tema === 'dolore' ? 95 : 80, icona: '✉️', titolo: 'Aspetta una risposta', testo: m.testo, quando: m.quando })
+    // i progressi condivisi ancora senza commento (26-11-2026): un grazie che il cliente aspetta
+    if (c.progressiDaCommentare > 0) fuori.push({ ...base, tipo: 'progresso', peso: 65, icona: '🏆', titolo: c.progressiDaCommentare === 1 ? 'Un progresso da commentare' : `${c.progressiDaCommentare} progressi da commentare`, testo: 'L’ha condiviso da Mirion Fit: un commento lo motiva', quando: null })
     // fermo da 3 giorni o più
     const fermo = giorniDa(c.ultimo)
     if (fermo >= 3) fuori.push({ ...base, tipo: 'fermo', peso: 40 + Math.min(20, fermo), icona: '💤', titolo: c.ultimo ? `Fermo da ${fermo} giorni` : 'Non ha ancora mandato niente', testo: 'Un messaggio per rimetterlo in moto?', quando: c.ultimo })

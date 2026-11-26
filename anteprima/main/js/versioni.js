@@ -4,6 +4,12 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.43', data: '2026-11-26', titolo: 'Le card tornano a posto, i progetti si adattano', novita: [
+    'Tornando dalla Squadra alla scrivania le card ricompaiono subito, senza restare bloccate sulla pagina di prima.',
+    'La card Task mostra i numeri veri anche fuori dalla squadra, non più tutti zero.',
+    'I progetti stanno in fila quando la card è larga e uno sotto l’altro quando è stretta, con lo stesso stile delle altre card.',
+    '«Tutti, a schermo intero» apre i progetti in grande, con le prossime cose da fare di ognuno.',
+  ] },
   { versione: '0.1.42', data: '2026-11-26', titolo: 'Il cervello spostato si ritrova da solo', novita: [
     'Se sposti la cartella del cervello dentro una cartella accanto (come Mirion dentro il Cervello), Mirion la ritrova e si riapre lì, con le tue task e il tuo diario, invece di aprire un cervello vuoto.',
   ] },

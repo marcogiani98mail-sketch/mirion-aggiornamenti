@@ -140,3 +140,13 @@ svg.t-cerchio .sotto { fill: var(--tenue); font: 500 11px var(--corpo); }
   background: color-mix(in oklch, var(--carta) 92%, transparent); border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); box-shadow: 0 16px 40px -14px #000; animation: sale .25s both; }
 @keyframes sale { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .t-avviso { animation: none; } }
+
+/* i progressi da commentare (26-11-2026) */
+.t-guarda li > div { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.t-guarda li.nuovo > div { box-shadow: inset 3px 0 0 var(--viola, #a78bfa); }
+.t-guarda li > div p { margin: 0; }
+.t-guarda li blockquote { margin: 0; padding-left: 8px; border-left: 2px solid color-mix(in oklch, var(--testo) 20%, transparent); opacity: .8; }
+.t-scrivi input { flex: 1; min-width: 0; min-height: 44px; border-radius: 12px; padding: 10px 12px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--fondo) 60%, transparent); color: inherit; font: inherit; }
+.t-scrivi input:focus { outline: none; border-color: var(--viola); box-shadow: 0 0 0 3px color-mix(in oklch, var(--viola) 25%, transparent); }
+.t-bottoni { gap: 8px; }
+.t-bottoni button:not(.t-primario) { border-radius: 14px; padding: 10px 14px; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 50%, transparent); color: inherit; font: inherit; cursor: pointer; }

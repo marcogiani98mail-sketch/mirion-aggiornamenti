@@ -6,7 +6,7 @@ import { el } from './base.js'
 export const scelte = sq => sq ? [['mie', 'Mie'], ...sq.persone.filter(p => p.id !== sq.io).map(p => ['di:' + p.id, 'Di ' + p.nome]), ['libere', 'Libere'], ['tutte', 'Tutte']] : []
 
 export const diChi = scelta => k => scelta === 'tutte' || !scelta ? true
-  : scelta === 'mie' ? k.mia === true
+  : scelta === 'mie' ? k.mia === true || k.mia === undefined // fuori dalla squadra (niente «mia») le task sono tutte tue
   : scelta === 'libere' ? Boolean(k.condivisa && !k.chi)
   : k.chi === scelta.slice(3)
 

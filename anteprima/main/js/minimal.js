@@ -45,7 +45,7 @@ export function scrivaniaMinimal (sc) {
 // la scrivania di prima (0.1.31) aveva accesa la sola card «tutto», una pagina fissa: si passa alle card vere una volta sola
 export const soloTutto = sc => { const accese = sc.riquadri.filter(c => c && c.nascosto !== true); return accese.length === 1 && accese[0].id === 'tutto' }
 
-// Mirion Fit: «Oggi», poi tre cartelle a due per riga: i pasti, il corpo (peso, acqua, sonno, integratori), il movimento
+// Mirion Fit: «Oggi», poi «Cibo» (i pasti in una card, 26-11-2026), poi due cartelle a due per riga: il corpo (peso, acqua, sonno, integratori), il movimento
 // (allenamento, attività, la settimana); via Notizie
 export function fitMinimal (sc) {
   const oggi = sc.riquadri.find(r => r.id === 'oggi')
@@ -53,7 +53,10 @@ export function fitMinimal (sc) {
   spegni(sc, ['notizie'])
   puntoInCima(sc, 'oggi')
   let dopo = oggi
-  dopo = cartella(sc, 'gruppo-pasti', 'I pasti', ['colazione', 'pranzo', 'cena', 'spuntini'], dopo, 6)
+  // il cibo è una card sola (26-11-2026): «Cibo», con i pasti da scegliere; i pasti uno per card restano spenti
+  spegni(sc, ['colazione', 'pranzo', 'cena', 'spuntini', 'pasti'])
+  const cibo = sc.riquadri.find(r => r.id === 'cibo')
+  if (cibo) { sc.riquadri.splice(sc.riquadri.indexOf(cibo), 1); sc.riquadri.splice(sc.riquadri.indexOf(oggi) + 1, 0, Object.assign(cibo, { nascosto: false, gruppo: null, larghezza: 12, altezza: null, piccolo: false })); dopo = cibo }
   dopo = cartella(sc, 'gruppo-corpo', 'Il corpo', ['peso', 'acqua', 'sonno', 'integratori'], dopo, 6)
   cartella(sc, 'gruppo-movimento', 'Il movimento', ['allenamento', 'attivita', 'settimana'], dopo, 6)
   return sc

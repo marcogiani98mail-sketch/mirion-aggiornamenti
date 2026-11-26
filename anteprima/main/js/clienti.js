@@ -469,6 +469,7 @@ function carteFit (c, p, comp, rifai) {
       ...check.filter(x => x.nota).slice(0, 3).map(x => el('blockquote', { testo: x.nota }))) : null,
     c.soloNota ? null : cartaReport(c, rifai),
     c.online ? cartaPiano(c, rifai) : null,
+    c.online ? cartaProgressi(c, rifai) : null,
     c.online ? cartaScheda(c, rifai) : null,
   ]
 }
@@ -510,6 +511,28 @@ function cartaReport (c, rifai) {
       el('button', { type: 'button', class: 'quieto', onclick: rifai }, 'Rileggi il report')))
 }
 
+// i progressi che il cliente condivide da Mirion Fit (26-11-2026, Marco: «Claudio può commentare i progressi quando li
+// condividono»): un record, il peso, una seduta finita, i giorni di fila, il cerchio, con la riga del cliente; sotto ognuno i
+// commenti e il campo per commentare. Il commento arriva al cliente in Mirion Fit, con la notifica
+function cartaProgressi (c, rifai) {
+  const lista = Array.isArray(c.progressi) ? c.progressi : []
+  const da = lista.filter(x => !(x.commenti ?? []).length).length
+  const giorno = q => new Date(q).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+  const ICONE = { record: 'sparkle', peso: 'arrows-vertical', seduta: 'check-circle', fila: 'calendar-dots', cerchio: 'target' }
+  return carta('I progressi', { larga: true, sopra: lista.length ? (da ? `${da} da commentare` : 'tutti commentati') : 'quelli che condivide da Mirion Fit' },
+    lista.length ? el('ul', { class: 'progressi-trainer' }, ...lista.slice(0, 12).map(x => {
+      const testo = el('input', { name: 'testo', maxlength: 600, placeholder: (x.commenti ?? []).length ? 'Un altro commento' : `Commenta, es. «Grande ${c.nome.split(' ')[0]}!»`, 'aria-label': 'Il commento' })
+      return el('li', { class: 'progresso' + ((x.commenti ?? []).length ? '' : ' da-commentare') },
+        el('div', { class: 'progresso-testa' }, ic(ICONE[x.tipo] ?? 'sparkle', { duo: true }), el('div', {}, el('b', { testo: x.titolo }), el('small', { class: 'sopra', testo: [giorno(x.quando), x.testo].filter(Boolean).join(' · ') }))),
+        x.nota ? el('blockquote', { testo: x.nota }) : null,
+        ...(x.commenti ?? []).map(k => el('div', { class: 'bolla mia' }, el('p', { testo: k.testo }), el('time', { testo: giorno(k.quando) }))),
+        el('form', { class: 'riga-form progresso-commenta', onsubmit: async e => {
+          e.preventDefault(); if (!testo.value.trim()) return testo.focus()
+          try { const r = await api('/api/clienti', { azione: 'commenta', id: c.id, progresso: x.id, testo: testo.value }); notifica(r.notifiche ? `Commento mandato: ${c.nome} lo vede in Mirion Fit.` : `Mandato. ${c.nome} lo vede quando apre Mirion Fit.`); rifai() } catch (err) { notifica(err.message, { tipo: 'sempre' }) }
+        } }, testo, el('button', { class: 'primario piccolo', testo: 'Commenta' })))
+    })) : el('p', { class: 'vuoto', testo: `Quando ${c.nome} condivide un progresso da Mirion Fit (un record, il peso, una seduta finita), lo trovi qui e lo commenti.` }))
+}
+
 // la scheda di allenamento (24-11 sera, Mirion Trainer → Mirion Fit online): un titolo, una nota e fino a 20 esercizi con serie,
 // ripetizioni («8» o «8-10»), kg (vuoto = corpo libero), recupero in secondi e una nota. Il cliente la trova nel diario come «La tua
 // scheda», con «Fai» che apre l'esercizio con serie e kg già scritti. Il nome si lega da solo all'esercizio di Mirion Fit (l'elenco
@@ -535,6 +558,30 @@ function cartaScheda (c, rifai) {
     return r
   }
   for (const e of s.esercizi?.length ? s.esercizi : [{}, {}, {}]) righe.append(riga(e))
+  // come va (26-11-2026, Marco: «Claudio può inviare schedine in Mirion Trainer in base a come fanno»): esercizio per esercizio
+  // l'ultima volta e i kg da proporre (la stessa regola della progressione di Mirion Fit). «Proponi in base a come va» rifà la
+  // scheda: gli esercizi che ci sono prendono i kg proposti; se la scheda è vuota, entrano i suoi esercizi più fatti. «+» ne aggiunge uno
+  const andamento = Array.isArray(c.piatto?.andamento) ? c.piatto.andamento : []
+  const virgola = v => String(v).replace('.', ',')
+  const daAndamento = a => ({ esercizioId: a.esercizioId, nome: a.nome, serie: a.serie?.length || 3, rip: String(a.rip ?? 10), kg: a.proposta?.kg ?? a.kg ?? '', note: '' })
+  const proponi = () => {
+    const perId = new Map(andamento.map(a => [a.esercizioId || a.nome.toLowerCase(), a]))
+    const scritte = [...righe.children].filter(r => r.querySelector('[name="nome"]').value.trim())
+    if (!scritte.length) { righe.replaceChildren(...andamento.slice(0, 6).map(a => riga(daAndamento(a)))); return notifica(andamento.length ? `Scheda proposta dai ${Math.min(6, andamento.length)} esercizi che ${c.nome} fa di più, con i kg da provare.` : 'Non ci sono ancora allenamenti da cui partire.') }
+    let cambiati = 0
+    for (const r of scritte) {
+      const a = perId.get(r.dataset.id) ?? perId.get(r.querySelector('[name="nome"]').value.trim().toLowerCase())
+      if (a?.proposta?.kg != null) { r.querySelector('[name="kg"]').value = virgola(a.proposta.kg); cambiati++ }
+    }
+    notifica(cambiati ? `Aggiornati i kg di ${cambiati} ${cambiati === 1 ? 'esercizio' : 'esercizi'} in base a come va.` : 'Per questi esercizi non ci sono ancora i kg dell’ultima volta.')
+  }
+  const comeVa = andamento.length ? el('details', { class: 'scheda-come-va', open: true },
+    el('summary', {}, el('b', { testo: 'Come va' }), el('small', { class: 'sopra', testo: ` · gli esercizi delle ultime 4 settimane, l’ultima volta e i kg da provare` })),
+    el('ul', { class: 'come-va' }, ...andamento.slice(0, 10).map(a => el('li', {},
+      el('span', {}, el('b', { testo: a.nome }), el('small', { class: 'sopra', testo: ` · ${new Date(a.giorno + 'T12:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}: ${(a.serie ?? []).map(x => x.kg ? `${virgola(x.kg)} kg × ${x.rip}` : `${x.rip} rip.`).join(' · ')} · ${a.volte} ${a.volte === 1 ? 'volta' : 'volte'}` })),
+      a.proposta ? el('span', { class: a.proposta.kg > (a.kg ?? 0) ? 'bene' : 'sopra', title: a.proposta.motivo, testo: a.proposta.kg > (a.kg ?? 0) ? `→ ${virgola(a.proposta.kg)} kg` : `resta ${virgola(a.proposta.kg)} kg` }) : el('span'),
+      el('button', { type: 'button', class: 'quieto piccolo', title: 'Mettilo nella scheda con i kg da provare', 'aria-label': `Metti ${a.nome} nella scheda`, onclick: () => { if (righe.children.length >= 20) return notifica('Al massimo 20 esercizi.'); const vuota = [...righe.children].find(r => !r.querySelector('[name="nome"]').value.trim()); const n = riga(daAndamento(a)); if (vuota) vuota.replaceWith(n); else righe.append(n) } }, ic('plus'))))))
+    : el('p', { class: 'sopra piccolo', testo: `Quando ${c.nome} segna gli allenamenti in Mirion Fit, qui vedi come va esercizio per esercizio e la scheda si propone da sola.` })
   const leggi = async () => {
     const es = await elencoEsercizi(), perNome = new Map(es.map(e => [e.nome.toLowerCase(), e.id]))
     const valore = (r, k) => r.querySelector(`[name="${k}"]`).value.trim()
@@ -554,10 +601,12 @@ function cartaScheda (c, rifai) {
     el('label', { class: 'campo-piano' }, el('small', { class: 'sopra', testo: 'Titolo' }), el('input', { name: 'titolo', value: s.titolo ?? '', maxlength: 60, placeholder: 'es. Forza A' })),
     el('label', { class: 'campo-piano' }, el('small', { class: 'sopra', testo: 'Una nota per il cliente' }), el('input', { name: 'nota', value: s.nota ?? '', maxlength: 400, placeholder: 'es. riscaldamento 10 minuti prima' }))),
   elenco,
+  comeVa,
   el('div', { class: 'scheda-riga scheda-intestazione', 'aria-hidden': 'true' }, ...['Esercizio', 'Serie', 'Ripetizioni', 'kg', 'Rec. (s)', 'Nota', ''].map(t => el('small', { class: 'sopra', testo: t }))),
   righe,
   el('div', { class: 'bottoni' },
     el('button', { type: 'button', class: 'secondario', onclick: () => { if (righe.children.length >= 20) return notifica('Al massimo 20 esercizi.'); righe.append(riga()); righe.lastChild.querySelector('input').focus() } }, ic('plus'), 'Un esercizio'),
+    andamento.length ? el('button', { type: 'button', class: 'secondario', title: 'I kg da provare per ogni esercizio, da come è andata l’ultima volta', onclick: proponi }, ic('sparkle'), 'Proponi in base a come va') : null,
     el('button', { type: 'submit', class: 'primario' }, c.scheda ? 'Aggiorna la scheda' : 'Manda la scheda'),
     c.scheda ? el('button', { type: 'button', class: 'quieto', onclick: async () => { try { await api('/api/clienti', { azione: 'scheda', id: c.id, scheda: null }); notifica(`Scheda tolta: ${c.nome} non la vede più.`); rifai() } catch (err) { notifica(err.message, { tipo: 'sempre' }) } } }, 'Togli la scheda') : null))
   return carta('La scheda', { larga: true, sopra: c.scheda?.quando ? `mandata il ${new Date(c.scheda.quando).toLocaleDateString('it-IT')}` : 'gli esercizi per Mirion Fit' },

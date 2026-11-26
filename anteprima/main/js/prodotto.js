@@ -20,22 +20,24 @@ import { cornice } from './widget.js'
 import { campoCodice } from './codice-barre.js'
 import { voceTrainer } from './schede-trainer.js'
 
-export const CARTE = { oggi: 'Oggi', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', attivita: 'Attività', acqua: 'Acqua', sonno: 'Sonno', integratori: 'Integratori', peso: 'Peso', allenamento: 'Allenamento', settimana: 'La settimana', programma: 'Il programma', task: 'Da fare', ia: 'Lavora con l’IA', notizie: 'Notizie', note: 'Le note' }
-const LARGHE = { oggi: 6, colazione: 6, pranzo: 6, cena: 6, spuntini: 6, pasti: 6, attivita: 3, acqua: 3, sonno: 3, integratori: 3, peso: 3, allenamento: 6, settimana: 6, programma: 12, task: 6, ia: 6, notizie: 6, note: 6 }
+export const CARTE = { oggi: 'Oggi', cibo: 'Cibo', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', attivita: 'Attività', acqua: 'Acqua', sonno: 'Sonno', integratori: 'Integratori', peso: 'Peso', allenamento: 'Allenamento', settimana: 'La settimana', programma: 'Il programma', task: 'Da fare', ia: 'Lavora con l’IA', notizie: 'Notizie', note: 'Le note' }
+const LARGHE = { oggi: 6, cibo: 6, colazione: 6, pranzo: 6, cena: 6, spuntini: 6, pasti: 6, attivita: 3, acqua: 3, sonno: 3, integratori: 3, peso: 3, allenamento: 6, settimana: 6, programma: 12, task: 6, ia: 6, notizie: 6, note: 6 }
 // Piatto in Mirion (Marco, 23-11: «non voglio che sia apribile da Piatto: si apra già quando seleziono Piatto, e devono essere
 // tutte card minimaliste dove posso accedere per variare»): le card che fanno, e quelle del lavoro sul software (tolte all'inizio)
 // Marco, 23-11 sera: «tutto il contenuto della scrivania completa di Piatto trasponilo in card sulla scrivania di Piatto»: un pasto
 // per card e l'attività, come in Piatto; «I pasti» (tutti in una) resta fra le card tolte
 const UN_PASTO = ['colazione', 'pranzo', 'cena', 'spuntini']
 // Mirion Fit (24-11): anche il sonno e gli integratori, come in Piatto
-const DEL_GIORNO = ['oggi', ...UN_PASTO, 'pasti', 'acqua', 'sonno', 'integratori', 'attivita', 'peso', 'allenamento', 'settimana'], DEL_LAVORO = ['programma', 'task', 'ia', 'notizie', 'note']
+const DEL_GIORNO = ['oggi', 'cibo', ...UN_PASTO, 'pasti', 'acqua', 'sonno', 'integratori', 'attivita', 'peso', 'allenamento', 'settimana'], DEL_LAVORO = ['programma', 'task', 'ia', 'notizie', 'note']
 // Mirion Fit (Marco, 24-11 sera: «nell'app togli lavora con l'IA in scrivania, e il programma non lo rendere visualizzabile però
 // assicurati che ci siano le card che lo sostituiscano»): nella scrivania di un software con le card del giorno non ci sono più
 // «Il programma» né «Lavora con l'IA»; le card del giorno (Oggi, i pasti, Acqua, Sonno, Integratori, Attività, Peso, Allenamento,
 // La settimana) fanno le sue veci.
 // Marco, 24-11 sera: «togli i pasti e lasciali sfusi, card pasti via… le note pure via»: niente «I pasti» (restano Colazione,
 // Pranzo, Cena e Spuntini, una per card), niente «Le note» e niente «Da fare» («da fare pure»): resta Notizie
-const SENZA = ['programma', 'ia', 'pasti', 'note', 'task']
+// Marco, 26-11-2026: «metti tutti gli apparati del cibo in uno solo dove li selezionano se è pranzo, cena ecc. non lasciarli
+// sparsi»: una card «Cibo» con i quattro pasti da scegliere, al posto di Colazione, Pranzo, Cena e Spuntini (come in Mirion Fit)
+const SENZA = ['programma', 'ia', 'pasti', 'note', 'task', ...UN_PASTO]
 const carteDi = p => haOggi(p) ? [...DEL_GIORNO, ...DEL_LAVORO].filter(c => !SENZA.includes(c)) : DEL_LAVORO
 const PASTI = [['colazione', 'Colazione'], ['pranzo', 'Pranzo'], ['cena', 'Cena'], ['spuntini', 'Spuntini']]
 // un'azione sul programma (acqua, peso, cibo, esercizio): la fa lui, poi le card si rileggono
@@ -220,6 +222,8 @@ function carta (p, quale, dati, rifai, dove) {
     }))
   } else if (quale === 'settimana') {
     riempi(async () => conNumeri(p, await dati.oggi(), d => vistaSettimana(d)))
+  } else if (quale === 'cibo') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardCibo(p, d, rifai)))
   } else if (UN_PASTO.includes(quale)) {
     riempi(async () => conNumeri(p, await dati.oggi(), d => cardPasto(p, d, quale, rifai)))
   } else if (quale === 'attivita') {
@@ -338,6 +342,20 @@ export async function mostra (stanza, params) {
       lay.riquadri = [...giorno, ...lavoro]; salva({ subito: true })
     }
   }
+  // il cibo in una card (26-11-2026): una scrivania di prima ha «Cibo» in fondo, spenta (server/disposizione.mjs); una volta sola va
+  // dove stava il primo pasto acceso (o dopo «Oggi»), accesa, e i pasti uno per card si spengono
+  if (haOggi(p)) {
+    const lay = disposizione(), cibo = lay.riquadri.find(r => r.id === 'cibo')
+    const pasti = lay.riquadri.filter(r => UN_PASTO.includes(r.id) || r.id === 'pasti')
+    if (cibo && pasti.some(r => !r.nascosto)) {
+      const primo = pasti.find(r => !r.nascosto)
+      lay.riquadri.splice(lay.riquadri.indexOf(cibo), 1)
+      Object.assign(cibo, { nascosto: false, gruppo: null, larghezza: primo.gruppo ? primo.larghezza : LARGHE.cibo, altezza: null, piccolo: false })
+      const i = lay.riquadri.indexOf(primo); lay.riquadri.splice(i, 0, cibo)
+      for (const r of pasti) { r.nascosto = true; r.gruppo = null }
+      salva({ subito: true })
+    }
+  }
   // «la scrivania due»: tutto il programma, a pagina intera dentro Mirion (compare quando il riepilogo dice dov'è)
   // il programma del software, intero, dentro Mirion (le pagine complete delle card le disegna Mirion)
   const intera = el('a', { class: 'quieto piccolo prodotto-intera', href: '#gestionale?id=' + encodeURIComponent(p.id), hidden: haOggi(p) || (!p.programma?.ce && !p.online) }, ic('arrow-square-out'), 'Il programma')
@@ -381,6 +399,24 @@ function cardPasto (p, d, k, rifai) {
     el('button', { type: 'button', class: 'secondario piccolo', onclick: e => { aggiungi.hidden = !aggiungi.hidden; e.currentTarget.setAttribute('aria-expanded', String(!aggiungi.hidden)); if (!aggiungi.hidden) aggiungi.querySelector('input')?.focus() } }, ic('plus'), 'Aggiungi'),
     aggiungi)
   return box
+}
+// il cibo in una card (26-11-2026): le calorie che restano, i quattro pasti come bottoni con le loro calorie e, sotto, il pasto
+// scelto (all'inizio quello dell'ora) con cosa c'è dentro e «Aggiungi», che mette l'alimento proprio in quel pasto
+let pastoScelto = null
+const pastoDellOra = (d = new Date()) => { const m = d.getHours() * 60 + d.getMinutes(); return m < 630 ? 'colazione' : m < 900 ? 'pranzo' : m < 1110 ? 'spuntini' : 'cena' }
+function cardCibo (p, d, rifai) {
+  const box = el('div', { class: 'cibo-una' })
+  const disegna = () => {
+    const k = pastoScelto ?? pastoDellOra(), o = d.obiettivo ?? {}, m = d.mangiato ?? {}
+    box.replaceChildren(
+      el('div', {}, el('b', { class: 'oggi-medio', testo: numero(d.restano) }), el('span', { class: 'sopra', testo: ` kcal che restano · mangiate ${numero(m.kcal)} di ${numero(o.kcal)}` })),
+      barretta(m.kcal, o.kcal),
+      el('div', { class: 'scegli-pasto', role: 'group', 'aria-label': 'Il pasto' }, ...PASTI.map(([id, t]) => el('button', {
+        type: 'button', class: id === k ? 'scelto' : '', 'aria-pressed': String(id === k), onclick: () => { pastoScelto = id; disegna() },
+      }, el('b', { testo: t }), el('small', { testo: `${numero(d.perPasto?.[id]?.kcal ?? 0)} kcal` })))),
+      cardPasto(p, d, k, rifai))
+  }
+  disegna(); return box
 }
 // l'attività del giorno: le calorie bruciate; la si scrive nella sua pagina completa (⛶), dove c'è tutto
 function cardAttivita (p, d) {

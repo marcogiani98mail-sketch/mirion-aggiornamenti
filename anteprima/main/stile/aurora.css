@@ -74,7 +74,7 @@ body {
   backdrop-filter: blur(var(--vetro)) saturate(1.5); -webkit-backdrop-filter: blur(var(--vetro)) saturate(1.5);
   border-color: color-mix(in oklch, var(--linea) 75%, transparent); box-shadow: var(--luce), var(--ombra-vetro);
   border-radius: var(--r); }
-.cifra, .progetti-fila button, .libreria-carta, .voce-pannello, .mese-giorno, .aree-pannello li, .collegamenti-area li, .novita-squadra li, .app-voce, .invio-testo, .feedback-pannello {
+.cifra, .progetti-fila .progetto-testa, .libreria-carta, .voce-pannello, .mese-giorno, .aree-pannello li, .collegamenti-area li, .novita-squadra li, .app-voce, .invio-testo, .feedback-pannello {
   background: color-mix(in oklch, var(--alto) calc(var(--trasparenza) - 8%), transparent); border-color: color-mix(in oklch, var(--linea) 70%, transparent); }
 /* «Adesso»: vetro come le altre card, senza le luci colorate dell'aurora (Marco, 25-11 sera: «togli l'aurora dalla card principale») */
 .banner { background: color-mix(in oklch, var(--carta) var(--trasparenza), transparent);

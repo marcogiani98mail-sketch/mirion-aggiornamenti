@@ -5,12 +5,27 @@ import { ic } from './icone.js'
 import { casella } from './casella.js'
 import { conIA, pulsantiIA, obsidian } from './ia.js'
 
-// 4. i progetti in fila; un clic apre il resoconto
-export function progetti (lista, stanza) {
-  return el('section', { class: 'fascia progetti', 'aria-labelledby': 'prog-t' }, el('header', {}, el('h2', { id: 'prog-t', testo: 'I progetti' }), el('span', { class: 'sopra piccolo', testo: 'un clic per il resoconto' })),
-    lista.length ? el('ul', { class: 'progetti-fila' }, ...lista.map((p, i) => el('li', { class: 'entra', style: { '--i': i } }, el('button', { type: 'button', onclick: () => resoconto(p.cartella), 'aria-label': `Resoconto di ${p.nome}` },
-      el('div', { class: 'anello', style: { '--p': p.percento } }, el('span', { testo: p.percento + '%' })),
-      el('div', {}, el('b', { testo: p.nome }), el('small', { testo: `${p.fatte} fatte, ${p.aperte} aperte` }), el('small', { testo: `toccato ${quando(p.ultima)}` }))))))
+// 4. i progetti; un clic apre il resoconto. In fila finché la card è larga, uno sotto l'altro quando è stretta (Marco, 26-11:
+// «mettili di fila orizzontale solo se la card lo vuole, se no impilali»): la griglia si riempie da sola con lo spazio che c'è.
+// A schermo intero (#scrivania?pagina=progetti, «modalità desktop») ogni progetto mostra anche le sue prossime cose da fare.
+const PRIME = 4
+export function progetti (lista, stanza, { completa = false, task = [] } = {}) {
+  const sue = p => task.filter(k => k.nota === p.cartella || k.nota.startsWith(p.cartella + '/'))
+  const voce = (p, i) => {
+    const prossime = completa ? sue(p) : []
+    return el('li', { class: 'entra', style: { '--i': i } },
+      el('button', { type: 'button', class: 'progetto-testa', onclick: () => resoconto(p.cartella), 'aria-label': `Resoconto di ${p.nome}` },
+        el('div', { class: 'anello', style: { '--p': p.percento } }, el('span', { testo: p.percento + '%' })),
+        el('div', {}, el('b', { testo: p.nome }), el('small', { testo: `${p.fatte} fatte, ${p.aperte} aperte` }), el('small', { testo: `toccato ${quando(p.ultima)}` }))),
+      completa ? el('ul', { class: 'progetto-prossime' },
+        ...(prossime.length ? prossime.slice(0, PRIME).map(k => el('li', {}, el('span', { testo: k.testo.replace(/📅\s*\S+/u, '').trim() }), k.data ? el('small', { testo: quando(k.data) }) : '')) : [el('li', { class: 'vuoto', testo: p.aperte ? 'Le cose da fare sono nel resoconto.' : 'Niente da fare.' })]),
+        prossime.length > PRIME ? el('li', { class: 'altre' }, el('button', { type: 'button', class: 'quieto piccolo', onclick: () => resoconto(p.cartella), testo: `e altre ${prossime.length - PRIME}` })) : '') : '')
+  }
+  return el('section', { class: 'fascia progetti' + (completa ? ' completa' : ''), 'aria-labelledby': 'prog-t' },
+    el('header', {}, el('h2', { id: 'prog-t', testo: 'I progetti' }),
+      completa ? el('span', { class: 'sopra piccolo', testo: `${lista.length} ${lista.length === 1 ? 'progetto' : 'progetti'} · un clic per il resoconto` })
+        : el('a', { class: 'sopra piccolo', href: '#scrivania?pagina=progetti', testo: 'Tutti, a schermo intero' })),
+    lista.length ? el('ul', { class: 'progetti-fila' }, ...lista.map(voce))
       : el('p', { class: 'vuoto', testo: 'Nessuna cartella di progetto con cose da fare.' }))
 }
 

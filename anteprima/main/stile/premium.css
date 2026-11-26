@@ -45,9 +45,9 @@ svg.ic-duo [opacity] { fill: var(--viola); opacity: .35; }
 .libreria { border-style: dashed; border-color: var(--viola-bordo); }
 .cassetto { background: #1d1c1f; border-left-color: var(--linea-forte); }
 .guida-scatola, .primo-scatola { background: #1d1c1f; border-color: var(--linea-forte); }
-.cifra, .progetti-fila button, .libreria-carta, .voce-pannello, .mese-giorno, .aree-pannello li, .collegamenti-area li { background: var(--alto); border-color: var(--linea); }
+.cifra, .progetti-fila .progetto-testa, .libreria-carta, .voce-pannello, .mese-giorno, .aree-pannello li, .collegamenti-area li { background: var(--alto); border-color: var(--linea); }
 .cifra { border-radius: 12px; }
-.progetti-fila button:hover, .progetti-fila button:focus-visible, .mese-giorno:hover { border-color: var(--viola-bordo); background: var(--carta-2); }
+.progetti-fila .progetto-testa:hover, .progetti-fila .progetto-testa:focus-visible, .mese-giorno:hover { border-color: var(--viola-bordo); background: var(--carta-2); }
 
 /* «Adesso»: l'unica cosa forte, un campo viola profondo con una luce sola */
 .banner { position: relative; overflow: hidden; isolation: isolate; background: color-mix(in srgb, var(--viola) 12%, #121113); border: 1px solid var(--viola-bordo); border-radius: 20px; }
