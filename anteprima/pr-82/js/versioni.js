@@ -7,6 +7,9 @@ export const VERSIONI = [
   { versione: '0.1.47', data: '2026-11-26', titolo: 'La tapparella delle cartelle', novita: [
     'Nelle cartelle della scrivania lo spazio libero della barra delle schede è la tapparella: un clic chiude la cartella e un altro la riapre, e trascinandola sposti la cartella.',
   ] },
+  { versione: '0.1.46', data: '2026-11-26', titolo: 'Telefoni della scrivania larghi come uno vero', novita: [
+    'Nei telefoni di «Le app sul telefono» lo schermo è largo come un iPhone: Mirion Fit e Mirion Trainer si vedono interi, senza tagli e senza la barra per scorrere di lato.',
+  ] },
   { versione: '0.1.45', data: '2026-11-26', titolo: 'Mirion Fit e Mirion Trainer separati, il cruscotto della palestra', novita: [
     'Nella barra a sinistra Mirion Fit e Mirion Trainer sono due voci: i clienti stanno solo in Mirion Trainer.',
     '«La palestra» è il tuo cruscotto: quanti clienti sono attivi oggi, in 7 e in 30 giorni, e per ogni trainer la licenza e quando si è collegato. Puoi sospenderlo, riattivarlo o toglierlo, e dare una licenza nuova.',
