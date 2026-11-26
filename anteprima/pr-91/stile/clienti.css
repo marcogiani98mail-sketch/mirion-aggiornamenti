@@ -1,0 +1,234 @@
+/* La dashboard del personal trainer (clienti.js; Marco, 23-11-2026 sera: «dashboard animata… un'anteprima misurata come quella
+   che abbiamo creato»): le card entrano una dopo l'altra, gli anelli si riempiono, le linee si disegnano. Con «meno movimento»
+   nelle impostazioni del computer, tutto fermo. */
+@keyframes sale { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes riempi { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes disegna { to { stroke-dashoffset: 0; } }
+
+.clienti { display: grid; gap: 1.1rem; }
+.clienti-cima { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; }
+.clienti-cima .bottoni { margin-left: auto; }
+.clienti-club { font-size: clamp(1.6rem, 3vw, 2.3rem); cursor: text; }
+.clienti-cifre { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .8rem; }
+.clienti-cifra { display: grid; gap: .1rem; padding: .9rem 1rem; border-radius: 16px; border: 1px solid var(--linea); animation: sale .5s var(--curva, ease) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.clienti-cifra b { font: 650 1.9rem var(--titoli); }
+.clienti-cifra span { color: var(--tenue); font-size: .82rem; }
+.clienti-cifra.presto b { color: var(--presto); }
+.clienti-cifra.bene b { color: var(--bene); }
+
+.clienti-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 1rem; }
+.cliente-carta { display: grid; gap: .85rem; padding: 1.05rem 1.15rem; color: inherit; text-decoration: none; animation: sale .55s var(--curva, ease) both; animation-delay: calc(120ms + var(--i, 0) * 80ms);
+  transition: transform .18s var(--curva, ease), border-color .18s, box-shadow .18s; }
+.cliente-carta:hover { transform: translateY(-3px); border-color: var(--viola-bordo); box-shadow: var(--luce), 0 22px 44px -22px var(--viola); }
+.cliente-carta.fermo { border-color: color-mix(in oklch, var(--presto) 45%, var(--linea)); }
+.cliente-testa { display: flex; align-items: center; gap: .7rem; }
+.cliente-testa > div { display: grid; min-width: 0; flex: 1; }
+.cliente-testa b { font: 650 1.08rem var(--titoli); }
+.cliente-faccia { width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center; font: 700 .95rem var(--titoli); color: #fff;
+  background: linear-gradient(140deg, var(--tasto), color-mix(in oklch, var(--tasto) 60%, var(--accento-2))); box-shadow: inset 0 1px 0 rgb(255 255 255 / .25); }
+.cliente-faccia.grande { width: 54px; height: 54px; font-size: 1.15rem; }
+.cliente-demo { font-size: .7rem; font-style: normal; padding: .1rem .45rem; border-radius: 99px; border: 1px dashed var(--linea-forte); color: var(--tenue); }
+.cliente-stato { margin-left: auto; font-size: .74rem; font-weight: 600; padding: .2rem .55rem; border-radius: 99px; white-space: nowrap; }
+.cliente-stato.bene { color: var(--bene); background: color-mix(in oklch, var(--bene) 14%, transparent); }
+.cliente-stato.presto { color: var(--presto); background: color-mix(in oklch, var(--presto) 14%, transparent); }
+.cliente-piatto { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: center; }
+.cliente-macro { display: grid; gap: .4rem; }
+.cliente-macro .oggi-barra i, .clienti-pagina .oggi-barra i { animation: riempi 1s var(--curva, ease) both; transform-origin: left; }
+
+.anello-box { position: relative; width: 92px; height: 92px; display: grid; place-items: center; }
+.anello-box.grande { width: 140px; height: 140px; }
+.anello-cliente { position: absolute; inset: 0; width: 100%; height: 100%; }
+.anello-cliente circle { fill: none; stroke-width: 9; stroke-linecap: round; }
+.anello-cliente .fondo { stroke: color-mix(in oklch, var(--carta-2) 90%, transparent); }
+.anello-cliente .pieno { stroke: var(--viola); transition: stroke-dashoffset 1.2s var(--curva, ease); filter: drop-shadow(0 0 6px color-mix(in oklch, var(--viola) 50%, transparent)); }
+.anello-cliente.oltre .pieno { stroke: var(--presto); }
+.anello-centro { position: relative; display: grid; justify-items: center; line-height: 1.05; }
+.anello-centro b { font: 700 1.15rem var(--titoli); }
+.anello-box.grande .anello-centro b { font-size: 1.7rem; }
+.anello-centro small { color: var(--tenue); font-size: .66rem; }
+
+.cliente-senza { margin: 0; }
+.cliente-fila { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.cliente-fila > div:first-child { display: grid; }
+.cliente-fila b { font: 650 1.15rem var(--titoli); }
+.linea-peso { width: 110px; height: 32px; flex: none; }
+.linea-peso polyline { fill: none; stroke: var(--lilla); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 300; stroke-dashoffset: 300; animation: disegna 1.4s .3s var(--curva, ease) forwards; }
+.cliente-settimana { margin-left: auto; display: grid; gap: .25rem; justify-items: end; }
+.cliente-settimana span { display: flex; gap: .25rem; }
+.cliente-settimana i { width: 12px; height: 12px; border-radius: 4px; background: color-mix(in oklch, var(--carta-2) 90%, transparent); border: 1px solid var(--linea); }
+.cliente-settimana i.si { background: linear-gradient(140deg, var(--viola), var(--accento-2)); border-color: transparent; }
+.cliente-checkin { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .6rem; align-items: start; padding: .55rem .7rem; border-radius: 12px; background: var(--viola-tenue); }
+.cliente-checkin p { margin: .1rem 0 0; font-size: .9rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cliente-umore { font-size: 1.4rem; line-height: 1; }
+.clienti-nota { max-width: 80ch; }
+
+/* la pagina di un cliente */
+.clienti-pagina > * { animation: sale .5s var(--curva, ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.cliente-oggi { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.2rem; align-items: center; }
+.cliente-pasti { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .8rem 1.2rem; }
+.cliente-checkin-elenco { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.cliente-checkin-elenco li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .7rem; padding: .6rem .75rem; border-radius: 12px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--alto) 55%, transparent); }
+.cliente-checkin-elenco p { margin: .1rem 0; }
+.cliente-checkin-elenco blockquote { margin: .3rem 0 0; padding-left: .7rem; border-left: 3px solid var(--viola); color: var(--testo-2); }
+
+/* l'invito con il QR */
+.invito-scatola { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 420px); display: grid; gap: .8rem; justify-items: center; text-align: center; padding: 1.4rem; z-index: 50;
+  border-radius: 22px; background: var(--carta); border: 1px solid var(--linea-forte); box-shadow: var(--ombra-su, 0 30px 80px -24px rgb(0 0 0 / .7)); }
+.invito-qr { width: min(70vw, 280px); padding: .6rem; border-radius: 16px; background: #fff; }
+.invito-qr svg { display: block; width: 100%; height: auto; }
+.invito-url { font-size: .72rem; word-break: break-all; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cliente-carta, .clienti-cifra, .clienti-pagina > * { animation: none; }
+  .linea-peso polyline { animation: none; stroke-dashoffset: 0; }
+  .anello-cliente .pieno { transition: none; }
+  .cliente-macro .oggi-barra i, .clienti-pagina .oggi-barra i { animation: none; }
+}
+@media (max-width: 760px) { .cliente-oggi { grid-template-columns: 1fr; justify-items: center; } .clienti-cima .bottoni { margin-left: 0; } }
+
+/* i dati di Claudio, l'app per palestre (claudio.mjs): da dove arrivano, l'abbonamento, le misure */
+.cliente-fonti { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin-top: -.35rem; }
+.cliente-fonti span { font-size: .68rem; font-weight: 600; letter-spacing: .02em; padding: .12rem .5rem; border-radius: 99px; color: var(--lilla); background: var(--viola-tenue); border: 1px solid var(--viola-bordo); }
+.cliente-fonti small { margin-left: .2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.cliente-palestra { display: grid; gap: .35rem; padding: .55rem .7rem; border-radius: 12px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--alto) 55%, transparent); }
+.cliente-palestra > div { display: grid; gap: .3rem; }
+.cliente-palestra.presto { border-color: color-mix(in oklch, var(--presto) 50%, var(--linea)); }
+.oggi-barra.abbonamento i { background: linear-gradient(90deg, var(--bene), color-mix(in oklch, var(--bene) 60%, var(--viola))); }
+.presto .oggi-barra.abbonamento i { background: var(--presto); }
+.cliente-misure { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .9rem 1rem; }
+.cliente-misura { display: grid; gap: .1rem; }
+.cliente-misura b { font: 650 1.25rem var(--titoli); }
+.cliente-misura .linea-peso { width: 100%; max-width: 140px; margin-top: .2rem; }
+.cliente-abbonamenti li { align-items: center; }
+.cliente-abbonamenti li > div { display: grid; gap: .3rem; flex: 1; }
+.cliente-abbonamenti li.presto span { color: var(--presto); }
+.cliente-abbina { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.cliente-abbina select { width: auto; min-width: 200px; }
+
+/* Clienti e conti: il nucleo di Mirion (app/js/conti.js, 25-11-2026) */
+.conti-stanza { display: grid; gap: 1rem; }
+.conti-cifre { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; }
+.conti-cifra { display: grid; gap: .15rem; padding: .7rem .8rem; border: 1px solid var(--linea); border-radius: 14px; }
+.conti-cifra b { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.conti-cifra.attenzione { border-color: var(--scaduto); }
+.conti .attenzione, .conti-importo.attenzione { color: var(--scaduto); }
+.conti-fisco { margin-top: .6rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.conti-colonne { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.conti-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.conti-riga { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: .5rem; padding: .35rem 0; border-bottom: 1px solid var(--linea); }
+.conti-riga > div { min-width: 0; display: grid; }
+.conti-importo { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.conti-nome { display: grid; justify-items: start; justify-content: start; justify-self: stretch; width: 100%; text-align: left; padding: 0; min-width: 0; font-size: 1rem; }
+.conti-nome > div { display: grid; justify-items: start; }
+.conti-clienti .conti-riga { grid-template-columns: 1fr auto; }
+.conti-sotto { margin: .8rem 0 .3rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+.conti-dati { display: grid; grid-template-columns: max-content 1fr; gap: .2rem .8rem; margin: .4rem 0 .8rem; }
+.conti-dati dt { color: var(--tenue, inherit); }
+.conti-dati dd { margin: 0; }
+.conti-modulo { display: grid; gap: .5rem; margin-top: .6rem; }
+.conti-campo { display: grid; gap: .2rem; font-size: .85rem; }
+.conti-riga-prev { display: grid; grid-template-columns: 1fr 4rem 6rem; gap: .4rem; }
+.conti-aggiungi summary { cursor: pointer; margin-top: .6rem; }
+@media (max-width: 600px) { .conti-riga { grid-template-columns: 1fr auto; } }
+
+/* il QR di Mirion Fit senza licenza: il campo per incollarla; sulla Mirion di Marco, la licenza per un altro trainer (25-11) */
+.invito-scatola .licenza-campo, .licenza-altro input { width: 100%; margin: 6px 0; box-sizing: border-box; font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--linea-forte); background: var(--carta-2); color: var(--testo); }
+.licenza-altro { margin-top: 12px; text-align: left; }
+.licenza-altro summary { cursor: pointer; color: var(--testo-2); }
+
+/* gli allenamenti di Mirion Fit (25-11-2026): il cerchio delle prestazioni, le sedute con un fastidio, i messaggi su un dolore */
+.cerchio-fit { margin: 4px auto 8px; max-width: 260px; }
+.cerchio-fit svg { display: block; width: 100%; height: auto; overflow: visible; }
+.cerchio-fit .cerchio-vuoto { fill: var(--linea-forte); }
+.cerchio-fit .cerchio-pieno { fill: var(--viola, #b666ce); }
+.cerchio-fit .cerchio-pieno.debole { fill: var(--presto, #f6bb66); }
+.cerchio-fit .cerchio-nome { fill: var(--testo-2); font: 600 11px Inter, system-ui, sans-serif; }
+.cerchio-fit .cerchio-punti { fill: var(--testo); font: 700 30px "Bricolage Grotesque", Inter, system-ui, sans-serif; }
+.cerchio-fit .cerchio-sotto { fill: var(--tenue); font: 500 11px Inter, system-ui, sans-serif; }
+.cliente-checkin-elenco li.con-fastidio .cliente-umore { color: var(--presto, #f6bb66); font-weight: 700; }
+.bolla.bolla-dolore { border-left: 3px solid var(--presto, #f6bb66); }
+.cerchio-fit path, .cerchio-fit text { stroke: none; }
+
+/* la dashboard a card dei clienti (25-11-2026): da guardare oggi, il cerchio della squadra, le sedute di oggi */
+.clienti-cruscotto { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin: 4px 0 14px; }
+@media (max-width: 1100px) { .clienti-cruscotto { grid-template-columns: 1fr 1fr; } .cruscotto-guarda { grid-column: 1 / -1; } }
+@media (max-width: 720px) { .clienti-cruscotto { grid-template-columns: 1fr; } }
+.cruscotto-carta { padding: 1rem 1.1rem; display: grid; align-content: start; gap: .6rem; }
+.cruscotto-carta > header { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.cruscotto-carta h2 { margin: 0; font-size: 1.02rem; }
+.guarda-elenco { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.guarda-elenco a { display: flex; gap: .7rem; align-items: flex-start; padding: .55rem .65rem; border-radius: 12px; color: inherit; text-decoration: none; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.guarda-elenco a:hover { background: color-mix(in oklch, var(--testo) 8%, transparent); }
+.guarda-elenco li.urgente a { background: color-mix(in oklch, var(--presto) 10%, transparent); box-shadow: inset 3px 0 0 var(--presto); }
+.guarda-elenco b { display: block; font-weight: 600; }
+.guarda-elenco p { margin: 2px 0 0; color: var(--testo-2); font-size: .86rem; }
+.guarda-icona { font-size: 1.15rem; width: 1.6rem; text-align: center; flex: none; }
+.cruscotto-media { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem; }
+.cruscotto-media b { font: 700 2.6rem/1 var(--titoli); background: linear-gradient(140deg, var(--lilla), var(--accento-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cruscotto-media em { font-style: normal; font-size: .82rem; width: 100%; }
+.cruscotto-classifica { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cruscotto-classifica a { display: grid; grid-template-columns: minmax(0, 7rem) 1fr 2rem; align-items: center; gap: .6rem; color: inherit; text-decoration: none; font-size: .88rem; }
+.cruscotto-classifica span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cruscotto-classifica b { text-align: right; font-family: var(--titoli); }
+.cruscotto-classifica i { height: 6px; border-radius: 6px; background: color-mix(in oklch, var(--testo) 8%, transparent); position: relative; overflow: hidden; }
+.cruscotto-classifica i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--pieno); border-radius: 6px; background: linear-gradient(90deg, var(--viola), var(--lilla)); }
+.cruscotto-classifica i.basso::after { background: linear-gradient(90deg, var(--accento-2), var(--presto)); }
+.cruscotto-oggi a { display: grid; gap: 2px; color: inherit; text-decoration: none; }
+.trainer-passi { margin: .2rem 0; padding-left: 1.2rem; text-align: left; display: grid; gap: .3rem; font-size: .88rem; }
+
+/* gli accessi alle app nella Squadra di Marco (accessi-app.js, 26-11-2026) */
+.accessi-app { display: grid; gap: .6rem; }
+.accessi-app h3 { font: 600 .95rem var(--titoli, inherit); margin: .6rem 0 0; }
+.accessi-app .app-licenza { display: grid; grid-template-columns: 2fr 1.2fr auto auto; gap: .5rem; align-items: center; }
+@media (max-width: 760px) { .accessi-app .app-licenza { grid-template-columns: 1fr; } }
+.accessi-app details summary { cursor: pointer; color: var(--testo-2); font-size: .9rem; }
+.licenze-date li .bottoni { margin-top: .3rem; }
+
+/* La guida animata di un esercizio, come in Mirion Fit (26-11-2026, fit-guida.js) */
+.guida-desk { --lilla: #9d6bff; --fondo: #0d0a18; --tenue: #a99cc4; --accento-2: #ff9a6b; width: min(94vw, 440px); justify-items: stretch; text-align: left; background: #120e1f; color: #f1ecff; }
+.guida-desk h2 { text-align: center; margin: 0; }
+.guida-anteprima { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 4px; border-radius: 18px; background: color-mix(in oklch, var(--lilla) 7%, var(--fondo)); border: 1px solid color-mix(in oklch, var(--lilla) 14%, transparent); }
+.guida-anteprima .guida-svg { width: 112px; flex: none; }
+.guida-anteprima-testo { display: flex; flex-direction: column; gap: 3px; }
+.guida-anteprima-testo b { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 18px; }
+.guida-via { margin-top: 2px; }
+.guida-svg { display: block; overflow: visible; }
+.guida-svg .g-terra { stroke: color-mix(in oklch, var(--lilla) 30%, transparent); stroke-width: 1.5; }
+.guida-svg .g-ombra { fill: rgb(0 0 0 / 35%); }
+.guida-svg .g-parallelo { stroke: color-mix(in oklch, var(--lilla) 35%, transparent); stroke-width: 1.2; stroke-dasharray: 4 4; transition: stroke .2s; }
+.guida-svg .g-parallelo.preso { stroke: var(--accento-2, #ff9a6b); stroke-dasharray: none; stroke-width: 2; }
+.guida-svg .g-parallelo-t { font: 600 8px Inter, sans-serif; fill: color-mix(in oklch, var(--lilla) 55%, transparent); letter-spacing: .04em; text-transform: uppercase; }
+.guida-svg .g-parallelo-t.preso { fill: var(--accento-2, #ff9a6b); }
+.guida-svg .g-fig { filter: drop-shadow(0 0 6px rgb(157 107 255 / 45%)); transition: opacity .3s; }
+.guida-svg.spenta .g-fig { opacity: .45; }
+.guida-es { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.guida-palco { position: relative; display: grid; place-items: center; border-radius: 22px; padding: 8px 0 0; background: radial-gradient(120% 90% at 50% 20%, color-mix(in oklch, var(--lilla) 16%, transparent), transparent 70%), var(--fondo); border: 1px solid color-mix(in oklch, var(--lilla) 16%, transparent); overflow: hidden; }
+.guida-svg.grande { width: min(300px, 78vw); }
+.guida-riposo { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(5 4 11 / 55%); backdrop-filter: blur(3px); }
+.guida-riposo[hidden] { display: none; }
+.guida-anello { width: 170px; height: 170px; transform: rotate(-90deg); grid-area: 1 / 1; }
+.guida-anello circle { fill: none; stroke-width: 8; }
+.guida-anello .fondo { stroke: color-mix(in oklch, var(--lilla) 18%, transparent); }
+.guida-anello .avanza { stroke: url(#g-lavora); stroke: var(--accento-2, #ff9a6b); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 0; }
+.guida-riposo-testo { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; }
+.guida-riposo-testo b { font: 700 52px/1 'Space Grotesk', Inter, sans-serif; }
+.guida-riposo-testo small { color: var(--tenue); font-size: 13px; }
+.guida-frase { text-align: center; font: 600 22px/1.2 'Space Grotesk', Inter, sans-serif; margin: 2px 0 0; min-height: 1.2em; background: linear-gradient(90deg, #c9a8ff, #ff9a6b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.guida-numeri { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 18px; background: color-mix(in oklch, var(--lilla) 6%, var(--fondo)); }
+.guida-rip { display: flex; align-items: baseline; gap: 6px; }
+.guida-rip b { font: 700 46px/1 'Space Grotesk', Inter, sans-serif; font-variant-numeric: tabular-nums; }
+.guida-rip span { color: var(--tenue); font-size: 13px; max-width: 7em; line-height: 1.2; }
+.guida-serie { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-weight: 600; }
+.guida-puntini { display: flex; gap: 6px; }
+.guida-puntini i { display: block; flex: none; width: 12px; height: 12px; border-radius: 50%; background: color-mix(in oklch, var(--lilla) 20%, transparent); }
+.guida-puntini i.fatto { background: linear-gradient(135deg, #9d6bff, #ff9a6b); }
+.guida-puntini i.adesso { box-shadow: 0 0 0 2px var(--accento-2, #ff9a6b) inset; animation: g-pulsa 1.2s ease-in-out infinite; }
+@keyframes g-pulsa { 50% { transform: scale(1.25); } }
+.guida-bottoni { display: flex; gap: 8px; }
+.guida-bottoni .btn { flex: 1; min-height: 48px; font-size: 16px; }
+.guida-scelte { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.guida-desk { max-height: 94vh; overflow: auto; }
+.guida-desk .guida-svg.grande { width: 240px; height: auto; }
+.guida-desk .guida-anello { width: 150px; height: 150px; }
+.guida-desk .guida-palco { min-height: 0; }
+.guida-svg .g-alone, .guida-svg .g-ombra, .guida-svg text, .guida-svg .g-testa { stroke: none; }
