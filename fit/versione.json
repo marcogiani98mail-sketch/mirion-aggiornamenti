@@ -1,9 +1,9 @@
 {
-  "versione": "1.0.11",
-  "codice": 11,
-  "note": "La prova di Mirion Trainer con clienti inventati.",
-  "byte": 552667,
-  "sha256": "fa3e9b91f803ba123da89dc9e3240ba2a31d70e22c2e20bc00a3e98c81428cc2",
-  "quando": "2026-11-26T18:19:05.711Z",
-  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=11"
+  "versione": "1.0.13",
+  "codice": 13,
+  "note": "",
+  "byte": 544329,
+  "sha256": "d62c47b0791041aaccad7ca3795cfc45d9b753db6ce53aa2f0f617c93b1ed8cc",
+  "quando": "2026-11-26T18:55:52.513Z",
+  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=13"
 }
