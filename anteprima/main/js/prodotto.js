@@ -529,8 +529,11 @@ function apriGuida (p, rifai, id, nome) {
 }
 function cardAllenamento (p, d, rifai) {
   const es = Array.isArray(d.esercizi) ? d.esercizi : []
-  const guide = el('p', { class: 'guida-scelte' }, el('small', { class: 'sopra', testo: 'Con la guida animata: ' }),
-    ...[['es:squat', 'Squat'], ['es:front-squat', 'Front squat'], ['es:goblet-squat', 'Goblet squat']].map(([id, n]) => el('button', { type: 'button', class: 'secondario piccolo', onclick: () => apriGuida(p, rifai, id, n) }, ic('target'), n)))
+  // la guida animata per tutti gli esercizi che ce l'hanno (26-11-2026 sera: la figura premium, fit-guida.js), come in Mirion Fit
+  const nomi = Object.fromEntries((d.completo?.libreria ?? []).map(e => [e.id, e.nome]))
+  const scelta = el('select', { 'aria-label': 'L’esercizio con la guida animata' }, ...Object.keys(G.MOVIMENTI).filter(id => nomi[id]).map(id => el('option', { value: id, testo: nomi[id] })))
+  const guide = el('p', { class: 'guida-scelte' }, el('small', { class: 'sopra', testo: 'Con la guida animata: ' }), scelta,
+    el('button', { type: 'button', class: 'secondario piccolo', onclick: () => apriGuida(p, rifai, scelta.value, nomi[scelta.value]) }, ic('target'), 'Allenati'))
   const nome = el('input', { placeholder: 'Esercizio (es. Panca piana)', 'aria-label': 'L’esercizio', required: true, maxlength: 60 })
   const serie = el('input', { type: 'number', min: 1, max: 20, value: 3, class: 'numero-breve', 'aria-label': 'Serie' })
   const rip = el('input', { type: 'number', min: 1, max: 200, value: 10, class: 'numero-breve', 'aria-label': 'Ripetizioni per serie' })
@@ -579,8 +582,8 @@ function cardLibreria (p, d, rifai) {
   riempiElenco()
   return [el('small', { class: 'sopra', testo: `${tutti.length} allenamenti pronti per la palestra, con i pesi` }), filtri, elenco]
 }
-// «Gli esercizi»: come si fanno, l'ultima volta e il record; la guida animata per lo squat (fit-guida.js)
-const CON_GUIDA = ['es:squat', 'es:front-squat', 'es:goblet-squat']
+// «Gli esercizi»: come si fanno, l'ultima volta e il record; la guida animata dove c'è (fit-guida.js)
+const CON_GUIDA = Object.keys(G.MOVIMENTI)
 function cardEsercizi (p, d, rifai) {
   const tutti = d.completo?.libreria ?? []
   if (!tutti.length) return el('p', { class: 'vuoto', testo: 'Gli esercizi arrivano con Mirion Fit aggiornato.' })
@@ -588,14 +591,14 @@ function cardEsercizi (p, d, rifai) {
   const cerca = el('input', { type: 'search', placeholder: 'Cerca un esercizio o un muscolo', 'aria-label': 'Cerca un esercizio', oninput: () => mostraEs() })
   const mostraEs = () => {
     const q = cerca.value.trim().toLowerCase()
-    const scelti = tutti.filter(e => !q || e.nome.toLowerCase().includes(q) || (e.muscoli ?? []).join(' ').toLowerCase().includes(q)).slice(0, q ? 40 : 12)
+    const scelti = tutti.filter(e => !q || e.nome.toLowerCase().includes(q) || [].concat(e.muscoli ?? []).join(' ').toLowerCase().includes(q)).slice(0, q ? 40 : 12)
     elenco.replaceChildren(...scelti.map(e => {
       const det = el('div', { class: 'esercizio-come', hidden: true },
         (e.passi ?? []).length ? el('ol', {}, ...e.passi.map(x => el('li', { testo: x }))) : null,
         e.attenzione ? el('p', { class: 'sopra piccolo presto', testo: 'Attenzione: ' + e.attenzione }) : null)
       return el('li', {},
         el('div', {}, el('button', { type: 'button', class: 'quieto esercizio-nome', 'aria-expanded': 'false', onclick: ev => { det.hidden = !det.hidden; ev.currentTarget.setAttribute('aria-expanded', String(!det.hidden)) } }, el('b', { testo: e.nome })),
-          el('small', { class: 'sopra', testo: [(e.muscoli ?? []).join(', '), e.attrezzo, e.record?.kg ? `record ${e.record.kg} kg × ${e.record.ripetizioni}` : null, e.ultimaVolta ? `l’ultima volta ${e.ultimaVolta.giorno.slice(8)}/${e.ultimaVolta.giorno.slice(5, 7)}` : null].filter(Boolean).join(' · ') }), det),
+          el('small', { class: 'sopra', testo: [[].concat(e.muscoli ?? []).join(', '), e.attrezzo, e.record?.kg ? `record ${e.record.kg} kg × ${e.record.ripetizioni}` : null, e.ultimaVolta ? `l’ultima volta ${e.ultimaVolta.giorno.slice(8)}/${e.ultimaVolta.giorno.slice(5, 7)}` : null].filter(Boolean).join(' · ') }), det),
         CON_GUIDA.includes(e.id) ? el('button', { type: 'button', class: 'secondario piccolo', onclick: () => apriGuida(p, rifai, e.id, e.nome) }, ic('target'), 'Guida') : null)
     }))
   }

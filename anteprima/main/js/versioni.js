@@ -4,6 +4,10 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.56', data: '2026-11-26', titolo: 'File e immagini nella chat della squadra', novita: [
+    'Nella chat della Squadra alleghi file e immagini: con la graffetta, incollandole (Ctrl V) o trascinandole sulla chat. Fino a 6 per messaggio, 20 MB l’uno.',
+    'Le immagini si vedono nella chat e si aprono grandi con un clic; gli altri file si salvano con un clic. Viaggiano con GitHub come i messaggi e si vedono anche in Obsidian.',
+  ] },
   { versione: '0.1.55', data: '2026-11-26', titolo: 'Accessi beta e la Squadra con le card in più', novita: [
     'Nella Squadra, solo per Marco, la card «Accessi beta»: chi ha aperto Mirion Trainer e quando, i clienti nuovi su Mirion Fit (dei trainer solo i numeri), le licenze date con chi le ha usate e l’ultimo invio di ognuno da Mirion sul computer. Si mette anche sulla scrivania.',
     'Quando qualcuno apre Mirion Trainer o si collega un cliente nuovo ti arriva una notifica.',

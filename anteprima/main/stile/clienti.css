@@ -291,3 +291,19 @@
 .misura-campo { display: grid; gap: 2px; }
 .libreria-voci b { display: block; }
 .check-voti button { border: 1px solid var(--linea); border-radius: 8px; }
+/* la figura premium della guida (26-11-2026 sera): volumi, lato lontano più scuro, muscolo acceso, scia, attrezzi */
+.guida-svg .g-terra { stroke: url(#g2-terra); stroke-width: 1.6; }
+.guida-svg .g-ombra { fill: url(#g2-ombra); }
+.guida-svg .g-fig { filter: drop-shadow(0 6px 10px rgb(10 4 30 / 45%)) drop-shadow(0 0 8px rgb(157 107 255 / 28%)); }
+.guida-svg .g-pezzo.lontano, .guida-svg .g-mano.lontano, .guida-svg .lontano { opacity: .92; }
+.guida-svg .g-lavora { filter: url(#g2-luce); mix-blend-mode: screen; transition: opacity .12s linear; }
+.guida-svg .g-scia path, .guida-svg .g-scia circle { fill: #b892ff; }
+.guida-svg .g-scia { filter: blur(1.2px); }
+.guida-svg .g-panca { fill: #2c2244; stroke: color-mix(in oklch, var(--lilla) 40%, transparent); stroke-width: 1; }
+.guida-svg .g-panca-gamba { fill: #1d1630; }
+.guida-svg .g-sbarra { stroke: #cfc6e3; stroke-width: 4; stroke-linecap: round; }
+.guida-svg .g-panca-gamba-l { stroke: #2c2244; stroke-width: 4; }
+@media (prefers-reduced-motion: reduce) { .guida-svg .g-scia { display: none; } }
+.guida-svg .g-fig path, .guida-svg .g-fig circle:not(.g-disco circle), .guida-svg .g-scia path, .guida-svg .g-scia circle { stroke: none; }
+.guida-desk .guida-puntini i { width: 12px; height: 12px; min-width: 0; padding: 0; margin: 0; border: 0; font-size: 0; }
+.guida-desk .guida-svg.grande { width: 300px; }

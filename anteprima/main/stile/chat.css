@@ -124,3 +124,22 @@ body[data-stanza="lavagne"] main { overflow: hidden; padding-bottom: 0; scrollba
 .lavagna-sola:fullscreen { background: var(--fondo); padding: 0; }
 .lavagna-sola:fullscreen .tela { height: 100%; }
 .task-testa .viste { grid-template-columns: repeat(auto-fit, minmax(82px, 1fr)); } /* sei viste (Marco, 22-11) */
+
+/* gli allegati della chat della squadra (squadre.js, 26-11 sera) */
+.chat-allegati { display: flex; flex-wrap: wrap; gap: .4rem; padding: .5rem .8rem 0; }
+.chat-allegati[hidden] { display: none; }
+.allegato-pronto { display: inline-flex; align-items: center; gap: .35rem; max-width: 100%; padding: .25rem .3rem .25rem .6rem; border-radius: 999px; border: 1px solid var(--linea-forte); font-size: .82rem; }
+.allegato-pronto > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14rem; }
+.allegato-pronto small { color: var(--tenue); }
+.allegato-pronto button { padding: .1rem; border-radius: 50%; display: inline-grid; place-items: center; }
+.chat-scrivi.ci-cade { outline: 2px dashed var(--viola); outline-offset: -4px; }
+.chat-scrivi .chat-graffetta { background: transparent; border: 1px solid var(--linea-forte); color: var(--testo); }
+.bolla-allegati { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .35rem; margin: .3rem 0 .15rem; }
+.allegato-foto { padding: 0; border: 0; background: none; border-radius: 10px; overflow: hidden; cursor: zoom-in; }
+.allegato-immagine { display: block; max-width: min(260px, 100%); max-height: 220px; border-radius: 10px; object-fit: cover; min-width: 60px; min-height: 40px; background: var(--alto); }
+.allegato-file { display: inline-flex; align-items: center; gap: .4rem; max-width: 100%; padding: .45rem .6rem; border-radius: 10px; border: 1px solid var(--linea-forte); background: var(--alto); color: var(--testo); font: inherit; font-size: .84rem; cursor: pointer; }
+.allegato-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14rem; }
+.allegato-file small { color: var(--tenue); }
+.allegato-grande { border: 0; padding: .6rem; border-radius: 14px; background: var(--carta, #150e18); max-width: 92vw; max-height: 92vh; }
+.allegato-grande::backdrop { background: rgb(0 0 0 / .7); }
+.allegato-grande img { display: block; max-width: 88vw; max-height: 80vh; border-radius: 10px; margin-bottom: .5rem; }
