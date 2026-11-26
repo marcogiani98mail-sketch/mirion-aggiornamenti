@@ -1,0 +1,51 @@
+/* La stanza «Claude» (claude.js, 25-11-2026): la chat usa le bolle di chat.css; qui il tetto in cima, le proposte da
+   approvare dentro le risposte di Claude, e la dashboard dei consumi (le cifre come in «Clienti e conti»). */
+.claude-tetto { display: grid; gap: .35rem; min-width: min(100%, 260px); }
+.claude-barra { height: 8px; border-radius: 99px; background: var(--carta-2); overflow: hidden; }
+.claude-barra i { display: block; height: 100%; border-radius: inherit; background: var(--viola); transition: width .4s var(--curva, ease); }
+.claude-tetto.quasi .claude-barra i { background: var(--presto); }
+.claude-tetto.finito .claude-barra i { background: var(--scaduto); }
+.claude-tetto.finito small { color: var(--scaduto); }
+.claude-avviso { margin-bottom: 1rem; border-color: color-mix(in srgb, var(--presto) 45%, var(--linea)); }
+.claude-avviso p { margin: 0 0 .6rem; }
+
+.claude-chat { height: min(74vh, 820px); padding: 0; }
+.claude-chat .chat-telefono { max-width: none; }
+.claude-chat .chat-testa small { display: block; margin-top: .2rem; }
+.claude-bollino { margin-left: auto; min-width: 1.3rem; padding: 0 .35rem; border-radius: 99px; background: var(--presto); color: #1a1206; font-size: .7rem; text-align: center; }
+.claude-togli { margin-top: auto; align-self: flex-start; }
+.claude-bolla { max-width: 88%; }
+.claude-bolla .nota-letta > :first-child { margin-top: 0; }
+.claude-bolla .nota-letta > :last-child { margin-bottom: 0; }
+.claude-proposta { display: grid; gap: .35rem; padding: .6rem .7rem; border-radius: 12px; border: 1px dashed var(--viola); background: var(--viola-tenue); }
+.claude-proposta p { margin: 0; }
+.claude-proposta pre { margin: .3rem 0 0; max-height: 240px; overflow: auto; white-space: pre-wrap; font-size: .78rem; }
+.claude-proposta.applicata { border-style: solid; border-color: color-mix(in srgb, var(--bene) 55%, transparent); background: color-mix(in srgb, var(--bene) 10%, transparent); }
+.claude-proposta.scartata { opacity: .6; }
+
+.claude-consumi { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.claude-consumi > *, .claude-due > * { min-width: 0; }
+.claude-consumi h2 { margin: 0 0 .7rem; font: 600 1rem var(--titoli); }
+.claude-giorni { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: .3rem; }
+.claude-giorni i { flex: 1; min-width: 3px; border-radius: 3px 3px 0 0; background: var(--viola); opacity: .85; }
+.claude-giorni i:hover { opacity: 1; }
+.claude-due { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 1rem; }
+.claude-tabella { overflow-x: auto; }
+.claude-tabella table { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.claude-tabella th { text-align: left; font-weight: 500; color: var(--tenue); padding: .3rem .5rem; border-bottom: 1px solid var(--linea); }
+.claude-tabella td { padding: .4rem .5rem; border-bottom: 1px solid var(--linea); }
+.claude-tabella tr.errore td { color: var(--scaduto); }
+.claude-imposta { display: grid; gap: .8rem; }
+.claude-imposta label { display: grid; gap: .3rem; }
+.claude-imposta label span { color: var(--testo-2); font-size: .85rem; }
+.claude-imposta input, .claude-imposta select { max-width: 640px; }
+
+@media (max-width: 760px) {
+  .claude-chat { grid-template-columns: 1fr; height: auto; }
+  .claude-chat .chat-lista { max-height: 200px; }
+  .claude-chat .chat-telefono { height: 70vh; }
+}
+@media (prefers-reduced-motion: reduce) { .claude-barra i { transition: none; } }
+.claude-testa-riga { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.claude-chat .chat-lista select { width: 100%; }
+.claude-abbonamento { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
