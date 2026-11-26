@@ -4,6 +4,7 @@
 import { el, api, $ } from './base.js'
 
 const MB = n => (n / 1048576).toLocaleString('it-IT', { maximumFractionDigits: 0 })
+const PESO = n => n < 1048576 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1048576).toLocaleString('it-IT', { maximumFractionDigits: 1 })} MB`
 let riquadro = null
 
 // la notifica «C'è Mirion X» resta finché non la chiudi o premi «Aggiorna» (prima spariva dopo 20 secondi)
@@ -38,12 +39,18 @@ export async function aggiornaOra () {
   $('[data-notifiche]').append(riquadro)
   const mostra = p => {
     const v = p.versione ? ` ${p.versione}` : ''
-    if (p.fase === 'scarico') {
+    // a pezzi (26-11, server/pezzi.mjs): solo i file cambiati, di solito qualche centinaio di KB
+    if (p.fase === 'confronto') { titolo.textContent = `Aggiorno Mirion${v}…`; dettaglio.textContent = 'Guardo quali file sono cambiati'; barra.removeAttribute('value') }
+    else if (p.fase === 'scarico' && p.pezzi) {
+      titolo.textContent = `Scarico Mirion${v}…`
+      const pc = p.totale ? Math.min(100, Math.round(p.fatti / p.totale * 100)) : 100; barra.value = pc
+      dettaglio.textContent = `Solo i file cambiati: ${PESO(p.fatti ?? 0)} di ${PESO(p.totale ?? 0)} · puoi continuare a lavorare`
+    } else if (p.fase === 'scarico') {
       titolo.textContent = `Scarico Mirion${v}…`
       if (p.totale) { const pc = Math.min(100, Math.round(p.fatti / p.totale * 100)); barra.value = pc; dettaglio.textContent = `${pc}% · ${MB(p.fatti)} di ${MB(p.totale)} MB · puoi continuare a lavorare` }
       else { barra.removeAttribute('value'); dettaglio.textContent = `${MB(p.fatti ?? 0)} MB scaricati · puoi continuare a lavorare` }
     } else if (p.fase === 'impronta') { titolo.textContent = `Controllo Mirion${v}…`; dettaglio.textContent = 'Guardo che il file sia quello giusto'; barra.value = 100 }
-    else if (p.fase === 'apro') { titolo.textContent = `Installo Mirion${v}…`; dettaglio.textContent = 'Apro l’installatore'; barra.removeAttribute('value') }
+    else if (p.fase === 'apro') { titolo.textContent = `Installo Mirion${v}…`; dettaglio.textContent = p.pezzi ? 'Preparo la versione nuova' : 'Apro l’installatore'; barra.removeAttribute('value') }
   }
   const giro = setInterval(() => api('/api/aggiornamenti/stato').then(mostra).catch(() => {}), 500)
   try {
@@ -53,7 +60,7 @@ export async function aggiornaOra () {
     if (x?.chiude === false && /^https:/.test(x.pronto ?? '')) { titolo.textContent = 'Scarica la versione per Mac'; dettaglio.textContent = x.avviso; barra.value = 100; chiudibile() }
     else if (x?.chiude === false) { titolo.textContent = 'Serve il permesso'; dettaglio.textContent = x.avviso || 'L’installatore chiede il permesso dell’amministratore e riapre Mirion aggiornata.'; chiudibile() }
     else if (x?.chiude) { riquadro.classList.add('chiude'); titolo.textContent = 'Mirion si chiude e si riapre aggiornata'; dettaglio.textContent = 'Fra qualche secondo. Non spegnere il computer.' }
-    else { titolo.textContent = 'Aggiornamento pronto'; dettaglio.textContent = 'Scaricato e controllato (in prova: l’installatore non si apre).'; barra.value = 100; chiudibile() }
+    else { titolo.textContent = 'Aggiornamento pronto'; dettaglio.textContent = x?.pezzi ? 'Solo i file cambiati, scaricati e controllati (in prova: Mirion non si riapre).' : 'Scaricato e controllato (in prova: l’installatore non si apre).'; barra.value = 100; chiudibile() }
   } catch (e) {
     clearInterval(giro)
     riquadro.classList.add('errore'); titolo.textContent = 'L’aggiornamento non è andato'; dettaglio.textContent = e.message; barra.hidden = true

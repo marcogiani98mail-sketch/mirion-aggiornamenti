@@ -9,6 +9,10 @@ export const VERSIONI = [
     'Quando qualcuno apre Mirion Trainer o si collega un cliente nuovo ti arriva una notifica.',
     'La Squadra ha card in più, solo sue, fra le icone in cima: «Gli incarichi» (quante cose ha da fare ognuno e le prossime) e «Gli ultimi invii».',
   ] },
+  { versione: '0.1.54', data: '2026-11-26', titolo: 'Aggiornamenti molto più veloci', novita: [
+    'Dalla prossima versione Mirion scarica solo i file cambiati, di solito pochi KB invece di 130 MB, e si riapre aggiornata in pochi secondi, su Windows e sul Mac.',
+    'Se cambia anche la base del programma (Electron), o se qualcosa va storto, Mirion scarica tutto come prima: l’aggiornamento arriva comunque, sempre con la firma di Marco.',
+  ] },
   { versione: '0.1.53', data: '2026-11-26', titolo: 'Mirion Trainer sul telefono senza il computer', novita: [
     'Mirion Trainer sul telefono funziona anche a computer spento e fuori casa: Clienti → «Sul telefono» → «Crea il QR per il telefono», lo inquadri e lo aggiungi alla schermata Home.',
     'Dal telefono vedi i clienti di Mirion Fit online, rispondi in chat, mandi la scheda, commenti i progressi e inviti clienti nuovi con il QR.',
