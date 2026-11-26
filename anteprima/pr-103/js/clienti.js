@@ -10,7 +10,7 @@ import { el, api, notifica } from './base.js'
 import { ic } from './icone.js'
 import { carta, barra, colonne, grafico } from './pagine-piatto.js'
 import { schedeTrainer, eTitolare, accendiVoce, NOME as TRAINER, CARTE_TRAINER, LARGHE_TRAINER } from './schede-trainer.js'
-import { griglia, iconeCard } from './riquadri.js'
+import { griglia, iconeCard, carteDentro } from './riquadri.js'
 import { MISURA } from './su-misura.js'
 import { bottoneScrivania } from './prodotto.js'
 import { conIA, pulsantiIA, obsidian } from './ia.js'
@@ -151,17 +151,19 @@ const vaiA = id => '#clienti?id=' + encodeURIComponent(id)
 export function cartaTrainer (quale, d, rifai, dove = 'trainer') {
   const sopra = dove === 'principale'
     ? el('a', { class: 'quieto piccolo', href: '#clienti', title: 'La dashboard di Mirion Trainer' }, el('span', { class: 'voce-iniziale voce-icona', 'aria-hidden': 'true' }, el('img', { src: './mirion-trainer.svg', alt: '' })), TRAINER)
-    : bottoneScrivania({ id: 'trainer' }, quale, LARGHE_TRAINER[quale])
+    : dove === 'dentro' ? null : bottoneScrivania({ id: 'trainer' }, quale, LARGHE_TRAINER[quale])
   const fai = async (corpo, detto) => { try { const r = await api('/api/clienti', corpo); if (detto) notifica(detto); return r } catch (e) { notifica(e.message, { tipo: 'sempre' }) } }
   const clienti = d.clienti ?? [], corpo = []
   if (quale === 'cifre') {
     const sq = squadra(clienti), attivi = clienti.filter(c => !fermo(c)).length
     const novita = clienti.reduce((t, c) => t + (c.checkin ?? []).filter(k => giorniDa(k.quando) <= 1 && k.messaggio).length + (c.ultimoMessaggio && c.ultimoMessaggio.da !== 'trainer' && giorniDa(c.ultimoMessaggio.quando) <= 1 ? 1 : 0), 0)
+    // tutte le card di Mirion Trainer dentro «I numeri» (Marco, 26-11-2026 notte): le icone, un clic e la card si apre lì
+    const dentro = dove === 'dentro' ? null : carteDentro('trainer', Object.entries(CARTE_TRAINER).filter(([c]) => c !== 'cifre'), c => cartaTrainer(c, d, rifai, 'dentro'))
     corpo.push(el('div', { class: 'clienti-cifre' },
       ...[[clienti.length, 'clienti'], [attivi, 'attivi negli ultimi 3 giorni'], [sq.allenati, 'allenati in settimana'], [sq.cerchio ?? '–', 'cerchio medio'], [clienti.length - attivi, 'fermi da 3 giorni o più', clienti.length - attivi ? 'presto' : ''], [novita, 'messaggi nelle ultime 24 ore', novita ? 'bene' : '']].map(([v, t, cls], i) =>
         el('div', { class: 'cifra clienti-cifra ' + (cls ?? ''), style: { '--i': i } }, typeof v === 'number' ? conta(el('b'), v) : el('b', { testo: v }), el('span', { testo: t })))),
     clienti.some(c => !conApp(c)) && clienti.some(conApp) || clienti.some(c => c.soloNota) ? el('p', { class: 'sopra piccolo legenda-fit' },
-      el('span', { class: 'pallino-fit si' }), ` ${clienti.filter(conApp).length} con l’app Mirion Fit`, ' · ', el('span', { class: 'pallino-fit no' }), ` ${clienti.filter(c => !conApp(c)).length} senza (i dati dai check-in, dal gestionale o dalla sua nota)`) : null)
+      el('span', { class: 'pallino-fit si' }), ` ${clienti.filter(conApp).length} con l’app Mirion Fit`, ' · ', el('span', { class: 'pallino-fit no' }), ` ${clienti.filter(c => !conApp(c)).length} senza (i dati dai check-in, dal gestionale o dalla sua nota)`) : null, dentro)
   } else if (quale === 'guarda') {
     const lista = daGuardare(clienti)
     corpo.push(el('small', { class: 'sopra', testo: lista.length ? `${lista.length} ${lista.length === 1 ? 'cosa' : 'cose'} · le più urgenti in cima` : 'tutto tranquillo' }),

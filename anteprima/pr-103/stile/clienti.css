@@ -307,3 +307,20 @@
 .guida-svg .g-fig path, .guida-svg .g-fig circle:not(.g-disco circle), .guida-svg .g-scia path, .guida-svg .g-scia circle { stroke: none; }
 .guida-desk .guida-puntini i { width: 12px; height: 12px; min-width: 0; padding: 0; margin: 0; border: 0; font-size: 0; }
 .guida-desk .guida-svg.grande { width: 300px; }
+
+/* tutte le card dentro la card principale (26-11-2026 notte): la fila di icone e, sotto, le card aperte; ingrandita o a schermo
+   intero le card aperte stanno una accanto all'altra */
+.carte-dentro { margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--linea); }
+.carte-dentro .icone-dentro { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: 0; padding: 0; position: static; }
+.carte-dentro .icona-card { padding: .4rem .55rem; border-radius: 10px; min-width: 3.6rem; }
+.carte-dentro .icona-card.aperta, .carte-dentro .icona-card.aperta:hover { background: var(--viola-tenue); color: var(--testo); }
+.carte-dentro .dentro-pagina { margin-left: auto; }
+.dentro-pannelli { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: .8rem; margin-top: .8rem; align-items: start; }
+.dentro-pannelli[hidden] { display: none; }
+.dentro-pannello { position: relative; border: 1px solid var(--linea); border-radius: 14px; padding: .2rem .8rem .8rem; background: var(--carta); animation: dentro-entra .22s ease-out; }
+.dentro-pannello > .fascia { margin: 0; box-shadow: none; border: 0; background: none; padding: 0; }
+.dentro-pannello > .fascia > header { padding-right: 2rem; }
+.dentro-chiudi { position: absolute; top: .45rem; right: .45rem; z-index: 1; }
+.riquadro.intero .dentro-pannelli { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
+@keyframes dentro-entra { from { opacity: 0; transform: translateY(6px) scale(.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dentro-pannello { animation: none; } }

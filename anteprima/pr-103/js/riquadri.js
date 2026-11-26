@@ -241,7 +241,10 @@ const SEGNI = { adesso: 'target', giorni: 'calendar-dots', cervello: 'notebook',
   beta: 'device-mobile', incarichi: 'check-square', giri: 'arrows-clockwise',
   // Mirion Fit
   oggi: 'target', colazione: 'book-open-text', pranzo: 'book-open-text', cena: 'book-open-text', spuntini: 'book-open-text', pasti: 'book-open-text',
-  peso: 'arrows-vertical', acqua: 'sparkle', sonno: 'clock', integratori: 'plus', allenamento: 'target', attivita: 'arrows-out', settimana: 'calendar-dots' }
+  peso: 'arrows-vertical', acqua: 'sparkle', sonno: 'clock', integratori: 'plus', allenamento: 'target', attivita: 'arrows-out', settimana: 'calendar-dots',
+  cibo: 'book-open-text', misure: 'arrows-horizontal', scheda: 'notebook', percorso: 'calendar-plus', libreria: 'folder-simple', esercizi: 'eye', prestazioni: 'sliders-horizontal', check: 'check-circle',
+  // Mirion Trainer
+  cifre: 'target', guarda: 'bell', squadra: 'sparkle', sedute: 'calendar-dots', invita: 'user-plus', fit: 'device-mobile', clienti: 'users-three' }
 export const segno = id => SEGNI[id] ?? 'squares-four'
 
 // dove: la disposizione delle card (la scrivania, la Squadra, un'app come Mirion Fit: Marco, 25-11 sera: «fai la stessa cosa per
@@ -249,7 +252,8 @@ export const segno = id => SEGNI[id] ?? 'squares-four'
 // il nome di una parola sotto l'icona (Marco, 25-11 sera: «dagli il nome di una parola»)
 const PAROLA = { adesso: 'Adesso', giorni: 'Giorni', cervello: 'Cervello', progetti: 'Progetti', 'senza-data': 'Libere', scadute: 'Task', accessi: 'Lavoro',
   cerca: 'Cerca', diario: 'Diario', conti: 'Conti', gestionali: 'Gestionali', notizie: 'Notizie', lavagne: 'Lavagna', notifiche: 'Notifiche', versioni: 'Versioni',
-  programmi: 'Programmi', 'da-chiudere': 'Chiudere', nascoste: 'Nascoste', punto: 'Punto', assegna: 'Assegna', lavoro: 'Lavoro', chat: 'Chat', storico: 'Storico', persone: 'Persone', tue: 'Tue', beta: 'Accessi', incarichi: 'Incarichi', giri: 'Invii' }
+  programmi: 'Programmi', 'da-chiudere': 'Chiudere', nascoste: 'Nascoste', punto: 'Punto', assegna: 'Assegna', lavoro: 'Lavoro', chat: 'Chat', storico: 'Storico', persone: 'Persone', tue: 'Tue', beta: 'Accessi', incarichi: 'Incarichi', giri: 'Invii',
+  scheda: 'Scheda', check: 'Check', integratori: 'Integratori', percorso: 'Percorso', misure: 'Misure', libreria: 'Libreria', esercizi: 'Esercizi', settimana: 'Settimana', prestazioni: 'Cerchio', guarda: 'Guarda', squadra: 'Squadra', sedute: 'Sedute', invita: 'Invita', fit: 'Il mio Fit', clienti: 'Clienti', cifre: 'Numeri' }
 export const parola = (id, titolo = '') => PAROLA[id] ?? (String(titolo).replace(/^(il|lo|la|i|gli|le|l’|l')\s*/i, '').split(/\s+/)[0] || id)
 
 // Marco, 25-11 sera: «le icone in alto servono solo per inviare card sulla scrivania»: un clic e la card va in fondo, accesa
@@ -296,4 +300,34 @@ export const mosse = {
   sciogli (g) { membri(g).forEach(r => { r.gruppo = null }); salva(); avvisa() },
   unisci (a, b) { unisci(a, b); salva(); avvisa() },
   mostra (g, chi) { const c = gruppo(g); if (c) { c.scelto = chi; salva(); avvisa() } },
+}
+
+// Tutte le card dentro la dashboard iniziale (Marco, 26-11-2026 notte: «integra tutte le card in qualche modo dentro la dashboard
+// iniziale, anche le icone apribili nella dashboard anche ingrandendola; lascia le card se qualcuno vuole averle»): nella card
+// principale di una sezione (Mirion Fit «Oggi», Mirion Trainer «I numeri») una fila di icone, una per ogni altra card; un clic la
+// apre lì dentro, un altro clic (o la ✕) la chiude. Se ne aprono anche più insieme: con la card ingrandita o a schermo intero si
+// mettono una accanto all'altra. Le card singole restano dove sono. Quali sono aperte si ricorda (per sezione, su questo computer).
+const APERTE = {}
+const leggiAperte = chiave => {
+  if (!APERTE[chiave]) { try { APERTE[chiave] = new Set(JSON.parse(localStorage.getItem('mirion:dentro:' + chiave) ?? '[]')) } catch { APERTE[chiave] = new Set() } }
+  return APERTE[chiave]
+}
+const scriviAperte = chiave => { try { localStorage.setItem('mirion:dentro:' + chiave, JSON.stringify([...APERTE[chiave]])) } catch {} }
+// voci: [[id, titolo]]; costruisci(id) dà il contenuto (la card com'è, senza i suoi comandi); in più: un elemento in fondo alla fila
+export function carteDentro (chiave, voci, costruisci, { inPiu = null } = {}) {
+  const aperte = leggiAperte(chiave)
+  for (const id of [...aperte]) if (!voci.some(([v]) => v === id)) aperte.delete(id)
+  const box = el('div', { class: 'carte-dentro' }), fila = el('nav', { class: 'icone-card icone-dentro', 'aria-label': 'Le altre card, da aprire qui' }), pannelli = el('div', { class: 'dentro-pannelli' })
+  const disegna = () => {
+    fila.replaceChildren(...voci.map(([id, t]) => el('button', {
+      type: 'button', class: 'icona-card' + (aperte.has(id) ? ' aperta' : ''), 'data-dentro': id, 'aria-pressed': String(aperte.has(id)),
+      title: aperte.has(id) ? `Chiudi «${t}»` : `Apri «${t}» qui`,
+      onclick: e => { e.stopPropagation(); if (aperte.has(id)) aperte.delete(id); else aperte.add(id); scriviAperte(chiave); disegna() },
+    }, ic(segno(id)), el('span', { class: 'icona-card-nome', testo: parola(id, t) }))), inPiu ?? '')
+    pannelli.replaceChildren(...voci.filter(([id]) => aperte.has(id)).map(([id, t]) => el('div', { class: 'dentro-pannello', 'data-dentro': id },
+      el('button', { type: 'button', class: 'quieto piccolo dentro-chiudi', 'aria-label': `Chiudi «${t}»`, title: 'Chiudi', onclick: e => { e.stopPropagation(); aperte.delete(id); scriviAperte(chiave); disegna() } }, ic('x')),
+      costruisci(id))))
+    pannelli.hidden = !aperte.size
+  }
+  disegna(); box.append(fila, pannelli); return box
 }

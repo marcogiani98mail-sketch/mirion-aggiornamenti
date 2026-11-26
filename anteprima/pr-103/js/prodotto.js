@@ -13,7 +13,7 @@ import { el, api, notifica, quando, $, $$, nomeNota } from './base.js'
 import { ic, haIcona } from './icone.js'
 import { casella } from './casella.js'
 import { conIA, pulsantiIA, obsidian } from './ia.js'
-import { griglia, TITOLI, iconeCard } from './riquadri.js'
+import { griglia, TITOLI, iconeCard, carteDentro } from './riquadri.js'
 import { MISURA, salva, scrivania } from './su-misura.js'
 import { pagina as paginaCompletaPiatto, PAGINE } from './pagine-piatto.js'
 import { cornice } from './widget.js'
@@ -114,7 +114,9 @@ export function paginaDi (pid, carta) {
   return PAGINE[carta] ? '#prodotto?id=' + encodeURIComponent(pid) + '&pagina=' + carta : null
 }
 // la card di un software sulla scrivania principale (id «p.<software>.<card>»): la sua pagina, o la scrivania del software
-export const paginaCompleta = id => { const [, pid, carta] = id.split('.'); return pid === 'trainer' ? '#clienti' : paginaDi(pid, carta) ?? '#prodotto?id=' + encodeURIComponent(pid) }
+// la card principale (Mirion Fit «Oggi», Mirion Trainer «I numeri») si ingrandisce lì, a schermo intero, con le altre card dentro
+export const paginaCompleta = id => { const [, pid, carta] = id.split('.'); if (DENTRO[pid] === carta) return null; return pid === 'trainer' ? '#clienti' : paginaDi(pid, carta) ?? '#prodotto?id=' + encodeURIComponent(pid) }
+const DENTRO = { piatto: 'oggi', trainer: 'cifre' }
 function datiDi (p) {
   const c = {}
   return {
@@ -146,7 +148,9 @@ export function bottoneScrivania (p, carta, larga = LARGHE[carta] ?? 6) {
 
 // le card. dove: 'prodotto' (la sua scrivania) o 'principale' (la scrivania di tutto: in testa il nome del software, e «Apri»)
 function carta (p, quale, dati, rifai, dove) {
-  const sopra = dove === 'principale'
+  const pg = dove === 'dentro' ? paginaDi(p.id, quale) : null
+  const sopra = dove === 'dentro' ? (pg ? el('a', { class: 'quieto piccolo', href: pg, title: 'La pagina completa' }, ic('corners-out'), 'Pagina') : null)
+    : dove === 'principale'
     ? el('a', { class: 'quieto piccolo', href: '#prodotto?id=' + encodeURIComponent(p.id), title: `La scrivania di ${p.nome}` }, segno(p), p.nome)
     : bottoneScrivania(p, quale)
   const titolo = (dove === 'principale' && quale !== 'programma' ? `${CARTE[quale]}` : CARTE[quale])
@@ -195,7 +199,7 @@ function carta (p, quale, dati, rifai, dove) {
     })
   } else if (quale === 'oggi') {
     // sulla sua scrivania «Oggi» è breve: le calorie che restano e i macro; acqua, peso e allenamento hanno la loro card
-    riempi(async () => vistaOggi(p, await dati.oggi(), rifai)) // la card principale, completa anche in Mirion Fit (25-11 sera: «fai una card principale… per Mirion Fit»)
+    riempi(async () => { const v = vistaOggi(p, await dati.oggi(), rifai); return dove === 'dentro' ? v : [v, dentroOggi(p, dati, rifai)] }) // la card principale, completa anche in Mirion Fit (25-11 sera: «fai una card principale… per Mirion Fit»)
   } else if (quale === 'acqua') {
     riempi(async () => conNumeri(p, await dati.oggi(), d => [
       el('div', {}, el('b', { class: 'oggi-medio', testo: numero(d.acqua) }), el('span', { class: 'sopra', testo: ` / ${numero(d.obiettivo?.acqua)} ml` })),
@@ -258,6 +262,13 @@ function carta (p, quale, dati, rifai, dove) {
     riempi(async () => conNumeri(p, await dati.oggi(), d => cardMisure(p, d, rifai)))
   }
   return fascia('carta-prodotto carta-' + quale, titolo, sopra, corpo)
+}
+
+// tutte le card di Mirion Fit dentro «Oggi» (26-11-2026 notte): le icone, un clic e la card si apre lì; le card singole restano
+function dentroOggi (p, dati, rifai) {
+  const voci = carteDi(p).filter(c => c !== 'oggi').map(c => [c, CARTE[c]])
+  return carteDentro(p.id, voci, c => carta(p, c, dati, rifai, 'dentro'),
+    { inPiu: el('a', { class: 'quieto piccolo dentro-pagina', href: paginaDi(p.id, 'oggi'), title: 'Calorie e macro, la pagina completa' }, ic('arrow-square-out'), 'Calorie e macro') })
 }
 
 // «Oggi»: i numeri del giorno del software (Piatto: calorie, macro, acqua, peso, la settimana, gli esercizi se ci sono)
@@ -396,7 +407,7 @@ export async function mostra (stanza, params) {
   // «la scrivania due»: tutto il programma, a pagina intera dentro Mirion (compare quando il riepilogo dice dov'è)
   // il programma del software, intero, dentro Mirion (le pagine complete delle card le disegna Mirion)
   const intera = el('a', { class: 'quieto piccolo prodotto-intera', href: '#gestionale?id=' + encodeURIComponent(p.id), hidden: haOggi(p) || (!p.programma?.ce && !p.online) }, ic('arrow-square-out'), 'Il programma')
-  const spazi = Object.fromEntries(carteDi(p).map(c => [c, () => paginaDi(p.id, c)]))
+  const spazi = Object.fromEntries(carteDi(p).filter(c => c !== DENTRO[p.id]).map(c => [c, () => paginaDi(p.id, c)]))
   const disegna = () => {
     const tolte = disposizione().riquadri.filter(r => r.nascosto && contenuti[r.id])
     stanza.replaceChildren(
