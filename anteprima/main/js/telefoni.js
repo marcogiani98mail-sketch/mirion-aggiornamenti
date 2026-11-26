@@ -29,12 +29,32 @@ export function casellaTelefoni () {
   indirizzoFit().then(u => { fit.src = u; statoFit.textContent = 'quello che vede il cliente' })
     .catch(e => { statoFit.textContent = e.message; fit.replaceWith(el('p', { class: 'vuoto telefono-schermo', testo: e.message })) })
   const ricarica = () => { for (const f of [fit, trainer]) if (f.src) f.src = f.src }
-  return el('div', { class: 'telefoni-casella' },
-    el('header', { class: 'telefoni-cima' }, el('p', { class: 'sopra piccolo', testo: 'Le due app come sul telefono: si usano anche da qui.' }),
-      el('button', { type: 'button', class: 'quieto piccolo', onclick: ricarica, title: 'Ricarica i due telefoni' }, ic('arrows-clockwise'), 'Ricarica')),
-    el('div', { class: 'telefoni-fila' },
+  const fila = el('div', { class: 'telefoni-fila' },
       el('figure', { class: 'telefono-finto' },
         el('div', { class: 'telefono-scocca' }, el('span', { class: 'telefono-isola', 'aria-hidden': 'true' }), fit),
         el('figcaption', {}, el('b', { testo: 'Mirion Fit' }), statoFit, el('a', { class: 'quieto piccolo', href: '#prodotto?id=piatto' }, ic('arrow-up-right'), 'Le card'))),
-      telefono('Mirion Trainer', 'quello che vedi tu dal telefono', trainer, el('a', { class: 'quieto piccolo', href: '#clienti' }, ic('arrow-up-right'), 'I clienti'))))
+      telefono('Mirion Trainer', 'quello che vedi tu dal telefono', trainer, el('a', { class: 'quieto piccolo', href: '#clienti' }, ic('arrow-up-right'), 'I clienti')))
+  adatta(fila)
+  return el('section', { class: 'fascia telefoni-casella', 'aria-label': 'Le app sul telefono' },
+    el('header', { class: 'telefoni-cima' }, el('h2', { testo: 'Le app sul telefono' }), el('span', { class: 'sopra piccolo', testo: 'si usano anche da qui' }),
+      el('button', { type: 'button', class: 'quieto piccolo', onclick: ricarica, title: 'Ricarica i due telefoni' }, ic('arrows-clockwise'), 'Ricarica')),
+    fila)
+}
+
+// i telefoni si adattano alla card (Marco, 26-11: «adatta bene i telefoni»): uno accanto all'altro finché ci stanno, se no uno
+// sotto l'altro; il telefono intero (schermo compreso) si rimpicciolisce con zoom, così l'app dentro resta quella vera da 375 punti
+const LARGO = 300, ALTO = 640, MINIMO = .55
+function adatta (fila) {
+  const misura = () => {
+    const w = fila.clientWidth; if (!w) return
+    const gap = Math.min(56, Math.max(16, w * .04))
+    const affiancati = (w - gap) / 2 / LARGO >= MINIMO
+    const k = Math.min(1, affiancati ? (w - gap) / 2 / LARGO : w / LARGO)
+    // in alto non più di quanto la finestra lascia vedere, così il telefono non si taglia
+    const kAlto = Math.max(MINIMO, Math.min(1, (innerHeight - 220) / ALTO))
+    fila.classList.toggle('impilati', !affiancati)
+    fila.style.setProperty('--zoom', Math.min(k, kAlto).toFixed(3))
+  }
+  new ResizeObserver(misura).observe(fila)
+  addEventListener('resize', misura)
 }

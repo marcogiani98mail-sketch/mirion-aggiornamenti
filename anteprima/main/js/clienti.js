@@ -114,6 +114,8 @@ export async function mostra (stanza, params) {
           : el('button', { type: 'button', class: 'primario', title: 'Il QR porta alla porta del telefono (Impostazioni → «Il telefono»)', onclick: async () => { await api('/api/telefono', { azione: 'accendi' }).catch(e => notifica(e.message, { tipo: 'sempre' })); rifai() } }, ic('user-plus'), 'Accendi la porta per invitare'),
         // l'app Mirion Fit per Android: il QR porta alla pagina su GitHub, che la scarica e la installa (25-11, senza Netlify né porta)
         el('button', { type: 'button', class: 'secondario', title: 'Un QR che il cliente inquadra col telefono (iPhone o Android): apre e installa Mirion Fit da GitHub, già attiva', onclick: () => qrApp(fai) }, ic('arrow-down'), 'QR per installare l’app'),
+        // l'app unica (26-11): Mirion Fit con l'accesso del trainer, da qualunque rete; solo con Mirion Fit online e la licenza
+        d.online?.acceso ? el('button', { type: 'button', class: 'secondario', title: 'Apri i tuoi clienti dentro Mirion Fit, sul telefono o su un altro computer, da qualunque rete', onclick: () => accessoApp(fai) }, ic('device-mobile'), 'Mirion Fit da trainer') : null,
         el('button', { type: 'button', class: 'secondario', title: 'Mirion Trainer sul telefono: i clienti, quello da guardare oggi, la chat e le schede', onclick: () => trainerTelefono(fai) }, ic('device-mobile'), 'Sul telefono'),
         el('button', { type: 'button', class: 'secondario', onclick: async () => { await fai({ azione: demo ? 'via-demo' : 'demo' }, demo ? 'Tolti i clienti inventati.' : (d.claudio?.ce ? 'Ecco i clienti inventati, anche quelli della demo del gestionale.' : 'Ecco quattro clienti inventati, per provare.')); rifai() } }, demo ? 'Togli la prova' : 'Prova con clienti inventati'))),
     el('div', { class: 'clienti-cifre' },
@@ -152,6 +154,26 @@ function cruscotto (clienti) {
       el('header', {}, el('h2', { testo: 'Le sedute di oggi' }), el('span', { class: 'sopra piccolo', testo: oggi.length ? 'dal percorso di ognuno' : '' })),
       oggi.length ? el('ul', { class: 'pasto-voci' }, ...oggi.slice(0, 7).map(c => { const pc = c.piatto.allena.percorso; return el('li', {}, el('a', { href: vai(c.id) }, el('span', { testo: c.nome }), el('small', { class: 'sopra', testo: `${pc.oggi}${pc.di ? ` · ${pc.fatti}/${pc.di} esercizi` : ''}` }))) }))
         : el('p', { class: 'sopra', testo: 'Quando i clienti scelgono un percorso in Mirion Fit (la scheda «Allena»), qui vedi la seduta di oggi di ognuno.' })))
+}
+
+// l'accesso trainer a Mirion Fit (26-11, Marco: «mirion fit e mirion trainer insieme con gli accessi separati e solo approvati»):
+// un link personale che apre Mirion Fit con i clienti di questo trainer. Lo dà solo Mirion Fit online, e solo a chi ha la licenza
+async function accessoApp (fai) {
+  const r = await fai({ azione: 'accesso-app' }); if (!r) return
+  const t = document.createElement('template'); t.innerHTML = r.qr
+  const chiudi = () => fondo.remove()
+  const copia = el('button', { type: 'button', class: 'secondario', onclick: async () => { try { await navigator.clipboard.writeText(r.url); copia.textContent = 'Copiato' } catch { copia.textContent = 'Selezionalo a mano' } } }, 'Copia il link')
+  const togli = el('button', { type: 'button', class: 'secondario', title: 'I link dati finora smettono di funzionare su tutti i telefoni', onclick: async () => { if (await fai({ azione: 'togli-accessi-app' }, 'Accessi tolti: i link di prima non aprono più niente.')) chiudi() } }, 'Togli tutti gli accessi')
+  const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) chiudi() } },
+    el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Mirion Fit da trainer' },
+      el('h2', { testo: 'Mirion Fit da trainer' }),
+      el('p', { class: 'sopra piccolo', testo: 'La stessa app dei tuoi clienti, con il tuo accesso: vedi i clienti, commenti i progressi, mandi le schede e rispondi in chat. Funziona da qualunque rete.' }),
+      el('div', { class: 'invito-qr' }, t.content.firstChild), el('code', { class: 'telefono-indirizzo invito-url', testo: r.url }),
+      el('ol', { class: 'sopra trainer-passi' }, el('li', { testo: 'Inquadralo con il tuo telefono, o apri il link sul computer.' }),
+        el('li', { testo: 'Su iPhone apri con Safari e «Aggiungi alla schermata Home»; su Android dal menu «Installa app».' }),
+        el('li', { testo: 'È solo tuo: non darlo ai clienti. Valgono gli ultimi 3 link che crei; se ne perdi uno, togli tutti gli accessi.' })),
+      el('div', { class: 'bottoni' }, togli, copia, el('button', { type: 'button', class: 'primario', onclick: chiudi }, 'Fatto'))))
+  document.body.append(fondo)
 }
 
 // Mirion Trainer sul telefono: l'indirizzo e il QR della pagina del trainer, sulla porta del telefono (Impostazioni → «Il telefono»)

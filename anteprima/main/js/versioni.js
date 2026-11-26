@@ -4,6 +4,9 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.44', data: '2026-11-26', titolo: 'I telefoni della scrivania si adattano alla card', novita: [
+    '«Le app sul telefono» ha la testata come le altre card; i due telefoni si rimpiccioliscono per stare nella card, uno accanto all’altro finché ci stanno, e non si tagliano più.',
+  ] },
   { versione: '0.1.43', data: '2026-11-26', titolo: 'Le card tornano a posto, i progetti si adattano', novita: [
     'Tornando dalla Squadra alla scrivania le card ricompaiono subito, senza restare bloccate sulla pagina di prima.',
     'La card Task mostra i numeri veri anche fuori dalla squadra, non più tutti zero.',
