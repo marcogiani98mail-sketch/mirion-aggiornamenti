@@ -1,9 +1,9 @@
 {
-  "versione": "1.0.8",
-  "codice": 8,
-  "note": "Il cibo in una card con la scelta del pasto; i progressi da condividere col trainer; l'accesso trainer nella stessa app.",
-  "byte": 223943,
-  "sha256": "349202ae5e6dde5280db7c8913f61385a4d050305c0171481e2151a08798cf24",
-  "quando": "2026-11-26T17:46:08.692Z",
-  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=8"
+  "versione": "1.0.9",
+  "codice": 9,
+  "note": "L'icona nuova di Mirion Fit (il manubrio).",
+  "byte": 244422,
+  "sha256": "36c229b9d4fd9da197d6ae118b49923833afeca5fe9f49b382bfff94bdfef61c",
+  "quando": "2026-11-26T18:06:47.928Z",
+  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=9"
 }
