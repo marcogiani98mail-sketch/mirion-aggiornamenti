@@ -38,7 +38,7 @@ const adatta = box => {
 // spazi: per le caselle che hanno una stanza tutta loro, dove porta il doppio clic (le altre si aprono a schermo intero)
 export function griglia (contenuti, ridisegna, opz = {}) {
   F = opz.dove ? { dove: opz.dove, titoli: opz.titoli ?? {}, scrivania: false } : { dove: () => scrivania(), titoli: TITOLI, scrivania: true }
-  F.spazi = opz.spazi ?? {}
+  F.spazi = opz.spazi ?? {}; F.contenuti = contenuti; F.ridisegna = ridisegna
   const g = el('div', { class: 'griglia-riquadri' }), fatti = new Set()
   for (const r of R()) {
     if (r.nascosto || !contenuti[r.id]) continue
@@ -83,6 +83,28 @@ function unisci (a, b) {
 }
 
 // una scatola: una casella sola, o una cartella con le schede; le misure stanno sulla prima casella
+// ridisegna una casella sola, senza ricaricare la scrivania (Marco, 26-11: «quando sposto o clicco su una task dentro una
+// cartella non ricaricare tutto»): la cartella rimasta con una casella sola torna quella casella
+function rifai (vecchio, id) {
+  if (!vecchio?.isConnected || !F.contenuti) return F.ridisegna?.()
+  let lista = gruppo(id) ? membri(id) : [riq(id)].filter(Boolean)
+  if (gruppo(id) && lista.length < 2) { lista.forEach(r => { r.gruppo = null }); const gs = G(), i = gs.findIndex(g => g.id === id); if (i >= 0) gs.splice(i, 1); id = lista[0]?.id }
+  if (!id || !lista.length) { vecchio.remove(); return null }
+  const nuovo = scatola(id, lista, F.contenuti, F.ridisegna)
+  vecchio.replaceWith(nuovo); osserva?.observe(nuovo)
+  return nuovo
+}
+// una scheda tirata fuori: la cartella si ridisegna da sola e la scheda le compare accanto, già una card che si sposta
+function fuoriQui (box, g, chi) {
+  estrai(g, chi)
+  const resta = rifai(box, g); salva()
+  const r = riq(chi)
+  if (!resta || !r || !F.contenuti) return F.ridisegna?.()
+  const nuovo = scatola(chi, [r], F.contenuti, F.ridisegna)
+  resta.after(nuovo); osserva?.observe(nuovo)
+  nuovo.classList.add('appena-uscita'); setTimeout(() => nuovo.classList.remove('appena-uscita'), 900)
+}
+
 function scatola (id, lista, contenuti, ridisegna) {
   // la pagina completa di una card: un indirizzo, o una funzione che lo dà al momento (Piatto: dal suo riepilogo, prodotto.js);
   // gli spazi di questa griglia, presi adesso: F cambia quando si disegna un'altra stanza a caselle
@@ -104,7 +126,7 @@ function scatola (id, lista, contenuti, ridisegna) {
       : tasto(intero === id ? 'x' : 'corners-out', intero === id ? 'Chiudi lo schermo intero' : 'A schermo intero', () => { intero = intero === id ? null : id; ridisegna() }),
     intero !== id && tasto(capo.piccolo ? 'plus' : 'minus', capo.piccolo ? 'Riapri' : 'Rimpicciolisci', () => { misure({ piccolo: !capo.piccolo }); ridisegna() }),
     intero !== id && tasto('x', cart ? `Togli «${F.titoli[mostrata.id]}»${F.scrivania ? ' dalla scrivania' : ''}` : F.scrivania ? 'Togli dalla scrivania' : 'Togli', () => { const m = riq(mostrata.id); if (m) { m.nascosto = true; m.gruppo = null; salva(); ridisegna() } }))
-  if (cart) box.append(schede(cart, lista, mostrata, ridisegna, () => { misure({ piccolo: !capo.piccolo }); ridisegna() }, capo.piccolo))
+  if (cart) box.append(schede(cart, lista, mostrata, ridisegna, () => { misure({ piccolo: !capo.piccolo }); rifai(box, id) }, capo.piccolo))
   else if (capo.piccolo) box.append(el('div', { class: 'riquadro-striscia', testo: titolo }))
   box.append(comandi, el('div', { class: 'riquadro-corpo', hidden: capo.piccolo }, capo.piccolo ? null : contenuti[mostrata.id]()))
   if (!capo.piccolo && intero !== id) box.append(angolo(box, misure))
@@ -142,12 +164,12 @@ function schede (cart, lista, mostrata, ridisegna, chiudi = null, chiusa = false
   const barra = el('div', { class: 'schede-cartella', role: 'tablist', 'aria-label': cart.nome, 'data-non-trascinare': '' },
     el('input', { class: 'nome-cartella', value: cart.nome, 'aria-label': 'Nome della cartella', size: Math.max(6, cart.nome.length), onchange: e => { const g = gruppo(id); if (g) { g.nome = e.target.value.trim() || 'Cartella'; salva() } } }),
     ...lista.map(r => el('span', { class: 'scheda-cartella', 'data-id': r.id },
-      el('button', { type: 'button', role: 'tab', 'aria-selected': String(r === mostrata), testo: F.titoli[r.id], onclick: () => { const g = gruppo(id); if (g) { g.scelto = r.id; salva(); ridisegna() } } }),
-      el('button', { type: 'button', class: 'fuori', title: 'Tira fuori dalla cartella', 'aria-label': `Tira fuori ${F.titoli[r.id]} dalla cartella`, onclick: () => { estrai(id, r.id); salva(); ridisegna() } }, ic('arrow-square-out')))),
+      el('button', { type: 'button', role: 'tab', 'aria-selected': String(r === mostrata), testo: F.titoli[r.id], onclick: () => { const g = gruppo(id); if (g) { g.scelto = r.id; salva(); rifai(barra.closest('.riquadro'), id) } } }),
+      el('button', { type: 'button', class: 'fuori', title: 'Tira fuori dalla cartella', 'aria-label': `Tira fuori ${F.titoli[r.id]} dalla cartella`, onclick: () => fuoriQui(barra.closest('.riquadro'), id, r.id) }, ic('arrow-square-out')))),
     chiudi ? el('span', { class: 'tapparella', 'data-maniglia': '', role: 'button', tabindex: '0', 'aria-expanded': String(!chiusa), 'aria-label': chiusa ? `Riapri la cartella ${cart.nome}` : `Chiudi la cartella ${cart.nome}`,
       title: (chiusa ? 'Un clic: riapri' : 'Un clic: chiudi') + ' · trascina per spostare la cartella', onclick: chiudi, onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chiudi() } } },
       ic(chiusa ? 'caret-down' : 'caret-up')) : '')
-  ordinabile(barra, { asse: 'orizzontale', fatto: ids => { ordinaSchede(id, ids); salva(); ridisegna() }, fuori: chi => { estrai(id, chi); salva(); ridisegna() } })
+  ordinabile(barra, { asse: 'orizzontale', fatto: ids => { ordinaSchede(id, ids); salva(); rifai(barra.closest('.riquadro'), id) }, fuori: chi => fuoriQui(barra.closest('.riquadro'), id, chi) })
   return barra
 }
 
@@ -249,6 +271,18 @@ export function iconeCard (contenuti, ridisegna, { titoli = TITOLI, dove = scriv
 // Esc chiude lo schermo intero
 addEventListener('keydown', e => { if (e.key === 'Escape' && intero && !document.querySelector('[aria-modal="true"]:not([hidden])')) { intero = null; dispatchEvent(new CustomEvent('su-misura')) } })
 export const aperta = () => intero
+
+// F11: a schermo intero la card sotto il mouse (o l'ultima toccata), e di nuovo F11 la richiude (Marco, 26-11: «con F11 posso
+// metterla a schermo intero»). Mirion non ha il menu di Electron, quindi F11 è libero
+let toccata = null
+addEventListener('pointerover', e => { const b = e.target.closest?.('.griglia-riquadri > .riquadro'); if (b) toccata = b.dataset.id })
+addEventListener('keydown', e => {
+  if (e.key !== 'F11' || e.repeat) return
+  const id = intero ?? (toccata && document.querySelector(`.griglia-riquadri > .riquadro[data-id="${CSS.escape(toccata)}"]`) ? toccata : null)
+  if (!id) return
+  e.preventDefault()
+  intero = intero ? null : id; dispatchEvent(new CustomEvent('su-misura'))
+})
 
 // per il tasto destro (tasto-destro.js): le stesse mosse dei pulsanti, chiamate per id; dopo ognuna la scrivania si ridisegna
 export const mosse = {

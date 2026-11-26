@@ -60,6 +60,9 @@ body.si-trascina, body.si-trascina * { cursor: grabbing !important; user-select:
 .schede-cartella .tapparella { flex: 1 1 3rem; align-self: stretch; min-height: 1.9rem; display: flex; align-items: center; justify-content: flex-end; padding: 0 .4rem; border-radius: 10px; cursor: grab; color: var(--tenue); }
 .schede-cartella .tapparella:hover, .schede-cartella .tapparella:focus-visible { background: color-mix(in oklch, var(--testo) 5%, transparent); color: var(--testo); outline: none; }
 .schede-cartella .tapparella .ic { width: 1rem; height: 1rem; }
+/* la scheda appena tirata fuori: un lampo, per vedere dov'è finita */
+@keyframes appena-uscita { from { box-shadow: 0 0 0 2px var(--viola); } to { box-shadow: 0 0 0 0 transparent; } }
+.riquadro.appena-uscita { animation: appena-uscita .9s ease-out; }
 body.si-trascina .schede-cartella .tapparella { cursor: grabbing; }
 .nome-cartella { font: 600 .85rem var(--titoli); color: var(--lilla); background: none; border: 1px solid transparent; border-radius: 8px; padding: .25rem .45rem; min-width: 5ch; }
 .nome-cartella:hover, .nome-cartella:focus { border-color: var(--linea-forte); background: var(--alto); }
@@ -282,6 +285,21 @@ body[data-tema]:not([data-tema="viola"]), .riquadro[data-colore] {
   background: linear-gradient(170deg, color-mix(in srgb, var(--tinta) 16%, var(--carta-2)), color-mix(in srgb, var(--tinta) 5%, var(--carta))); }
 .riquadro[data-colore] > .riquadro-corpo > .banner {
   background: radial-gradient(700px 260px at 0% 0%, color-mix(in srgb, var(--tinta) 32%, transparent), transparent 70%), linear-gradient(170deg, color-mix(in srgb, var(--tinta) 18%, var(--carta-2)), var(--carta)); }
+/* le card colorabili fuori dalla griglia (colora.js, le card di Mirion Trainer): stesse tinte delle caselle */
+.colorabile { position: relative; }
+.colorabile[data-colore="viola"] { --tinta: #8a6cef; } .colorabile[data-colore="blu"] { --tinta: #4f7cff; } .colorabile[data-colore="azzurro"] { --tinta: #38bdf8; }
+.colorabile[data-colore="verde"] { --tinta: #34d399; } .colorabile[data-colore="giallo"] { --tinta: #facc15; } .colorabile[data-colore="arancio"] { --tinta: #fb923c; }
+.colorabile[data-colore="rosso"] { --tinta: #f87171; } .colorabile[data-colore="rosa"] { --tinta: #f472b6; } .colorabile[data-colore="grigio"] { --tinta: #94a3b8; }
+.colorabile[data-colore] {
+  --viola: var(--tinta); --lilla: color-mix(in srgb, var(--tinta) 55%, #fff);
+  --viola-tenue: color-mix(in srgb, var(--tinta) 15%, transparent); --viola-bordo: color-mix(in srgb, var(--tinta) 45%, transparent);
+  border-color: var(--viola-bordo);
+  background: linear-gradient(170deg, color-mix(in srgb, var(--tinta) 16%, var(--carta-2)), color-mix(in srgb, var(--tinta) 5%, var(--carta))); }
+.colora-tasto { position: absolute; top: .55rem; right: .55rem; width: 1.8rem; height: 1.8rem; display: grid; place-items: center; padding: 0; border-radius: 9px; border: 1px solid var(--linea); background: var(--alto, var(--carta)); color: var(--tenue); cursor: pointer; opacity: 0; transition: opacity .15s; }
+.colora-tasto .ic { width: .95rem; height: .95rem; }
+.colorabile:hover > .colora-tasto, .colora-tasto:focus-visible { opacity: 1; }
+.colora-tasto:hover { color: var(--testo); border-color: var(--linea-forte); }
+@media (hover: none) { .colora-tasto { opacity: .7; } }
 /* la scelta del tema in Personalizza */
 .temi { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .45rem; }
 .temi button { display: grid; justify-items: center; gap: .3rem; padding: .55rem .4rem; border-radius: 12px; border: 1px solid var(--linea); background: var(--alto); color: var(--testo-2); font: 600 .78rem var(--corpo); cursor: pointer; }

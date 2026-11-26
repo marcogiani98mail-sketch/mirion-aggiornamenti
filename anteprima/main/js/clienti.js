@@ -13,6 +13,7 @@ import { schedeTrainer, eTitolare, accendiVoce, NOME as TRAINER } from './schede
 import { conIA, pulsantiIA, obsidian } from './ia.js'
 import { leggiNota } from './markdown.js'
 import { daGuardare, squadra, quandoBreve } from './trainer-oggi.js'
+import { colorabile } from './colora.js'
 
 const n = v => Number.isFinite(+v) ? Math.round(+v).toLocaleString('it-IT') : '—'
 const virgola = v => Number.isFinite(+v) ? (+v).toLocaleString('it-IT', { maximumFractionDigits: 1 }) : '—'
@@ -131,27 +132,29 @@ export async function mostra (stanza, params) {
 // la dashboard a card (Marco, 25-11-2026: «nella versione desktop usiamo le card»): sopra i clienti, tre card che dicono subito
 // cosa fare: quello da guardare oggi (dolori, avvisi dall'app, messaggi senza risposta, chi è fermo), il cerchio della squadra
 // e le sedute di oggi del percorso di ognuno. Gli stessi conti di Mirion Trainer sul telefono (trainer-oggi.js)
+// ogni card con data-carta prende il suo ✦ per il colore (colora.js)
+const colorate = box => { for (const c of box.querySelectorAll('[data-carta]')) colorabile(c, c.dataset.carta); return box }
 function cruscotto (clienti) {
   const lista = daGuardare(clienti), sq = squadra(clienti)
   const oggi = clienti.filter(c => c.piatto?.allena?.percorso?.oggi)
   const vai = id => '#clienti?id=' + encodeURIComponent(id)
-  return el('div', { class: 'clienti-cruscotto' },
-    el('section', { class: 'fascia cruscotto-carta cruscotto-guarda', 'aria-label': 'Da guardare oggi' },
+  return colorate(el('div', { class: 'clienti-cruscotto' },
+    el('section', { class: 'fascia cruscotto-carta cruscotto-guarda', 'data-carta': 'trainer.guarda', 'aria-label': 'Da guardare oggi' },
       el('header', {}, el('h2', { testo: 'Da guardare oggi' }), el('span', { class: 'sopra piccolo', testo: lista.length ? `${lista.length} ${lista.length === 1 ? 'cosa' : 'cose'} · le più urgenti in cima` : 'tutto tranquillo' })),
       lista.length ? el('ul', { class: 'guarda-elenco' }, ...lista.slice(0, 6).map(v => el('li', { class: 'guarda-' + v.tipo.split('-')[0] + (v.peso >= 90 ? ' urgente' : '') },
         el('a', { href: vai(v.id) }, el('span', { class: 'guarda-icona', 'aria-hidden': 'true', testo: v.icona }),
           el('div', {}, el('small', { class: 'sopra', testo: [v.nome, quandoBreve(v.quando)].filter(Boolean).join(' · ') }), el('b', { testo: v.titolo }), v.testo ? el('p', { testo: v.testo }) : null)))))
         : el('p', { class: 'sopra', testo: 'Nessun dolore, nessun avviso, nessuno fermo. Quando un cliente scrive dall’app o segna un fastidio a fine seduta, compare qui.' })),
-    el('section', { class: 'fascia cruscotto-carta cruscotto-cerchio', 'aria-label': 'Il cerchio della squadra' },
+    el('section', { class: 'fascia cruscotto-carta cruscotto-cerchio', 'data-carta': 'trainer.cerchio', 'aria-label': 'Il cerchio della squadra' },
       el('header', {}, el('h2', { testo: 'Il cerchio della squadra' }), el('span', { class: 'sopra piccolo', testo: `${sq.allenati} su ${sq.clienti} allenati in settimana` })),
       el('div', { class: 'cruscotto-media' }, el('b', { testo: sq.cerchio ?? '–' }), el('span', { class: 'sopra', testo: sq.cerchio != null ? 'su 100, in media' : 'ancora nessun cerchio' }),
         sq.fastidi ? el('em', { class: 'presto', testo: `${sq.fastidi} ${sq.fastidi === 1 ? 'seduta' : 'sedute'} con un fastidio in 14 giorni` }) : null),
       sq.classifica.length ? el('ol', { class: 'cruscotto-classifica' }, ...sq.classifica.slice(0, 6).map(x => el('li', {},
         el('a', { href: vai(x.id) }, el('span', { testo: x.nome }), el('i', { style: { '--pieno': x.punteggio + '%' }, class: x.punteggio < 55 ? 'basso' : '' }), el('b', { testo: x.punteggio }))))) : null),
-    el('section', { class: 'fascia cruscotto-carta cruscotto-oggi', 'aria-label': 'Le sedute di oggi' },
+    el('section', { class: 'fascia cruscotto-carta cruscotto-oggi', 'data-carta': 'trainer.oggi', 'aria-label': 'Le sedute di oggi' },
       el('header', {}, el('h2', { testo: 'Le sedute di oggi' }), el('span', { class: 'sopra piccolo', testo: oggi.length ? 'dal percorso di ognuno' : '' })),
       oggi.length ? el('ul', { class: 'pasto-voci' }, ...oggi.slice(0, 7).map(c => { const pc = c.piatto.allena.percorso; return el('li', {}, el('a', { href: vai(c.id) }, el('span', { testo: c.nome }), el('small', { class: 'sopra', testo: `${pc.oggi}${pc.di ? ` · ${pc.fatti}/${pc.di} esercizi` : ''}` }))) }))
-        : el('p', { class: 'sopra', testo: 'Quando i clienti scelgono un percorso in Mirion Fit (la scheda «Allena»), qui vedi la seduta di oggi di ognuno.' })))
+        : el('p', { class: 'sopra', testo: 'Quando i clienti scelgono un percorso in Mirion Fit (la scheda «Allena»), qui vedi la seduta di oggi di ognuno.' }))))
 }
 
 // Mirion Trainer sul telefono: l'indirizzo e il QR della pagina del trainer, sulla porta del telefono (Impostazioni → «Il telefono»)

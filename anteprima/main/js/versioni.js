@@ -4,6 +4,12 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.48', data: '2026-11-26', titolo: 'Cartelle leggere, F11 e card di Trainer colorate', novita: [
+    'Cliccando o spostando le schede di una cartella si cambia solo quella cartella: il resto della scrivania non si ricarica.',
+    'Una scheda tirata fuori dalla cartella compare subito accanto come card, già da spostare.',
+    'F11 mette a schermo intero la card sotto il mouse; un altro F11 la richiude.',
+    'Le card di Mirion Trainer («Da guardare oggi», «Il cerchio della squadra», «Le sedute di oggi») si colorano con il ✦, come le altre.',
+  ] },
   { versione: '0.1.47', data: '2026-11-26', titolo: 'La tapparella delle cartelle', novita: [
     'Nelle cartelle della scrivania lo spazio libero della barra delle schede è la tapparella: un clic chiude la cartella e un altro la riapre, e trascinandola sposti la cartella.',
   ] },
