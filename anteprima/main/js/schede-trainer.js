@@ -33,3 +33,9 @@ export function schedeTrainer (attiva) {
   eTitolare().then(si => { if (si) nav.hidden = false })
   return nav
 }
+
+// la dashboard a card di Mirion Trainer sul computer, come sul telefono (Marco, 26-11-2026 sera: «facciamo la dashboard completa
+// uguale a quella del telefono»): le stesse parti di Mirion Trainer sul telefono (Oggi, Clienti con l'invito, il Cerchio) e il tuo
+// Mirion Fit, ognuna una card che si sposta, si allarga, si toglie e va sulla scrivania («p.trainer.<card>»)
+export const CARTE_TRAINER = { cifre: 'I numeri', guarda: 'Da guardare oggi', squadra: 'Il cerchio della squadra', sedute: 'Le sedute di oggi', invita: 'Invita un cliente', fit: 'Il mio Mirion Fit', clienti: 'I clienti' }
+export const LARGHE_TRAINER = { cifre: 12, guarda: 6, squadra: 3, sedute: 3, invita: 6, fit: 6, clienti: 12 }

@@ -18,18 +18,22 @@ import { MISURA, salva, scrivania } from './su-misura.js'
 import { pagina as paginaCompletaPiatto, PAGINE } from './pagine-piatto.js'
 import { cornice } from './widget.js'
 import { campoCodice } from './codice-barre.js'
-import { voceTrainer } from './schede-trainer.js'
-import { cerchioSvg } from './clienti.js'
+import { voceTrainer, CARTE_TRAINER, LARGHE_TRAINER } from './schede-trainer.js'
+import { cerchioSvg, cartaTrainerPerScrivania } from './clienti.js'
+import * as G from './fit-guida.js'
 
-export const CARTE = { oggi: 'Oggi', cibo: 'Cibo', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', attivita: 'Attività', acqua: 'Acqua', sonno: 'Sonno', integratori: 'Integratori', peso: 'Peso', allenamento: 'Allenamento', percorso: 'Il tuo percorso', prestazioni: 'Cerchio prestazioni', settimana: 'La settimana', programma: 'Il programma', task: 'Da fare', ia: 'Lavora con l’IA', notizie: 'Notizie', note: 'Le note' }
-const LARGHE = { oggi: 6, cibo: 6, colazione: 6, pranzo: 6, cena: 6, spuntini: 6, pasti: 6, attivita: 3, acqua: 3, sonno: 3, integratori: 3, peso: 3, allenamento: 6, percorso: 6, prestazioni: 3, settimana: 6, programma: 12, task: 6, ia: 6, notizie: 6, note: 6 }
+export const CARTE = { oggi: 'Oggi', cibo: 'Cibo', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', attivita: 'Attività', acqua: 'Acqua', sonno: 'Sonno', integratori: 'Integratori', peso: 'Peso', misure: 'Le misure', allenamento: 'Allenamento', scheda: 'La scheda del trainer', percorso: 'Il tuo percorso', libreria: 'La libreria', esercizi: 'Gli esercizi', prestazioni: 'Cerchio prestazioni', check: 'Il check della settimana', settimana: 'La settimana', programma: 'Il programma', task: 'Da fare', ia: 'Lavora con l’IA', notizie: 'Notizie', note: 'Le note' }
+const LARGHE = { oggi: 6, cibo: 6, colazione: 6, pranzo: 6, cena: 6, spuntini: 6, pasti: 6, attivita: 3, acqua: 3, sonno: 3, integratori: 3, peso: 3, misure: 3, allenamento: 6, scheda: 6, percorso: 6, libreria: 6, esercizi: 6, prestazioni: 3, check: 3, settimana: 6, programma: 12, task: 6, ia: 6, notizie: 6, note: 6 }
+// le card di Mirion Fit che c'erano sul telefono e non qui (Marco, 26-11-2026 sera: «la dashboard completa uguale a quella del
+// telefono»): la scheda del trainer, la libreria degli allenamenti, gli esercizi con la guida, il check della settimana, le misure
+const NUOVE_FIT = ['scheda', 'percorso', 'libreria', 'esercizi', 'prestazioni', 'check', 'misure']
 // Piatto in Mirion (Marco, 23-11: «non voglio che sia apribile da Piatto: si apra già quando seleziono Piatto, e devono essere
 // tutte card minimaliste dove posso accedere per variare»): le card che fanno, e quelle del lavoro sul software (tolte all'inizio)
 // Marco, 23-11 sera: «tutto il contenuto della scrivania completa di Piatto trasponilo in card sulla scrivania di Piatto»: un pasto
 // per card e l'attività, come in Piatto; «I pasti» (tutti in una) resta fra le card tolte
 const UN_PASTO = ['colazione', 'pranzo', 'cena', 'spuntini']
 // Mirion Fit (24-11): anche il sonno e gli integratori, come in Piatto
-const DEL_GIORNO = ['oggi', 'cibo', ...UN_PASTO, 'pasti', 'acqua', 'sonno', 'integratori', 'attivita', 'peso', 'percorso', 'allenamento', 'prestazioni', 'settimana'], DEL_LAVORO = ['programma', 'task', 'ia', 'notizie', 'note']
+const DEL_GIORNO = ['oggi', 'cibo', ...UN_PASTO, 'pasti', 'acqua', 'sonno', 'integratori', 'attivita', 'peso', 'misure', 'scheda', 'percorso', 'allenamento', 'libreria', 'esercizi', 'prestazioni', 'check', 'settimana'], DEL_LAVORO = ['programma', 'task', 'ia', 'notizie', 'note']
 // Mirion Fit (Marco, 24-11 sera: «nell'app togli lavora con l'IA in scrivania, e il programma non lo rendere visualizzabile però
 // assicurati che ci siano le card che lo sostituiscano»): nella scrivania di un software con le card del giorno non ci sono più
 // «Il programma» né «Lavora con l'IA»; le card del giorno (Oggi, i pasti, Acqua, Sonno, Integratori, Attività, Peso, Allenamento,
@@ -70,7 +74,10 @@ const segno = p => p.id === 'piatto' ? el('span', { class: 'voce-iniziale voce-i
 let elenco = null
 const prodotti = (fresco = false) => { if (!elenco || fresco) elenco = api('/api/prodotti').then(d => d.prodotti ?? []).catch(() => []); return elenco }
 // i titoli delle card dei software, anche per la scrivania principale (le strisce, le cartelle, i pulsanti)
-const registraTitoli = lista => { for (const p of lista) for (const [c, t] of Object.entries(CARTE)) TITOLI[`p.${p.id}.${c}`] = `${p.nome} · ${t}` }
+const registraTitoli = lista => {
+  for (const p of lista) for (const [c, t] of Object.entries(CARTE)) TITOLI[`p.${p.id}.${c}`] = `${p.id === 'piatto' ? 'Mirion Fit' : p.nome} · ${t}`
+  for (const [c, t] of Object.entries(CARTE_TRAINER)) TITOLI[`p.trainer.${c}`] = `Mirion Trainer · ${t}`
+}
 
 // la barra a sinistra: una voce per prodotto, sotto le stanze (barra.js le rimette al loro posto quando ridisegna)
 export async function vociProdotti () {
@@ -107,7 +114,7 @@ export function paginaDi (pid, carta) {
   return PAGINE[carta] ? '#prodotto?id=' + encodeURIComponent(pid) + '&pagina=' + carta : null
 }
 // la card di un software sulla scrivania principale (id «p.<software>.<card>»): la sua pagina, o la scrivania del software
-export const paginaCompleta = id => { const [, pid, carta] = id.split('.'); return paginaDi(pid, carta) ?? '#prodotto?id=' + encodeURIComponent(pid) }
+export const paginaCompleta = id => { const [, pid, carta] = id.split('.'); return pid === 'trainer' ? '#clienti' : paginaDi(pid, carta) ?? '#prodotto?id=' + encodeURIComponent(pid) }
 function datiDi (p) {
   const c = {}
   return {
@@ -118,8 +125,8 @@ function datiDi (p) {
   }
 }
 
-// «Metti sulla scrivania»: la card anche sulla scrivania principale, con un clic; di nuovo, si toglie
-function bottoneScrivania (p, carta) {
+// «Metti sulla scrivania»: la card anche sulla scrivania principale, con un clic; di nuovo, si toglie (anche per Mirion Trainer: p = { id: 'trainer' })
+export function bottoneScrivania (p, carta, larga = LARGHE[carta] ?? 6) {
   const id = `p.${p.id}.${carta}`, b = el('button', { type: 'button', class: 'quieto piccolo sulla-scrivania' })
   const r = () => scrivania()?.riquadri.find(x => x.id === id)
   const disegna = () => { const su = r() && !r().nascosto; b.replaceChildren(ic(su ? 'check' : 'plus'), su ? 'Sulla scrivania' : 'Metti sulla scrivania'); b.title = su ? 'È anche sulla scrivania principale: clic per toglierla da lì' : 'Mettila anche sulla scrivania principale, con un clic'; b.setAttribute('aria-pressed', String(Boolean(su))) }
@@ -129,7 +136,7 @@ function bottoneScrivania (p, carta) {
     let x = r()
     if (x && !x.nascosto) { x.nascosto = true; x.gruppo = null; notifica(`Tolta dalla scrivania «${s.nome}»: «${TITOLI[id] ?? id}».`) }
     else {
-      if (!x) { x = { id, larghezza: LARGHE[carta] ?? 6, altezza: null, piccolo: false, nascosto: false, gruppo: null, colore: null }; s.riquadri.unshift(x) } else { x.nascosto = false; s.riquadri.splice(s.riquadri.indexOf(x), 1); s.riquadri.unshift(x) }
+      if (!x) { x = { id, larghezza: larga, altezza: null, piccolo: false, nascosto: false, gruppo: null, colore: null }; s.riquadri.unshift(x) } else { x.nascosto = false; s.riquadri.splice(s.riquadri.indexOf(x), 1); s.riquadri.unshift(x) }
       notifica(`Messa sulla scrivania «${s.nome}»: «${TITOLI[id] ?? id}».`, { azione: { testo: 'Vai', fai: () => { location.hash = 'scrivania' } } })
     }
     salva({ subito: true }); disegna()
@@ -239,6 +246,16 @@ function carta (p, quale, dati, rifai, dove) {
     riempi(async () => conNumeri(p, await dati.oggi(), d => cardPercorso(d)))
   } else if (quale === 'prestazioni') {
     riempi(async () => conNumeri(p, await dati.oggi(), d => cardPrestazioni(d)))
+  } else if (quale === 'scheda') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardScheda(p, d, rifai)))
+  } else if (quale === 'libreria') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardLibreria(p, d, rifai)))
+  } else if (quale === 'esercizi') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardEsercizi(p, d, rifai)))
+  } else if (quale === 'check') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardCheck(p, d, rifai)))
+  } else if (quale === 'misure') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardMisure(p, d, rifai)))
   }
   return fascia('carta-prodotto carta-' + quale, titolo, sopra, corpo)
 }
@@ -280,6 +297,7 @@ export function vistaOggi (p, r, rifai) {
 // una card di un software sulla scrivania principale (id «p.<software>.<card>»): si costruisce quando arriva l'elenco
 export function cartaPerScrivania (id, rifai) {
   const [, pid, quale] = id.split('.')
+  if (pid === 'trainer') return cartaTrainerPerScrivania(quale, rifai)
   const box = el('div', { class: 'carta-attesa' }, el('p', { class: 'vuoto', testo: 'Leggo…' }))
   prodotti().then(lista => {
     registraTitoli(lista)
@@ -361,6 +379,18 @@ export async function mostra (stanza, params) {
       const i = lay.riquadri.indexOf(primo); lay.riquadri.splice(i, 0, cibo)
       for (const r of pasti) { r.nascosto = true; r.gruppo = null }
       salva({ subito: true })
+    }
+  }
+  // le card del telefono che mancavano (26-11-2026 sera): il server le mette in fondo (server/disposizione.mjs); una volta
+  // sola vanno dopo «Allenamento» (o dopo «Oggi»), accese. Si riconoscono perché stanno dopo le card del lavoro sul software
+  if (haOggi(p)) {
+    const lay = disposizione(), pos = c => lay.riquadri.findIndex(r => r.id === c)
+    const nuove = NUOVE_FIT.map(c => lay.riquadri.find(r => r.id === c)).filter(r => r && pos(r.id) > pos('notizie') && pos('notizie') >= 0)
+    if (nuove.length) {
+      lay.riquadri = lay.riquadri.filter(r => !nuove.includes(r))
+      for (const r of nuove) Object.assign(r, { nascosto: false, gruppo: null, larghezza: LARGHE[r.id], altezza: null, piccolo: false })
+      const dopo = pos('allenamento') >= 0 ? pos('allenamento') : pos('oggi')
+      lay.riquadri.splice(dopo + 1, 0, ...nuove); salva({ subito: true })
     }
   }
   // «la scrivania due»: tutto il programma, a pagina intera dentro Mirion (compare quando il riepilogo dice dov'è)
@@ -486,8 +516,21 @@ function cardPrestazioni (d) {
   const deb = pr.gruppi?.find(g => g.id === pr.debole)
   return [cerchioSvg(pr), el('small', { class: 'sopra', testo: `${pr.sedute} sedute · costanza ${pr.costanza}% · multiarticolari ${pr.multi}%${deb ? ` · da spingere: ${deb.nome.toLowerCase()}` : ''}` })]
 }
+// la guida animata (26-11-2026, come in Mirion Fit): la figura fa lo squat, conta ripetizioni e serie, poi il recupero;
+// alla fine le serie fatte entrano nell'allenamento di oggi
+function apriGuida (p, rifai, id, nome) {
+  const o = { id, nome, serie: 3, rip: 10, recupero: 90, kg: null }
+  const chiudi = () => fondo.remove()
+  const scatola = el('section', { class: 'invito-scatola guida-desk', role: 'dialog', 'aria-modal': 'true', 'aria-label': `${nome} con la guida` }, el('h2', { testo: nome }))
+  const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) chiudi() } }, scatola)
+  const corpo = el('div'); corpo.innerHTML = G.htmlGuida(o); scatola.append(corpo, el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'quieto', onclick: chiudi }, 'Chiudi')))
+  document.body.append(fondo)
+  G.montaGuida(corpo, o, fatte => { chiudi(); fai(p, { tipo: 'esercizio', nome, serie: fatte.map(r => ({ ripetizioni: r, kg: 0 })) }, rifai, `${nome}: ${fatte.length} serie segnate. Aggiungi i kg se vuoi.`) })
+}
 function cardAllenamento (p, d, rifai) {
   const es = Array.isArray(d.esercizi) ? d.esercizi : []
+  const guide = el('p', { class: 'guida-scelte' }, el('small', { class: 'sopra', testo: 'Con la guida animata: ' }),
+    ...[['es:squat', 'Squat'], ['es:front-squat', 'Front squat'], ['es:goblet-squat', 'Goblet squat']].map(([id, n]) => el('button', { type: 'button', class: 'secondario piccolo', onclick: () => apriGuida(p, rifai, id, n) }, ic('target'), n)))
   const nome = el('input', { placeholder: 'Esercizio (es. Panca piana)', 'aria-label': 'L’esercizio', required: true, maxlength: 60 })
   const serie = el('input', { type: 'number', min: 1, max: 20, value: 3, class: 'numero-breve', 'aria-label': 'Serie' })
   const rip = el('input', { type: 'number', min: 1, max: 200, value: 10, class: 'numero-breve', 'aria-label': 'Ripetizioni per serie' })
@@ -498,6 +541,7 @@ function cardAllenamento (p, d, rifai) {
     fai(p, { tipo: 'esercizio', nome: nome.value.trim(), serie: Array.from({ length: n }, () => ({ ripetizioni: +rip.value || 0, kg: +kg.value || 0 })) }, rifai, `Aggiunto: ${nome.value.trim()}.`)
   } }, nome, el('span', { class: 'riga-numeri' }, serie, el('span', { testo: 'serie ×' }), rip, el('span', { testo: 'rip. ×' }), kg, el('span', { testo: 'kg' })), el('button', { class: 'primario piccolo', testo: 'Aggiungi' }))
   return [
+    guide,
     d.allenamento ? el('small', { class: 'sopra', testo: `${numero(d.allenamento.esercizi)} esercizi · ${numero(d.allenamento.serie)} serie · ${numero(d.allenamento.volume)} kg sollevati` }) : null,
     es.length ? el('ul', { class: 'pasto-voci' }, ...es.map((e, i) => el('li', {},
       el('span', { testo: [e.nome, e.serie ? `${e.serie} serie` : null, e.ripetizioni ? `${e.ripetizioni} rip.` : null, e.kg ? `fino a ${e.kg} kg` : null].filter(Boolean).join(' · ') }),
@@ -506,3 +550,98 @@ function cardAllenamento (p, d, rifai) {
       : el('p', { class: 'vuoto', testo: 'Oggi ancora niente.' }),
     el('button', { type: 'button', class: 'quieto piccolo', onclick: () => { modulo.hidden = !modulo.hidden; if (!modulo.hidden) nome.focus() } }, ic('plus'), 'Aggiungi un esercizio'), modulo]
 }
+
+// ---- le card del telefono che mancavano (Marco, 26-11-2026 sera: «la dashboard completa uguale a quella del telefono») ----
+// «La scheda del trainer»: gli esercizi con serie × ripetizioni e kg; «Fai» lo segna già pronto, come «Fai» sul telefono
+function cardScheda (p, d, rifai) {
+  const s = d.schedaTrainer
+  if (!s) return el('p', { class: 'vuoto', testo: 'Nessuna scheda: quando il tuo trainer te la manda da Mirion Trainer, la trovi qui e vale prima di tutto.' })
+  return [
+    el('p', {}, el('b', { testo: s.titolo }), el('small', { class: 'sopra', testo: `  ${s.fatti} di ${s.esercizi.length} fatti${s.da ? ` · da ${s.da}` : ''}` })),
+    el('ul', { class: 'pasto-voci scheda-voci' }, ...s.esercizi.map(e => el('li', { class: e.fatto ? 'fatto' : '' },
+      el('span', {}, el('b', { testo: e.nome }), el('small', { class: 'sopra', testo: [` ${e.serie} × ${e.rip}`, e.kg != null ? `${String(e.kg).replace('.', ',')} kg` : null, e.recupero ? `recupero ${e.recupero} s` : null, e.note || null].filter(Boolean).join(' · ') })),
+      e.fatto ? el('span', { class: 'bene', testo: '✓' })
+        : el('button', { type: 'button', class: 'primario piccolo', onclick: () => fai(p, { tipo: 'esercizio', nome: e.nome, serie: Array.from({ length: Math.max(1, +e.serie || 1) }, () => ({ ripetizioni: parseInt(e.rip, 10) || 10, kg: +e.kg || 0 })) }, rifai, `${e.nome}: segnato. Cambia i kg nella card «Allenamento» se serve.`) }, 'Fai')))),
+    s.nota ? el('p', { class: 'sopra piccolo', testo: s.nota }) : null]
+}
+// «La libreria»: gli allenamenti pronti, filtrati per livello; «Usa» lo fa diventare il tuo percorso (azione «libreria» di Mirion Fit)
+let filtroLibreria = ''
+function cardLibreria (p, d, rifai) {
+  const tutti = d.allenamentiPronti ?? []
+  if (!tutti.length) return el('p', { class: 'vuoto', testo: 'La libreria arriva con Mirion Fit aggiornato: prendi le novità del cervello.' })
+  const livelli = [...new Set(tutti.map(x => x.livello))]
+  const elenco = el('ul', { class: 'libreria-voci' })
+  const riempiElenco = () => elenco.replaceChildren(...tutti.filter(x => !filtroLibreria || x.livello === filtroLibreria).map(x => el('li', { class: d.percorso?.libreria === x.id ? 'scelto' : '' },
+    el('div', {}, el('b', { testo: x.titolo }), el('small', { class: 'sopra', testo: [x.livello, x.obiettivo, `${x.giorni} giorni a settimana`, x.minuti ? `${x.minuti} min` : null].filter(Boolean).join(' · ') }), el('p', { class: 'sopra piccolo', testo: x.descrizione }), el('small', { class: 'sopra', testo: x.sedute.join(' · ') })),
+    d.percorso?.libreria === x.id ? el('span', { class: 'bene', testo: 'il tuo percorso' })
+      : el('button', { type: 'button', class: 'secondario piccolo', onclick: () => fai(p, { tipo: 'libreria', id: x.id }, rifai, `«${x.titolo}» è il tuo percorso: la seduta di oggi è nella card «Il tuo percorso».`) }, 'Usa'))))
+  const filtri = el('div', { class: 'filtri-libreria bottoni' }, ...['', ...livelli].map(l => el('button', { type: 'button', class: 'quieto piccolo', 'aria-pressed': String(filtroLibreria === l), onclick: () => { filtroLibreria = l; for (const b of filtri.children) b.setAttribute('aria-pressed', String(b.dataset.l === l)); riempiElenco() }, 'data-l': l }, l || 'Tutti')))
+  riempiElenco()
+  return [el('small', { class: 'sopra', testo: `${tutti.length} allenamenti pronti per la palestra, con i pesi` }), filtri, elenco]
+}
+// «Gli esercizi»: come si fanno, l'ultima volta e il record; la guida animata per lo squat (fit-guida.js)
+const CON_GUIDA = ['es:squat', 'es:front-squat', 'es:goblet-squat']
+function cardEsercizi (p, d, rifai) {
+  const tutti = d.completo?.libreria ?? []
+  if (!tutti.length) return el('p', { class: 'vuoto', testo: 'Gli esercizi arrivano con Mirion Fit aggiornato.' })
+  const elenco = el('ul', { class: 'esercizi-voci' })
+  const cerca = el('input', { type: 'search', placeholder: 'Cerca un esercizio o un muscolo', 'aria-label': 'Cerca un esercizio', oninput: () => mostraEs() })
+  const mostraEs = () => {
+    const q = cerca.value.trim().toLowerCase()
+    const scelti = tutti.filter(e => !q || e.nome.toLowerCase().includes(q) || (e.muscoli ?? []).join(' ').toLowerCase().includes(q)).slice(0, q ? 40 : 12)
+    elenco.replaceChildren(...scelti.map(e => {
+      const det = el('div', { class: 'esercizio-come', hidden: true },
+        (e.passi ?? []).length ? el('ol', {}, ...e.passi.map(x => el('li', { testo: x }))) : null,
+        e.attenzione ? el('p', { class: 'sopra piccolo presto', testo: 'Attenzione: ' + e.attenzione }) : null)
+      return el('li', {},
+        el('div', {}, el('button', { type: 'button', class: 'quieto esercizio-nome', 'aria-expanded': 'false', onclick: ev => { det.hidden = !det.hidden; ev.currentTarget.setAttribute('aria-expanded', String(!det.hidden)) } }, el('b', { testo: e.nome })),
+          el('small', { class: 'sopra', testo: [(e.muscoli ?? []).join(', '), e.attrezzo, e.record?.kg ? `record ${e.record.kg} kg × ${e.record.ripetizioni}` : null, e.ultimaVolta ? `l’ultima volta ${e.ultimaVolta.giorno.slice(8)}/${e.ultimaVolta.giorno.slice(5, 7)}` : null].filter(Boolean).join(' · ') }), det),
+        CON_GUIDA.includes(e.id) ? el('button', { type: 'button', class: 'secondario piccolo', onclick: () => apriGuida(p, rifai, e.id, e.nome) }, ic('target'), 'Guida') : null)
+    }))
+  }
+  mostraEs()
+  return [el('small', { class: 'sopra', testo: `${tutti.length} esercizi · clic sul nome per come si fa` }), cerca, elenco]
+}
+// «Il check della settimana»: cinque domande da 1 a 5 e una riga; lo vede anche il trainer, se condividi
+function cardCheck (p, d, rifai) {
+  const domande = d.domandeCheck ?? [], c = d.check
+  if (c) return [el('small', { class: 'sopra', testo: 'fatto questa settimana' }),
+    el('ul', { class: 'pasto-voci' }, ...domande.map(q => el('li', {}, el('span', { testo: q.nome }), el('b', { testo: c[q.id] ? `${c[q.id]}/5` : '–' })))),
+    c.nota ? el('p', { class: 'sopra piccolo', testo: c.nota }) : null]
+  if (!domande.length) return el('p', { class: 'vuoto', testo: 'Il check arriva con Mirion Fit aggiornato.' })
+  const risposte = {}
+  const nota = el('input', { placeholder: 'Una riga per il trainer (facoltativa)', maxlength: 500, 'aria-label': 'Una riga per il trainer' })
+  return [el('small', { class: 'sopra', testo: 'Com’è andata la settimana? Cinque domande, un minuto.' }),
+    el('form', { class: 'check-modulo', onsubmit: e => { e.preventDefault(); if (Object.keys(risposte).length < 3) return notifica('Rispondi almeno a tre domande.'); fai(p, { tipo: 'check', risposte, nota: nota.value }, rifai, 'Check fatto. Grazie!') } },
+      ...domande.map(q => el('div', { class: 'check-domanda' }, el('small', { class: 'sopra', testo: `${q.nome} (1 ${q.basso}, 5 ${q.alto})` }),
+        el('div', { class: 'check-voti', role: 'group', 'aria-label': q.nome }, ...[1, 2, 3, 4, 5].map(v => el('button', { type: 'button', class: 'quieto piccolo', 'aria-pressed': 'false', onclick: ev => { risposte[q.id] = v; for (const b of ev.currentTarget.parentNode.children) b.setAttribute('aria-pressed', String(b === ev.currentTarget)) } }, String(v)))))),
+      nota, el('button', { class: 'primario piccolo', testo: 'Fatto' }))]
+}
+// «Le misure»: vita, fianchi, petto, braccio e coscia in centimetri, con la differenza dalla volta prima
+const MISURE = [['vita', 'Vita'], ['fianchi', 'Fianchi'], ['petto', 'Petto'], ['braccio', 'Braccio'], ['coscia', 'Coscia']]
+function cardMisure (p, d, rifai) {
+  const tutte = d.completo?.misure ?? [], ultima = tutte.at(-1), prima = tutte.at(-2)
+  const campi = MISURE.map(([k, t]) => el('label', { class: 'misura-campo' }, el('small', { class: 'sopra', testo: t }), el('input', { type: 'number', step: '0.5', min: 10, max: 250, name: k, value: '', class: 'numero-breve', 'aria-label': t + ' in cm' })))
+  const modulo = el('form', { class: 'misure-modulo', hidden: true, onsubmit: e => { e.preventDefault(); const m = {}; for (const c of campi) { const i = c.querySelector('input'); if (i.value) m[i.name] = +i.value } if (!Object.keys(m).length) return notifica('Scrivi almeno una misura.'); fai(p, { tipo: 'misure', misure: m }, rifai, 'Misure segnate.') } }, ...campi, el('button', { class: 'primario piccolo', testo: 'Salva' }))
+  const diff = k => ultima?.[k] != null && prima?.[k] != null ? Math.round((ultima[k] - prima[k]) * 10) / 10 : null
+  return [
+    ultima ? el('ul', { class: 'pasto-voci' }, ...MISURE.filter(([k]) => ultima[k] != null).map(([k, t]) => el('li', {}, el('span', { testo: t }), el('b', { testo: `${String(ultima[k]).replace('.', ',')} cm` }), diff(k) ? el('small', { class: diff(k) < 0 ? 'bene' : 'presto', testo: `${diff(k) > 0 ? '+' : ''}${String(diff(k)).replace('.', ',')}` }) : null)))
+      : el('p', { class: 'sopra piccolo', testo: 'Con il metro da sarta, sempre nello stesso punto: si vedono i centimetri persi anche quando la bilancia sta ferma.' }),
+    ultima ? el('small', { class: 'sopra', testo: `le ultime il ${ultima.data.slice(8)}/${ultima.data.slice(5, 7)}` }) : null,
+    el('button', { type: 'button', class: 'quieto piccolo', onclick: () => { modulo.hidden = !modulo.hidden } }, ic('plus'), 'Segna le misure'), modulo]
+}
+
+// Mirion Fit e Mirion Trainer insieme sulla scrivania principale (Marco, 26-11-2026 sera: «mettimele insieme come se fossi io il
+// trainer»): una volta sola, in cima, il tuo Oggi e il tuo allenamento accanto a quello che chiedono i tuoi clienti. Da lì si
+// tolgono con la ✕ come le altre, e non tornano più
+const INSIEME = [['p.piatto.oggi', 6], ['p.trainer.guarda', 6], ['p.piatto.allenamento', 6], ['p.trainer.squadra', 3], ['p.piatto.prestazioni', 3], ['p.trainer.sedute', 6], ['p.trainer.fit', 6]].filter(([id]) => id !== 'p.trainer.fit')
+export function insiemeSullaScrivania (s) {
+  let fatto = false; try { fatto = localStorage.getItem('mirion:fit-trainer-insieme') === '1' } catch { }
+  if (fatto || !s || s.id !== 'principale') return false
+  try { localStorage.setItem('mirion:fit-trainer-insieme', '1') } catch { }
+  if (s.riquadri.some(r => /^p\.trainer\./.test(r.id))) return false
+  const nuove = INSIEME.filter(([id]) => !s.riquadri.some(r => r.id === id && !r.nascosto)).map(([id, larghezza]) => ({ id, larghezza, altezza: null, piccolo: false, nascosto: false, gruppo: null, colore: null }))
+  s.riquadri = [...nuove, ...s.riquadri.filter(r => !nuove.some(x => x.id === r.id))]
+  return nuove.length > 0
+}
+

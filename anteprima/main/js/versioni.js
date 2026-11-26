@@ -4,6 +4,24 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.54', data: '2026-11-26', titolo: 'Aggiornamenti molto più veloci', novita: [
+    'Dalla prossima versione Mirion scarica solo i file cambiati, di solito pochi KB invece di 130 MB, e si riapre aggiornata in pochi secondi, su Windows e sul Mac.',
+    'Se cambia anche la base del programma (Electron), o se qualcosa va storto, Mirion scarica tutto come prima: l’aggiornamento arriva comunque, sempre con la firma di Marco.',
+  ] },
+  { versione: '0.1.53', data: '2026-11-26', titolo: 'Mirion Trainer sul telefono senza il computer', novita: [
+    'Mirion Trainer sul telefono funziona anche a computer spento e fuori casa: Clienti → «Sul telefono» → «Crea il QR per il telefono», lo inquadri e lo aggiungi alla schermata Home.',
+    'Dal telefono vedi i clienti di Mirion Fit online, rispondi in chat, mandi la scheda, commenti i progressi e inviti clienti nuovi con il QR.',
+    'Il cerchio delle prestazioni è un esagono anche in Mirion Trainer sul telefono.',
+  ] },
+  { versione: '0.1.52', data: '2026-11-26', titolo: 'Il cerchio a esagono e il Trainer sul telefono dopo gli aggiornamenti', novita: [
+    'Il cerchio delle prestazioni dei clienti è un esagono, come su Mirion Fit: ogni gruppo è diviso nei suoi muscoli, colorati a fasce dal rosso al viola, con la legenda sotto.',
+    'Mirion Trainer sul telefono si riapre dalla schermata Home anche dopo un aggiornamento: Mirion resta sulla stessa porta.',
+  ] },
+  { versione: '0.1.51', data: '2026-11-26', titolo: 'Mirion Trainer pulita, rientro dal Fit, la guida dello squat', novita: [
+    'Mirion Trainer senza clienti inventati: il tasto della prova non c’è più e quelli rimasti si tolgono da soli.',
+    'Dal tuo Mirion Fit, il tasto «Trainer» ti riporta in Mirion Trainer sul telefono senza rifare il codice dal computer.',
+    'Nella card «Allenamento» di Mirion Fit c’è la guida animata dello squat: conta ripetizioni e serie e fa partire il recupero.',
+  ] },
   { versione: '0.1.50', data: '2026-11-26', titolo: 'Mirion sul Mac si aggiorna da sola', novita: [
     'Sul Mac Mirion si aggiorna da sola, come su Windows: scarica la versione nuova, controlla la firma, sostituisce l’app e si riapre. Niente più pagina di GitHub e .dmg da riscaricare.',
   ] },

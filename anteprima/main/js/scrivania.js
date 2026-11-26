@@ -87,6 +87,7 @@ function disegna () {
   const fila = barraScrivanie(disegna); fila.querySelector('.scrivania-nuova')?.before(pillSquadra(false)); fila.append(pulsanteAnnulla())
   // le card dei software messe qui con «Metti sulla scrivania» (prodotto.js, 23-11)
   const deiSoftware = {}, spaziSoftware = {}
+  if (software.insiemeSullaScrivania(scrivaniaAttiva())) salva({ subito: true }) // Mirion Fit e Mirion Trainer insieme (26-11-2026 sera)
   for (const r of scrivaniaAttiva()?.riquadri ?? []) if (/^p\./.test(r.id)) { deiSoftware[r.id] = () => software.cartaPerScrivania(r.id, ricarica); spaziSoftware[r.id] = () => software.paginaCompleta(r.id) }
   const contenuti = { ...deiSoftware, adesso: () => banner(s, ricarica), giorni: () => giorni(s, ricarica), cervello: () => cervello(s), progetti: () => progetti(s.progetti, stanza, { completa: pagina === 'progetti', task: [...s.prossime, ...s.senzaData] }),
     scadute: () => extra.scadute(ricarica), accessi: extra.accessi, lavagne: extra.lavagne, cerca: extra.cerca, diario: extra.diario, gestionali: casellaGestionali, conti: casellaConti,

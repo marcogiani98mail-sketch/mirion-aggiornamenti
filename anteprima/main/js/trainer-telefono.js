@@ -6,7 +6,10 @@
 // con le stesse API della stanza Clienti (/api/clienti). Si installa come app con «Aggiungi a schermata Home» (trainer.webmanifest).
 import { daGuardare, squadra, quandoBreve, giorniDa, TEMI, FASTIDI } from './trainer-oggi.js'
 import { accendiStelle } from './spazio.js'
-import { BASE_API } from './trainer-config.js' // '' = il server di Mirion sul computer; online, l'indirizzo del backend
+import { BASE_API, ONLINE } from './trainer-config.js' // '' = il server di Mirion sul computer; ONLINE: la web app senza computer
+import { creaOnline } from './trainer-online.js'
+// la web app su GitHub Pages (26-11-2026 sera, Marco: «Sì, online da solo»): i dati da Mirion Fit online, non dal computer
+const online = ONLINE ? creaOnline({ qr: globalThis.mirionQr }) : null
 
 const $ = s => document.querySelector(s)
 function el (tag, attr = {}, ...figli) {
@@ -22,6 +25,7 @@ function el (tag, attr = {}, ...figli) {
   return e
 }
 async function api (url, corpo) {
+  if (online) return online.api(url, corpo)
   const r = await fetch(BASE_API + url, corpo === undefined ? { credentials: BASE_API ? 'include' : 'same-origin' } : { method: 'POST', credentials: BASE_API ? 'include' : 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) })
   const d = await r.json().catch(() => ({ errore: 'risposta illeggibile' }))
   if (r.status === 401 && !d.accesso && !BASE_API) { location.href = '/'; throw new Error('Abbina prima il telefono') } // la porta del telefono chiede il codice
@@ -41,23 +45,33 @@ const faccia = c => c.faccia ? el('img', { class: 't-faccia', src: c.faccia, alt
 const giornoCorto = g => new Date(g + 'T12:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 const carta = (titolo, sopra, ...dentro) => el('section', { class: 't-carta' }, el('header', {}, el('h2', { testo: titolo }), sopra ? el('small', { testo: sopra }) : null), ...dentro)
 
-// il cerchio delle prestazioni: lo stesso disegno di Mirion Fit (sei spicchi pieni quanto le serie a settimana)
+// il cerchio delle prestazioni: lo stesso esagono di Mirion Fit (26-11-2026: «diagramma esagonale… sotto settori per muscoli…
+// fasce di colori più specifiche»): ogni gruppo diviso nei suoi muscoli, ognuno colorato con la sua fascia, la linea che li unisce
+const FASCE = [[0.25, 'f1', 'da cominciare'], [0.5, 'f2', 'poco'], [0.75, 'f3', 'a metà'], [1, 'f4', 'quasi'], [Infinity, 'f5', 'pieno']]
+const fascia5 = p => FASCE.find(([x]) => p < x)[1]
+const escSvg = v => String(v ?? '').replace(/[&<>"']/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]))
+const virg = v => String(Math.round((+v || 0) * 10) / 10).replace('.', ',')
 function cerchio (pr, piccolo = false) {
-  const NS = 'http://www.w3.org/2000/svg', c = 110, r0 = 40, r1 = 96, gr = Array.isArray(pr?.gruppi) ? pr.gruppi.slice(0, 8) : [], giro = (2 * Math.PI) / Math.max(1, gr.length), gap = 0.035
-  const pt = (r, a) => `${(c + r * Math.sin(a)).toFixed(1)},${(c - r * Math.cos(a)).toFixed(1)}`
-  const sp = (ra, rb, a0, a1) => `M${pt(ra, a0)} L${pt(rb, a0)} A${rb},${rb} 0 0 1 ${pt(rb, a1)} L${pt(ra, a1)} A${ra},${ra} 0 0 0 ${pt(ra, a0)} Z`
-  const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', piccolo ? '0 0 220 220' : '-14 -4 248 228'); s.setAttribute('class', 't-cerchio' + (piccolo ? ' piccolo' : ''))
-  s.setAttribute('role', 'img'); s.setAttribute('aria-label', `Cerchio prestazioni: ${pr?.punteggio ?? '–'} su 100`)
-  const nodo = (tag, a, testo) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(a)) n.setAttribute(k, v); if (testo != null) n.textContent = testo; s.append(n); return n }
-  gr.forEach((g, i) => {
-    const a0 = i * giro + gap, a1 = (i + 1) * giro - gap, pieno = Math.max(0, Math.min(1, +g.pieno || 0))
-    nodo('path', { d: sp(r0, r1, a0, a1), class: 'vuoto' })
-    if (pieno > 0.01) nodo('path', { d: sp(r0, r0 + (r1 - r0) * pieno, a0, a1), class: 'pieno' + (g.id === pr.debole ? ' debole' : '') })
-    if (!piccolo) { const [x, y] = pt(r1 + 14, (a0 + a1) / 2).split(','); nodo('text', { x, y, class: 'nome', 'text-anchor': 'middle', 'dominant-baseline': 'middle' }, g.nome) }
-  })
-  nodo('text', { x: c, y: c + (piccolo ? 10 : -4), class: 'punti', 'text-anchor': 'middle' }, pr?.punteggio ?? '–')
-  if (!piccolo) nodo('text', { x: c, y: c + 16, class: 'sotto', 'text-anchor': 'middle' }, 'su 100')
-  return s
+  const c = 110, R = 92, gr = Array.isArray(pr?.gruppi) ? pr.gruppi.slice(0, 8) : [], n = Math.max(3, gr.length)
+  const vert = (i, r = R) => { const a = (i * 2 * Math.PI) / n - Math.PI / 2 - Math.PI / n; return [c + r * Math.cos(a), c + r * Math.sin(a)] }
+  const P = ([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`, lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+  const pieno = v => Math.max(0, Math.min(1, +v || 0))
+  const griglia = [0.25, 0.5, 0.75, 1].map(f => `<polygon class="esa-riga ${f === 1 ? 'bordo' : ''}" points="${Array.from({ length: n }, (_, i) => P(vert(i, R * f))).join(' ')}"/>`).join('')
+  const raggi = Array.from({ length: n }, (_, i) => { const [x, y] = vert(i); return `<line class="esa-raggio" x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>` }).join('')
+  const parti = gr.map((g, i) => {
+    const A = vert(i), B = vert(i + 1), mus = Array.isArray(g.muscoli) && g.muscoli.length ? g.muscoli : [{ nome: g.nome, serie: g.serie, obiettivo: g.obiettivo, pieno: g.pieno }]
+    const sotto = mus.map((m, j) => {
+      const a = lerp(A, B, j / mus.length), b = lerp(A, B, (j + 1) / mus.length), f = pieno(m.pieno)
+      return `<polygon class="esa-sotto" points="${c},${c} ${P(a)} ${P(b)}"/>${f > 0.01 ? `<polygon class="esa-pieno ${fascia5(+m.pieno || 0)}" points="${c},${c} ${P(lerp([c, c], a, f))} ${P(lerp([c, c], b, f))}"><title>${escSvg(m.nome)}: ${virg(m.serie)} serie a settimana su ${virg(m.obiettivo)}</title></polygon>` : ''}${j ? `<line class="esa-taglio" x1="${c}" y1="${c}" x2="${a[0].toFixed(1)}" y2="${a[1].toFixed(1)}"/>` : ''}`
+    }).join('')
+    const et = lerp([c, c], lerp(A, B, 0.5), 1.2)
+    return `<g class="esa-gruppo ${g.id === pr.debole ? 'debole' : ''}">${sotto}${piccolo ? '' : `<text x="${et[0].toFixed(1)}" y="${et[1].toFixed(1)}" class="nome" text-anchor="middle" dominant-baseline="middle">${escSvg(g.nome)}</text>`}</g>`
+  }).join('')
+  const linea = gr.map((g, i) => P(lerp([c, c], lerp(vert(i), vert(i + 1), 0.5), Math.max(0.04, pieno(g.pieno))))).join(' ')
+  const box = el('figure', { class: 't-esagono' + (piccolo ? ' piccolo' : '') })
+  box.innerHTML = `<svg viewBox="${piccolo ? '14 14 192 192' : '-18 -6 256 232'}" class="t-cerchio${piccolo ? ' piccolo' : ''}" role="img" aria-label="Cerchio prestazioni: ${escSvg(pr?.punteggio ?? '–')} su 100">${parti}${griglia}${raggi}${gr.length ? `<polygon class="esa-linea" points="${linea}"/>` : ''}<circle cx="${c}" cy="${c}" r="${piccolo ? 22 : 25}" class="esa-centro"/><text x="${c}" y="${c + (piccolo ? 6 : 4)}" class="punti" text-anchor="middle">${escSvg(pr?.punteggio ?? '–')}</text>${piccolo ? '' : `<text x="${c}" y="${c + 17}" class="sotto" text-anchor="middle">su 100</text>`}</svg>` +
+    (piccolo ? '' : `<figcaption class="esa-legenda">${FASCE.map(([x, k, nome], i) => `<span><i class="${k}"></i>${i < 4 ? `fino al ${Math.round(x * 100)}%` : '100%'} · ${nome}</span>`).join('')}</figcaption>`)
+  return box
 }
 
 let dati = null, letti = 0
@@ -242,7 +256,7 @@ async function mostra () {
     else if (nome === 'squadra') await vistaSquadra(v)
     else await vistaOggi(v)
     scrollTo(0, 0)
-  } catch (e) { metti(v, el('p', { class: 't-vuoto', testo: e.message || 'Il computer non risponde: Mirion è acceso?' })) }
+  } catch (e) { metti(v, el('p', { class: 't-vuoto', testo: e.message || (online ? 'Mirion Fit online non risponde: riprova fra poco.' : 'Il computer non risponde: Mirion è acceso?') })) }
 }
 addEventListener('hashchange', mostra)
 // il tuo Mirion Fit (Marco, 26-11-2026: «al trainer lo puoi far collegare anche al suo Mirion Fit, che è incluso, e può passare a
@@ -257,7 +271,9 @@ $('#mio-fit').addEventListener('click', async () => {
     try { const r = await api('/api/clienti', { azione: 'invita-online', etichetta: 'Io, il trainer' }); link = r.url ?? r.link } catch (e) { return dimmi(e.message) }
     try { localStorage.setItem(MIO_FIT, link) } catch { }
   }
-  const u = new URL(link); u.searchParams.set('tr', location.origin + location.pathname + '#oggi'); location.href = u.href
+  // il link per tornare porta il gettone di rientro: da Mirion Fit si rientra senza rifare l'abbinamento (server/telefono.mjs)
+  let g = null; if (!BASE_API && !online) try { g = (await (await fetch('/telefono/rientro', { method: 'POST', credentials: 'same-origin' })).json()).g } catch { }
+  const u = new URL(link); u.searchParams.set('tr', online ? location.origin + location.pathname + location.search + '#oggi' : location.origin + location.pathname + (g ? '?g=' + g : '') + '#oggi'); location.href = u.href
 })
 $('#aggiorna').addEventListener('click', async () => { letti = 0; await leggi(true).catch(() => {}); mostra() })
 // le novità ogni minuto, finché la pagina si vede (non nella pagina di un cliente, per non perdere quello che stai scrivendo)

@@ -183,3 +183,111 @@
 @media (max-width: 760px) { .accessi-app .app-licenza { grid-template-columns: 1fr; } }
 .accessi-app details summary { cursor: pointer; color: var(--testo-2); font-size: .9rem; }
 .licenze-date li .bottoni { margin-top: .3rem; }
+
+/* La guida animata di un esercizio, come in Mirion Fit (26-11-2026, fit-guida.js) */
+.guida-desk { --lilla: #9d6bff; --fondo: #0d0a18; --tenue: #a99cc4; --accento-2: #ff9a6b; width: min(94vw, 440px); justify-items: stretch; text-align: left; background: #120e1f; color: #f1ecff; }
+.guida-desk h2 { text-align: center; margin: 0; }
+.guida-anteprima { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 4px; border-radius: 18px; background: color-mix(in oklch, var(--lilla) 7%, var(--fondo)); border: 1px solid color-mix(in oklch, var(--lilla) 14%, transparent); }
+.guida-anteprima .guida-svg { width: 112px; flex: none; }
+.guida-anteprima-testo { display: flex; flex-direction: column; gap: 3px; }
+.guida-anteprima-testo b { font-family: 'Space Grotesk', Inter, sans-serif; font-size: 18px; }
+.guida-via { margin-top: 2px; }
+.guida-svg { display: block; overflow: visible; }
+.guida-svg .g-terra { stroke: color-mix(in oklch, var(--lilla) 30%, transparent); stroke-width: 1.5; }
+.guida-svg .g-ombra { fill: rgb(0 0 0 / 35%); }
+.guida-svg .g-parallelo { stroke: color-mix(in oklch, var(--lilla) 35%, transparent); stroke-width: 1.2; stroke-dasharray: 4 4; transition: stroke .2s; }
+.guida-svg .g-parallelo.preso { stroke: var(--accento-2, #ff9a6b); stroke-dasharray: none; stroke-width: 2; }
+.guida-svg .g-parallelo-t { font: 600 8px Inter, sans-serif; fill: color-mix(in oklch, var(--lilla) 55%, transparent); letter-spacing: .04em; text-transform: uppercase; }
+.guida-svg .g-parallelo-t.preso { fill: var(--accento-2, #ff9a6b); }
+.guida-svg .g-fig { filter: drop-shadow(0 0 6px rgb(157 107 255 / 45%)); transition: opacity .3s; }
+.guida-svg.spenta .g-fig { opacity: .45; }
+.guida-es { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.guida-palco { position: relative; display: grid; place-items: center; border-radius: 22px; padding: 8px 0 0; background: radial-gradient(120% 90% at 50% 20%, color-mix(in oklch, var(--lilla) 16%, transparent), transparent 70%), var(--fondo); border: 1px solid color-mix(in oklch, var(--lilla) 16%, transparent); overflow: hidden; }
+.guida-svg.grande { width: min(300px, 78vw); }
+.guida-riposo { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(5 4 11 / 55%); backdrop-filter: blur(3px); }
+.guida-riposo[hidden] { display: none; }
+.guida-anello { width: 170px; height: 170px; transform: rotate(-90deg); grid-area: 1 / 1; }
+.guida-anello circle { fill: none; stroke-width: 8; }
+.guida-anello .fondo { stroke: color-mix(in oklch, var(--lilla) 18%, transparent); }
+.guida-anello .avanza { stroke: url(#g-lavora); stroke: var(--accento-2, #ff9a6b); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 0; }
+.guida-riposo-testo { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; }
+.guida-riposo-testo b { font: 700 52px/1 'Space Grotesk', Inter, sans-serif; }
+.guida-riposo-testo small { color: var(--tenue); font-size: 13px; }
+.guida-frase { text-align: center; font: 600 22px/1.2 'Space Grotesk', Inter, sans-serif; margin: 2px 0 0; min-height: 1.2em; background: linear-gradient(90deg, #c9a8ff, #ff9a6b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.guida-numeri { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 18px; background: color-mix(in oklch, var(--lilla) 6%, var(--fondo)); }
+.guida-rip { display: flex; align-items: baseline; gap: 6px; }
+.guida-rip b { font: 700 46px/1 'Space Grotesk', Inter, sans-serif; font-variant-numeric: tabular-nums; }
+.guida-rip span { color: var(--tenue); font-size: 13px; max-width: 7em; line-height: 1.2; }
+.guida-serie { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-weight: 600; }
+.guida-puntini { display: flex; gap: 6px; }
+.guida-puntini i { display: block; flex: none; width: 12px; height: 12px; border-radius: 50%; background: color-mix(in oklch, var(--lilla) 20%, transparent); }
+.guida-puntini i.fatto { background: linear-gradient(135deg, #9d6bff, #ff9a6b); }
+.guida-puntini i.adesso { box-shadow: 0 0 0 2px var(--accento-2, #ff9a6b) inset; animation: g-pulsa 1.2s ease-in-out infinite; }
+@keyframes g-pulsa { 50% { transform: scale(1.25); } }
+.guida-bottoni { display: flex; gap: 8px; }
+.guida-bottoni .btn { flex: 1; min-height: 48px; font-size: 16px; }
+.guida-scelte { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.guida-desk { max-height: 94vh; overflow: auto; }
+.guida-desk .guida-svg.grande { width: 240px; height: auto; }
+.guida-desk .guida-anello { width: 150px; height: 150px; }
+.guida-desk .guida-palco { min-height: 0; }
+.guida-svg .g-alone, .guida-svg .g-ombra, .guida-svg text, .guida-svg .g-testa { stroke: none; }
+
+/* il cerchio a esagono con i muscoli e le fasce di colore, come su Mirion Fit (26-11-2026) */
+.cerchio-fit.esagono { max-width: 300px; }
+.cerchio-fit .esa-sotto { fill: color-mix(in oklch, var(--lilla, #c9a8ff) 7%, transparent); stroke: none; }
+.cerchio-fit .esa-pieno { stroke: rgb(5 4 11 / 35%); stroke-width: .6; }
+.cerchio-fit .f1, .esa-legenda i.f1 { fill: #ff5d73; background: #ff5d73; }
+.cerchio-fit .f2, .esa-legenda i.f2 { fill: #ff9a6b; background: #ff9a6b; }
+.cerchio-fit .f3, .esa-legenda i.f3 { fill: #ffd36b; background: #ffd36b; }
+.cerchio-fit .f4, .esa-legenda i.f4 { fill: #6be3a4; background: #6be3a4; }
+.cerchio-fit .f5, .esa-legenda i.f5 { fill: #9d6bff; background: linear-gradient(90deg, #9d6bff, #c9a8ff); }
+.cerchio-fit .esa-riga { fill: none; stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 22%, transparent); stroke-width: .7; stroke-dasharray: 2 3; }
+.cerchio-fit .esa-riga.bordo { stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 45%, transparent); stroke-width: 1.2; stroke-dasharray: none; }
+.cerchio-fit .esa-raggio { stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 35%, transparent); stroke-width: 1; }
+.cerchio-fit .esa-taglio { stroke: rgb(5 4 11 / 55%); stroke-width: .8; }
+.cerchio-fit .esa-linea { fill: color-mix(in oklch, #c9a8ff 10%, transparent); stroke: #f1ecff; stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgb(201 168 255 / 70%)); }
+.cerchio-fit .esa-centro { fill: var(--carta, #1b151d); stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 50%, transparent); stroke-width: 1.2; }
+.cerchio-fit .esa-gruppo.debole .cerchio-nome { fill: var(--presto, #ff9a6b); }
+.cerchio-fit .cerchio-punti { font-size: 24px; }
+.esa-legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin: 4px 0 0; font-size: 11px; color: var(--tenue); }
+.esa-legenda span { display: inline-flex; align-items: center; gap: 4px; }
+.esa-legenda i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.trainer-titoletto { margin: 14px 0 6px; font: 600 .95rem var(--titoli, Inter); color: var(--testo); }
+.trainer-online { display: grid; gap: 8px; justify-items: start; }
+
+/* la dashboard di Mirion Trainer a card (26-11-2026 sera: «la dashboard completa uguale a quella del telefono») */
+.trainer-spiega { margin: 2px 0 10px; }
+.carta-trainer .carta-corpo { display: grid; gap: .6rem; align-content: start; }
+.carta-trainer .clienti-cifre { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.carta-trainer .clienti-griglia { margin-top: 2px; }
+.cruscotto-classifica a { grid-template-areas: "n b p" "d d d"; }
+.cruscotto-classifica .classifica-dettagli { grid-area: d; font-size: .76rem; margin-top: -3px; }
+.trainer-cerca, .carta-esercizi input[type=search] { width: 100%; max-width: 360px; padding: .45rem .7rem; border-radius: 10px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--carta) 70%, transparent); color: var(--testo); }
+.trainer-invito-fatto { display: grid; grid-template-columns: minmax(150px, 210px) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.trainer-invito-fatto .invito-qr { background: #fff; border-radius: 12px; padding: 8px; }
+.trainer-invito-fatto .invito-qr svg { width: 100%; height: auto; display: block; }
+.trainer-invito-fatto code { display: block; word-break: break-all; margin: 2px 0 8px; }
+@media (max-width: 640px) { .trainer-invito-fatto { grid-template-columns: 1fr; } }
+.mio-fit-fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .8rem; }
+.mio-fit-fila > div { display: grid; gap: 2px; }
+.icona-fit-mini { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+
+/* le card di Mirion Fit che c'erano solo sul telefono (prodotto.js) */
+.scheda-voci li, .libreria-voci li, .esercizi-voci li { display: flex; align-items: center; justify-content: space-between; gap: .7rem; }
+.scheda-voci li.fatto b { text-decoration: line-through; opacity: .7; }
+.libreria-voci, .esercizi-voci { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.libreria-voci li { padding: .6rem .7rem; border-radius: 12px; border: 1px solid var(--linea); align-items: start; }
+.libreria-voci li.scelto { border-color: var(--viola); background: color-mix(in oklch, var(--viola) 10%, transparent); }
+.libreria-voci p { margin: .25rem 0; }
+.filtri-libreria [aria-pressed=true], .check-voti [aria-pressed=true] { background: var(--viola); color: var(--su-accento, #fff); }
+.esercizi-voci li { align-items: start; padding-bottom: .45rem; border-bottom: 1px solid var(--linea); }
+.esercizio-nome { padding: 0; text-align: left; }
+.esercizio-come ol { margin: .35rem 0; padding-left: 1.2rem; font-size: .86rem; }
+.check-modulo { display: grid; gap: .5rem; }
+.check-voti { display: flex; gap: 4px; }
+.check-voti button { min-width: 2rem; }
+.misure-modulo { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; }
+.misura-campo { display: grid; gap: 2px; }
+.libreria-voci b { display: block; }
+.check-voti button { border: 1px solid var(--linea); border-radius: 8px; }
