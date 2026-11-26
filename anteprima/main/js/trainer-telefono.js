@@ -204,12 +204,17 @@ function cartaScheda (c) {
     el('small', { testo: `ultima: ${(a.serie ?? []).map(x => x.kg ? `${String(x.kg).replace('.', ',')} kg × ${x.rip}` : `${x.rip} rip.`).join(' · ')}${a.proposta ? ` → ${String(a.proposta.kg).replace('.', ',')} kg` : ''}` })))) : null
   return carta('La scheda', s ? `ora: ${s.titolo || 'senza titolo'}` : 'nessuna', comeVa, el('form', { class: 't-modulo', onsubmit: async e => {
     e.preventDefault()
+    // quello che il telefono non mostra (la nota, il recupero, l'esercizio della libreria scritti dal computer) resta com'era
+    // per gli esercizi con lo stesso nome: prima si perdeva (analisi del 26-11, T1)
+    const prima = new Map((s?.esercizi ?? []).map(e => [String(e.nome ?? '').trim().toLowerCase(), e]))
+    const tieni = nome => { const v = prima.get(nome.toLowerCase()); return { esercizioId: v?.esercizioId ?? '', recupero: v?.recupero ?? null, note: v?.note ?? '' } }
     const esercizi = righe.value.split('\n').map(r => r.trim()).filter(Boolean).slice(0, 20).map(r => {
       const m = /^(.*?)\s+(\d{1,2})\s*[x×]\s*([\d-]{1,7})(?:\s+(\d+(?:[.,]\d+)?))?\s*(?:kg)?$/i.exec(r)
-      return m ? { esercizioId: '', nome: m[1].trim(), serie: +m[2], rip: m[3], kg: m[4] ? +m[4].replace(',', '.') : null, recupero: null, note: '' } : { esercizioId: '', nome: r, serie: 3, rip: '10', kg: null, recupero: null, note: '' }
+      const nome = m ? m[1].trim() : r
+      return m ? { ...tieni(nome), nome, serie: +m[2], rip: m[3], kg: m[4] ? +m[4].replace(',', '.') : null } : { ...tieni(nome), nome, serie: 3, rip: '10', kg: null }
     })
     if (!esercizi.length) return dimmi('Scrivi almeno un esercizio.')
-    try { await api('/api/clienti', { azione: 'scheda', id: c.id, scheda: { titolo: titolo.value.trim(), nota: '', esercizi } }); dimmi(`La scheda è arrivata a ${c.nome}.`) } catch (err) { dimmi(err.message) }
+    try { await api('/api/clienti', { azione: 'scheda', id: c.id, scheda: { titolo: titolo.value.trim(), nota: s?.nota ?? '', esercizi } }); dimmi(`La scheda è arrivata a ${c.nome}.`) } catch (err) { dimmi(err.message) }
   } }, titolo, righe, el('div', { class: 't-bottoni' }, andamento.length ? el('button', { type: 'button', onclick: proponi }, 'Proponi in base a come va') : null, el('button', { class: 't-primario' }, 'Manda la scheda'))))
 }
 

@@ -151,8 +151,9 @@ export function ordinabile (contenitore, { fatto, unisci = null, fuori = null, a
       if (dito) { document.removeEventListener('touchmove', ferma); cosa.classList.remove('presa') }
       fantasma?.remove(); cosa.classList.remove('in-viaggio'); document.body.classList.remove('si-trascina')
       if (!mosso) return
-      const ferma = ev => { ev.preventDefault(); ev.stopPropagation() } // il clic che arriva dopo un trascinamento non apre niente
-      addEventListener('click', ferma, { capture: true, once: true }); setTimeout(() => removeEventListener('click', ferma, true), 0)
+      // il clic che arriva dopo un trascinamento non apre niente (nome diverso da «ferma» del dito: prima l'errore bloccava il rilascio col touch, analisi del 26-11)
+      const fermaClic = ev => { ev.preventDefault(); ev.stopPropagation() }
+      addEventListener('click', fermaClic, { capture: true, once: true }); setTimeout(() => removeEventListener('click', fermaClic, true), 0)
       const b = bersaglio; segna(null)
       if (fuori && ultimo && !sopra(ultimo, contenitore.parentElement ?? contenitore)) return fuori(cosa.dataset.id, ultimo)
       if (b) unisci(cosa.dataset.id, b.dataset.id); else fatto(figli().map(f => f.dataset.id), posto ? { id: cosa.dataset.id, colonna: posto } : null)
