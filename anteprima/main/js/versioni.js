@@ -4,6 +4,10 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.40', data: '2026-11-26', titolo: 'Notifiche ferme, «Da chiudere» e «Nascoste» separate', novita: [
+    'Le notifiche in alto hanno sempre la stessa larghezza e il testo al centro; le frecce si fermano all’ultima invece di ricominciare.',
+    '«Da chiudere» e «Nascoste» sono due card diverse, e con «Segna tutte fatte» le chiudi tutte con un clic.',
+  ] },
   { versione: '0.1.39', data: '2026-11-26', titolo: 'Ognuno vede il suo, la pagina si aggiorna ogni mezz’ora', novita: [
     'La scrivania si rimette in pari con il Cervello ogni mezz’ora, senza saltare in cima; quando vuoi tu, «Aggiornami» in alto lo fa subito. Quello che fai in Mirion si vede subito.',
     'La Mirion di un trainer con la licenza di Mirion Trainer si chiama «Mirion Trainer» e mostra solo i clienti e le Impostazioni.',
