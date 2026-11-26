@@ -9,7 +9,10 @@
 import { el, api, notifica } from './base.js'
 import { ic } from './icone.js'
 import { carta, barra, colonne, grafico } from './pagine-piatto.js'
-import { schedeTrainer, eTitolare, accendiVoce, NOME as TRAINER } from './schede-trainer.js'
+import { schedeTrainer, eTitolare, accendiVoce, NOME as TRAINER, CARTE_TRAINER, LARGHE_TRAINER } from './schede-trainer.js'
+import { griglia, iconeCard } from './riquadri.js'
+import { MISURA } from './su-misura.js'
+import { bottoneScrivania } from './prodotto.js'
 import { conIA, pulsantiIA, obsidian } from './ia.js'
 import { leggiNota } from './markdown.js'
 import { daGuardare, squadra, quandoBreve } from './trainer-oggi.js'
@@ -93,16 +96,26 @@ export async function mostra (stanza, params) {
   scrollTo(0, 0)
   stanza.replaceChildren(el('p', { class: 'vuoto', testo: 'Leggo i clienti…' }))
   let d
-  try { d = await api('/api/clienti') } catch (e) { return stanza.replaceChildren(el('p', { class: 'vuoto', testo: e.message })) }
+  try { d = await clientiDi(true) } catch (e) { return stanza.replaceChildren(el('p', { class: 'vuoto', testo: e.message })) }
   const rifai = () => mostra(stanza, params)
   if (params?.get('vista') === 'palestra' && d.online?.io?.titolare) return vistaPalestra(stanza, d, rifai)
   const fai = async (corpo, detto) => { try { const r = await api('/api/clienti', corpo); if (detto) notifica(detto); return r } catch (e) { notifica(e.message, { tipo: 'sempre' }) } }
   const clienti = d.clienti, demo = clienti.some(c => c.demo)
-  const attivi = clienti.filter(c => !fermo(c)).length, fermi = clienti.length - attivi
-  const novita = clienti.reduce((t, c) => t + (c.checkin ?? []).filter(k => giorniDa(k.quando) <= 1 && k.messaggio).length, 0)
   const nome = el('h1', { class: 'clienti-club', testo: d.club, title: 'Il nome del club: clic per cambiarlo', tabindex: 0,
     onclick: async () => { const campo = el('input', { value: d.club, maxlength: 60, 'aria-label': 'Il nome del club', onkeydown: async e => { if (e.key === 'Enter') { await fai({ azione: 'club', nome: campo.value }); rifai() } if (e.key === 'Escape') rifai() } }); nome.replaceWith(campo); campo.focus(); campo.select() } })
   const porta = d.porta?.acceso
+  // le card (26-11-2026 sera, Marco: «la dashboard completa uguale a quella del telefono… apribili negli apparati già esistenti»):
+  // la disposizione sta con quella dei software (MISURA.d.prodotti.trainer, server/disposizione.mjs); la prima volta tutte accese
+  MISURA.d.prodotti ??= {}
+  const disposizione = () => MISURA.d.prodotti.trainer ??= { riquadri: Object.keys(CARTE_TRAINER).map(c => ({ id: c, larghezza: LARGHE_TRAINER[c], altezza: null, piccolo: false, nascosto: false, gruppo: null, colore: null })), gruppi: [] }
+  const contenuti = Object.fromEntries(Object.keys(CARTE_TRAINER).map(c => [c, () => cartaTrainer(c, d, rifai, 'trainer')]))
+  const carte = el('div', { class: 'trainer-carte' })
+  const disegna = () => {
+    const tolte = disposizione().riquadri.filter(r => r.nascosto && contenuti[r.id])
+    carte.replaceChildren(tolte.length ? iconeCard(contenuti, disegna, { titoli: CARTE_TRAINER, dove: disposizione, qui: 'qui' }) : '',
+      griglia(contenuti, disegna, { dove: disposizione, titoli: CARTE_TRAINER, vuoto: el('p', { class: 'vuoto', testo: 'Hai tolto tutte le card: sono fra le icone qui sopra.' }) }))
+  }
+  disegna()
   stanza.replaceChildren(el('div', { class: 'clienti' },
     schedeFit(d, 'clienti'),
     el('header', { class: 'clienti-cima' },
@@ -118,14 +131,8 @@ export async function mostra (stanza, params) {
         el('button', { type: 'button', class: 'secondario', title: 'Mirion Trainer sul telefono: i clienti, quello da guardare oggi, la chat e le schede', onclick: () => trainerTelefono(fai) }, ic('device-mobile'), 'Sul telefono'),
         // «Prova con clienti inventati» tolto il 26-11 sera (Marco: «togli i clienti prova dalla trainer»): la prova sta nell'anteprima web
         demo ? el('button', { type: 'button', class: 'secondario', onclick: async () => { await fai({ azione: 'via-demo' }, 'Tolti i clienti inventati.'); rifai() } }, 'Togli la prova') : null)),
-    el('div', { class: 'clienti-cifre' },
-      ...[[clienti.length, 'clienti'], [attivi, 'attivi negli ultimi 3 giorni'], [fermi, 'fermi da 3 giorni o più', fermi ? 'presto' : ''], [novita, 'messaggi nelle ultime 24 ore', novita ? 'bene' : '']].map(([v, t, cls], i) =>
-        el('div', { class: 'cifra clienti-cifra ' + (cls ?? ''), style: { '--i': i } }, conta(el('b'), v), el('span', { testo: t })))),
-    clienti.length ? cruscotto(clienti) : null,
-    clienti.some(c => !conApp(c)) && clienti.some(conApp) || clienti.some(c => c.soloNota) ? el('p', { class: 'sopra piccolo legenda-fit' },
-      el('span', { class: 'pallino-fit si' }), ` ${clienti.filter(conApp).length} con l’app Mirion Fit`, ' · ', el('span', { class: 'pallino-fit no' }), ` ${clienti.filter(c => !conApp(c)).length} senza (i dati dai check-in, dal gestionale o dalla sua nota)`) : null,
-    clienti.length ? el('div', { class: 'clienti-griglia' }, ...clienti.map((c, i) => cartaCliente(c, i)))
-      : el('section', { class: 'fascia clienti-vuoto' }, el('h2', { testo: 'Ancora nessun cliente' }), el('p', { class: 'sopra', testo: porta ? 'Premi «Invita un cliente»: esce un QR, il cliente lo inquadra col telefono, scrive il nome e dà il consenso. Da lì ti manda peso, allenamenti e come sta, e può collegare il suo Mirion Fit.' : 'Per invitare i clienti serve la porta del telefono accesa: il QR porta lì. Vanno sulla stessa rete Wi-Fi del computer.' })),
+    el('p', { class: 'sopra piccolo trainer-spiega', testo: 'Le card si spostano, si allargano e si tolgono come sulla scrivania; «Metti sulla scrivania» le porta anche su quella principale, accanto al tuo Mirion Fit.' }),
+    carte,
     el('p', { class: 'sopra piccolo clienti-nota', testo: `I dati di chi condivide da qui stanno solo su questo computer, in «Delion/Clienti PT/<nome>» (non vanno su GitHub, non li vede nessun altro): la scheda e i check-in si leggono anche in Obsidian. ${d.claudio?.ce ? 'Quelli del gestionale della palestra (peso e misure, allenamenti, abbonamento) Mirion li legge dal gestionale su questo computer, senza copiarli nel cervello; lo stesso cliente si unisce dal nome. ' : ''}Sono dati sulla salute: si condividono solo con il consenso del cliente, che può smettere quando vuole.` }),
     d.claudio?.errore ? el('p', { class: 'sopra piccolo presto', testo: d.claudio.errore }) : null))
 }
@@ -135,6 +142,119 @@ export async function mostra (stanza, params) {
 // e le sedute di oggi del percorso di ognuno. Gli stessi conti di Mirion Trainer sul telefono (trainer-oggi.js)
 // ogni card con data-carta prende il suo ✦ per il colore (colora.js)
 const colorate = box => { for (const c of box.querySelectorAll('[data-carta]')) colorabile(c, c.dataset.carta); return box }
+// i clienti, letti una volta ogni 15 secondi anche se le card sono tante (la dashboard e la scrivania principale)
+let letti = null
+export const clientiDi = (fresco = false) => { if (fresco || !letti || Date.now() - letti.quando > 15_000) { letti = { quando: Date.now(), d: api('/api/clienti') }; letti.d.catch(() => { letti = null }) } return letti.d }
+const vaiA = id => '#clienti?id=' + encodeURIComponent(id)
+
+// una card di Mirion Trainer. dove: 'trainer' (la sua dashboard) o 'principale' (la scrivania di tutto: in testa «Mirion Trainer»)
+export function cartaTrainer (quale, d, rifai, dove = 'trainer') {
+  const sopra = dove === 'principale'
+    ? el('a', { class: 'quieto piccolo', href: '#clienti', title: 'La dashboard di Mirion Trainer' }, el('span', { class: 'voce-iniziale voce-icona', 'aria-hidden': 'true' }, el('img', { src: './mirion-trainer.svg', alt: '' })), TRAINER)
+    : bottoneScrivania({ id: 'trainer' }, quale, LARGHE_TRAINER[quale])
+  const fai = async (corpo, detto) => { try { const r = await api('/api/clienti', corpo); if (detto) notifica(detto); return r } catch (e) { notifica(e.message, { tipo: 'sempre' }) } }
+  const clienti = d.clienti ?? [], corpo = []
+  if (quale === 'cifre') {
+    const sq = squadra(clienti), attivi = clienti.filter(c => !fermo(c)).length
+    const novita = clienti.reduce((t, c) => t + (c.checkin ?? []).filter(k => giorniDa(k.quando) <= 1 && k.messaggio).length + (c.ultimoMessaggio && c.ultimoMessaggio.da !== 'trainer' && giorniDa(c.ultimoMessaggio.quando) <= 1 ? 1 : 0), 0)
+    corpo.push(el('div', { class: 'clienti-cifre' },
+      ...[[clienti.length, 'clienti'], [attivi, 'attivi negli ultimi 3 giorni'], [sq.allenati, 'allenati in settimana'], [sq.cerchio ?? '–', 'cerchio medio'], [clienti.length - attivi, 'fermi da 3 giorni o più', clienti.length - attivi ? 'presto' : ''], [novita, 'messaggi nelle ultime 24 ore', novita ? 'bene' : '']].map(([v, t, cls], i) =>
+        el('div', { class: 'cifra clienti-cifra ' + (cls ?? ''), style: { '--i': i } }, typeof v === 'number' ? conta(el('b'), v) : el('b', { testo: v }), el('span', { testo: t })))),
+    clienti.some(c => !conApp(c)) && clienti.some(conApp) || clienti.some(c => c.soloNota) ? el('p', { class: 'sopra piccolo legenda-fit' },
+      el('span', { class: 'pallino-fit si' }), ` ${clienti.filter(conApp).length} con l’app Mirion Fit`, ' · ', el('span', { class: 'pallino-fit no' }), ` ${clienti.filter(c => !conApp(c)).length} senza (i dati dai check-in, dal gestionale o dalla sua nota)`) : null)
+  } else if (quale === 'guarda') {
+    const lista = daGuardare(clienti)
+    corpo.push(el('small', { class: 'sopra', testo: lista.length ? `${lista.length} ${lista.length === 1 ? 'cosa' : 'cose'} · le più urgenti in cima` : 'tutto tranquillo' }),
+      lista.length ? el('ul', { class: 'guarda-elenco' }, ...lista.slice(0, dove === 'principale' ? 6 : 20).map(v => el('li', { class: 'guarda-' + v.tipo.split('-')[0] + (v.peso >= 90 ? ' urgente' : '') },
+        el('a', { href: vaiA(v.id) }, el('span', { class: 'guarda-icona', 'aria-hidden': 'true', testo: v.icona }),
+          el('div', {}, el('small', { class: 'sopra', testo: [v.nome, quandoBreve(v.quando)].filter(Boolean).join(' · ') }), el('b', { testo: v.titolo }), v.testo ? el('p', { testo: v.testo }) : null)))))
+        : el('p', { class: 'sopra', testo: 'Nessun dolore, nessun avviso, nessuno fermo. Quando un cliente scrive dall’app o segna un fastidio a fine seduta, compare qui.' }))
+  } else if (quale === 'squadra') {
+    const sq = squadra(clienti)
+    corpo.push(el('small', { class: 'sopra', testo: `${sq.allenati} su ${sq.clienti} allenati in settimana · le serie per gruppo muscolare e la costanza, 4 settimane` }),
+      el('div', { class: 'cruscotto-media' }, el('b', { testo: sq.cerchio ?? '–' }), el('span', { class: 'sopra', testo: sq.cerchio != null ? 'su 100, in media' : 'ancora nessun cerchio' }),
+        sq.fastidi ? el('em', { class: 'presto', testo: `${sq.fastidi} ${sq.fastidi === 1 ? 'seduta' : 'sedute'} con un fastidio in 14 giorni` }) : null),
+      sq.classifica.length ? el('ol', { class: 'cruscotto-classifica' }, ...sq.classifica.slice(0, dove === 'principale' ? 6 : 30).map(x => el('li', {},
+        el('a', { href: vaiA(x.id), title: [x.costanza != null ? `costanza ${x.costanza}%` : null, x.debole ? `da spingere: ${x.debole.toLowerCase()}` : null].filter(Boolean).join(' · ') },
+          el('span', { testo: x.nome }), el('i', { style: { '--pieno': x.punteggio + '%' }, class: x.punteggio < 55 ? 'basso' : '' }), el('b', { testo: x.punteggio }),
+          dove === 'principale' ? null : el('small', { class: 'sopra classifica-dettagli', testo: [x.costanza != null ? `costanza ${x.costanza}%` : null, x.debole ? `da spingere: ${x.debole.toLowerCase()}` : null].filter(Boolean).join(' · ') })))))
+        : el('p', { class: 'sopra', testo: 'Il cerchio arriva quando i clienti si allenano con Mirion Fit.' }))
+  } else if (quale === 'sedute') {
+    const oggi = clienti.filter(c => c.piatto?.allena?.percorso?.oggi)
+    corpo.push(oggi.length ? el('ul', { class: 'pasto-voci' }, ...oggi.map(c => { const pc = c.piatto.allena.percorso; return el('li', {}, el('a', { href: vaiA(c.id) }, el('span', { testo: c.nome }), el('small', { class: 'sopra', testo: `${pc.oggi}${pc.di ? ` · ${pc.fatti}/${pc.di} esercizi` : ''}` }))) }))
+      : el('p', { class: 'sopra', testo: 'Quando i clienti scelgono un percorso in Mirion Fit (la scheda «Allena»), qui vedi la seduta di oggi di ognuno.' }))
+  } else if (quale === 'invita') {
+    corpo.push(invitoInCarta(d, fai, rifai))
+  } else if (quale === 'fit') {
+    corpo.push(mioFit())
+  } else if (quale === 'clienti') {
+    const griglia = el('div', { class: 'clienti-griglia' }, ...clienti.map((c, i) => cartaCliente(c, i)))
+    const cerca = el('input', { type: 'search', class: 'trainer-cerca', placeholder: 'Cerca un cliente', 'aria-label': 'Cerca un cliente', oninput: () => { const q = cerca.value.trim().toLowerCase(); clienti.forEach((c, i) => { griglia.children[i].hidden = Boolean(q) && !c.nome.toLowerCase().includes(q) }) } })
+    corpo.push(clienti.length > 5 ? cerca : null, clienti.length ? griglia
+      : el('div', { class: 'clienti-vuoto' }, el('b', { testo: 'Ancora nessun cliente' }), el('p', { class: 'sopra', testo: d.online?.acceso || d.porta?.acceso ? 'Premi «Invita un cliente»: esce un QR, il cliente lo inquadra col telefono, scrive il nome e dà il consenso. Da lì ti manda peso, allenamenti e come sta.' : 'Per invitare i clienti serve Mirion Fit online (la licenza di Mirion Trainer) o la porta del telefono accesa.' })))
+  }
+  return el('section', { class: `fascia carta-trainer carta-trainer-${quale} cruscotto-carta`, 'aria-label': CARTE_TRAINER[quale] },
+    el('header', {}, el('h2', { testo: CARTE_TRAINER[quale] }), sopra), el('div', { class: 'carta-corpo' }, ...corpo.filter(Boolean)))
+}
+
+// «Invita un cliente» dentro la card, come su Mirion Trainer sul telefono: il QR, il link e il codice, senza finestre
+function invitoInCarta (d, fai, rifai) {
+  const box = el('div', { class: 'trainer-invito' })
+  const azione = d.online?.acceso ? 'invita-online' : d.porta?.acceso ? 'invita' : null
+  const via = () => {
+    box.replaceChildren(
+      el('p', { class: 'sopra', testo: azione === 'invita-online' ? 'Un link personale per Mirion Fit online: il cliente lo apre dal telefono, ovunque, e compare qui quando dà il consenso.' : azione ? 'Sulla Wi-Fi di casa: il cliente inquadra il QR con il telefono sulla stessa rete del computer.' : 'Per invitare serve Mirion Fit online (la licenza di Mirion Trainer) o la porta del telefono accesa.' }),
+      el('div', { class: 'bottoni' },
+        azione ? el('button', { type: 'button', class: 'primario', onclick: crea }, ic('user-plus'), 'Invita un cliente')
+          : el('button', { type: 'button', class: 'primario', onclick: async () => { await api('/api/telefono', { azione: 'accendi' }).catch(e => notifica(e.message, { tipo: 'sempre' })); rifai() } }, ic('user-plus'), 'Accendi la porta per invitare'),
+        azione === 'invita-online' && d.porta?.acceso ? el('button', { type: 'button', class: 'secondario', onclick: () => crea(null, 'invita') }, 'Sulla Wi-Fi') : null))
+  }
+  async function crea (_, quale = azione) {
+    const r = await fai({ azione: quale }); if (!r) return
+    const t = document.createElement('template'); t.innerHTML = r.qr ?? ''
+    const codice = r.online ? ((/[?&]k=([\w.~-]+)/.exec(r.url) || [])[1] ?? '') : ''
+    const copia = async (x, detto) => { try { await navigator.clipboard.writeText(x); notifica(detto) } catch { notifica('Non riesco a copiare: seleziona il testo e copialo.', { tipo: 'sempre' }) } }
+    box.replaceChildren(el('div', { class: 'trainer-invito-fatto' },
+      el('div', { class: 'invito-qr' }, t.content.firstChild ?? ''),
+      el('div', {},
+        el('p', { class: 'sopra piccolo', testo: r.online ? 'Fallo inquadrare con la fotocamera: si apre Mirion Fit con il suo link personale, che vale finché lo segui.' : `Sulla stessa Wi-Fi. Vale una volta, fino a domani alle ${r.scade ? new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—'}.` }),
+        el('small', { class: 'sopra', testo: 'Il link' }), el('code', { class: 'telefono-indirizzo invito-url', testo: r.url ?? '' }),
+        codice ? el('small', { class: 'sopra', testo: 'Il codice (Mirion Fit → Trainer → incollalo)' }) : null, codice ? el('code', { class: 'telefono-indirizzo invito-url invito-codice', testo: codice }) : null,
+        el('div', { class: 'bottoni' },
+          el('button', { type: 'button', class: 'secondario piccolo', onclick: () => copia(r.url, 'Link copiato: mandalo al cliente.') }, ic('copy'), 'Copia il link'),
+          codice ? el('button', { type: 'button', class: 'secondario piccolo', onclick: () => copia(codice, 'Codice copiato.') }, ic('copy'), 'Copia il codice') : null,
+          el('button', { type: 'button', class: 'quieto piccolo', onclick: via }, 'Fatto')))))
+  }
+  via(); return box
+}
+
+// «Il mio Mirion Fit» (Marco, 26-11-2026 sera: «mettimele insieme come se fossi io il trainer»): il tuo diario di oggi accanto ai
+// tuoi clienti; i numeri vengono da Mirion Fit su questo computer (la scrivania di Mirion Fit nella barra)
+function mioFit () {
+  const box = el('div', { class: 'trainer-mio-fit' }, el('p', { class: 'vuoto', testo: 'Leggo il tuo Mirion Fit…' }))
+  api('/api/prodotti/riepilogo?id=piatto').then(r => {
+    const d = r?.dati, vai = el('a', { class: 'primario piccolo', href: '#prodotto?id=piatto' }, el('img', { src: './mirion-fit.svg', alt: '', class: 'icona-fit-mini' }), 'Apri Mirion Fit')
+    if (!d || d.pronto === false) return box.replaceChildren(el('p', { class: 'sopra', testo: r?.errore ? 'Mirion Fit non risponde adesso: ' + r.errore : r?.spento ? 'Mirion Fit si sta accendendo: riprova fra un attimo.' : 'Per cominciare serve il tuo profilo (peso, altezza, obiettivo) in Mirion Fit.' }), el('div', { class: 'bottoni' }, vai))
+    const pr = d.prestazioni, pc = d.percorso, s = d.schedaTrainer
+    box.replaceChildren(
+      el('div', { class: 'mio-fit-fila' },
+        el('div', {}, el('small', { class: 'sopra', testo: 'Calorie che restano' }), el('b', { class: 'oggi-medio', testo: n(d.restano) }), el('small', { class: 'sopra', testo: `mangiate ${n(d.mangiato?.kcal)} di ${n(d.obiettivo?.kcal)}` })),
+        el('div', {}, el('small', { class: 'sopra', testo: 'Allenamento' }), el('b', { class: 'oggi-medio', testo: d.allenamento?.esercizi ? `${d.allenamento.esercizi} esercizi` : '—' }), el('small', { class: 'sopra', testo: pc?.oggi ? `oggi ${pc.oggi}: ${pc.fatti}/${pc.di}` : s ? `${s.titolo}: ${s.fatti}/${s.esercizi.length}` : 'niente segnato oggi' })),
+        el('div', {}, el('small', { class: 'sopra', testo: 'Cerchio' }), el('b', { class: 'oggi-medio', testo: pr?.serie ? pr.punteggio : '—' }), el('small', { class: 'sopra', testo: pr?.serie ? `costanza ${pr.costanza}%` : 'segna un allenamento' })),
+        el('div', {}, el('small', { class: 'sopra', testo: 'Peso' }), el('b', { class: 'oggi-medio', testo: d.peso?.attuale ? `${virgola(d.peso.attuale)} kg` : '—' }), el('small', { class: 'sopra', testo: d.peso?.diff30 != null ? `${d.peso.diff30 > 0 ? '+' : ''}${virgola(d.peso.diff30)} in 30 giorni` : '' }))),
+      el('div', { class: 'bottoni' }, vai))
+  }).catch(e => box.replaceChildren(el('p', { class: 'vuoto', testo: 'Mirion Fit non risponde adesso: ' + e.message })))
+  return box
+}
+
+// una card di Mirion Trainer sulla scrivania principale (id «p.trainer.<card>»)
+export function cartaTrainerPerScrivania (quale, rifai) {
+  const box = el('div', { class: 'carta-attesa' }, el('p', { class: 'vuoto', testo: 'Leggo i clienti…' }))
+  clientiDi().then(d => box.replaceWith(CARTE_TRAINER[quale] ? cartaTrainer(quale, d, rifai, 'principale') : el('p', { class: 'vuoto', testo: 'Questa card di Mirion Trainer non c’è più: toglila con la ✕.' })))
+    .catch(e => box.replaceChildren(el('p', { class: 'vuoto', testo: 'Mirion Trainer non legge i clienti adesso: ' + e.message })))
+  return box
+}
+
 function cruscotto (clienti) {
   const lista = daGuardare(clienti), sq = squadra(clienti)
   const oggi = clienti.filter(c => c.piatto?.allena?.percorso?.oggi)

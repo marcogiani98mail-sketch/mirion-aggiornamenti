@@ -255,3 +255,39 @@
 .esa-legenda i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
 .trainer-titoletto { margin: 14px 0 6px; font: 600 .95rem var(--titoli, Inter); color: var(--testo); }
 .trainer-online { display: grid; gap: 8px; justify-items: start; }
+
+/* la dashboard di Mirion Trainer a card (26-11-2026 sera: «la dashboard completa uguale a quella del telefono») */
+.trainer-spiega { margin: 2px 0 10px; }
+.carta-trainer .carta-corpo { display: grid; gap: .6rem; align-content: start; }
+.carta-trainer .clienti-cifre { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.carta-trainer .clienti-griglia { margin-top: 2px; }
+.cruscotto-classifica a { grid-template-areas: "n b p" "d d d"; }
+.cruscotto-classifica .classifica-dettagli { grid-area: d; font-size: .76rem; margin-top: -3px; }
+.trainer-cerca, .carta-esercizi input[type=search] { width: 100%; max-width: 360px; padding: .45rem .7rem; border-radius: 10px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--carta) 70%, transparent); color: var(--testo); }
+.trainer-invito-fatto { display: grid; grid-template-columns: minmax(150px, 210px) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.trainer-invito-fatto .invito-qr { background: #fff; border-radius: 12px; padding: 8px; }
+.trainer-invito-fatto .invito-qr svg { width: 100%; height: auto; display: block; }
+.trainer-invito-fatto code { display: block; word-break: break-all; margin: 2px 0 8px; }
+@media (max-width: 640px) { .trainer-invito-fatto { grid-template-columns: 1fr; } }
+.mio-fit-fila { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .8rem; }
+.mio-fit-fila > div { display: grid; gap: 2px; }
+.icona-fit-mini { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+
+/* le card di Mirion Fit che c'erano solo sul telefono (prodotto.js) */
+.scheda-voci li, .libreria-voci li, .esercizi-voci li { display: flex; align-items: center; justify-content: space-between; gap: .7rem; }
+.scheda-voci li.fatto b { text-decoration: line-through; opacity: .7; }
+.libreria-voci, .esercizi-voci { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.libreria-voci li { padding: .6rem .7rem; border-radius: 12px; border: 1px solid var(--linea); align-items: start; }
+.libreria-voci li.scelto { border-color: var(--viola); background: color-mix(in oklch, var(--viola) 10%, transparent); }
+.libreria-voci p { margin: .25rem 0; }
+.filtri-libreria [aria-pressed=true], .check-voti [aria-pressed=true] { background: var(--viola); color: var(--su-accento, #fff); }
+.esercizi-voci li { align-items: start; padding-bottom: .45rem; border-bottom: 1px solid var(--linea); }
+.esercizio-nome { padding: 0; text-align: left; }
+.esercizio-come ol { margin: .35rem 0; padding-left: 1.2rem; font-size: .86rem; }
+.check-modulo { display: grid; gap: .5rem; }
+.check-voti { display: flex; gap: 4px; }
+.check-voti button { min-width: 2rem; }
+.misure-modulo { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; }
+.misura-campo { display: grid; gap: 2px; }
+.libreria-voci b { display: block; }
+.check-voti button { border: 1px solid var(--linea); border-radius: 8px; }
