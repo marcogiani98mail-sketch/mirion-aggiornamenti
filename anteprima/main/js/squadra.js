@@ -12,6 +12,7 @@ import { griglia, iconeCard } from './riquadri.js'
 import { MISURA, salva, pulsanteAnnulla } from './su-misura.js'
 import { apriInvio } from './invio.js'
 import { numerino } from './notifiche-squadra.js'
+import { accessiApp } from './accessi-app.js'
 
 const ORA = iso => new Date(iso).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 let ultimo = null
@@ -21,7 +22,7 @@ let ultimo = null
 // rimettono da «Tolte». La disposizione sta con quella della scrivania (squadra, in disposizione.mjs).
 // la chat e il lavoro degli altri erano stati tolti il 22-11; il 23-11 Marco li rivuole qui, nella sezione della scrivania;
 // il 25-11 il lavoro degli altri va via di nuovo («leva il lavoro degli altri e usiamo solo lo storico»)
-const TITOLI_SQUADRA = { punto: 'Il punto', assegna: 'Assegna una task', chat: 'La chat', lavoro: 'Il tuo lavoro', tue: 'Le tue squadre', storico: 'Lo storico', persone: 'Chi c’è' }
+const TITOLI_SQUADRA = { punto: 'Il punto', assegna: 'Assegna una task', chat: 'La chat', lavoro: 'Il tuo lavoro', tue: 'Le tue squadre', storico: 'Lo storico', persone: 'Chi c’è', app: 'Mirion Fit e Mirion Trainer' }
 const fascia = (classe, titolo, ...dentro) => el('section', { class: 'fascia ' + classe }, el('header', {}, el('h2', { testo: titolo })), ...dentro)
 let ultima = null
 
@@ -34,7 +35,9 @@ export async function mostra (stanza) {
   ultimo = n.ultimo
   const parti = await storicoEMessaggi(d, rifai)
   const caselle = { punto: puntoSquadra(d, n, rifai), assegna: d.io ? fascia('squadra-assegna', 'Assegna una task', await assegna(d, rifai)) : null, chat: parti.messaggi, lavoro: d.io ? fascia('squadra-lavoro', 'Il tuo lavoro', azioni(d, rifai)) : chiSei(d, rifai), tue, storico: parti.storico,
-    persone: fascia('squadra-persone', 'Chi c’è', albero(d, rifai)) }
+    persone: fascia('squadra-persone', 'Chi c’è', albero(d, rifai)),
+    // gli accessi alle app, solo per il titolare sulla Mirion di Marco (accessi-app.js)
+    app: d.io?.ruolo === 'titolare' ? await accessiApp(rifai).then(x => x && fascia('squadra-app', 'Mirion Fit e Mirion Trainer', x)).catch(() => null) : null }
   ultima = { stanza, d, caselle, github: parti.github }
   disegna()
   // aperta la sezione, le novità sono viste: via il numerino su «Squadra»

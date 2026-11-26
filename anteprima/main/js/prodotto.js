@@ -19,16 +19,17 @@ import { pagina as paginaCompletaPiatto, PAGINE } from './pagine-piatto.js'
 import { cornice } from './widget.js'
 import { campoCodice } from './codice-barre.js'
 import { voceTrainer } from './schede-trainer.js'
+import { cerchioSvg } from './clienti.js'
 
-export const CARTE = { oggi: 'Oggi', cibo: 'Cibo', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', attivita: 'Attività', acqua: 'Acqua', sonno: 'Sonno', integratori: 'Integratori', peso: 'Peso', allenamento: 'Allenamento', settimana: 'La settimana', programma: 'Il programma', task: 'Da fare', ia: 'Lavora con l’IA', notizie: 'Notizie', note: 'Le note' }
-const LARGHE = { oggi: 6, cibo: 6, colazione: 6, pranzo: 6, cena: 6, spuntini: 6, pasti: 6, attivita: 3, acqua: 3, sonno: 3, integratori: 3, peso: 3, allenamento: 6, settimana: 6, programma: 12, task: 6, ia: 6, notizie: 6, note: 6 }
+export const CARTE = { oggi: 'Oggi', cibo: 'Cibo', colazione: 'Colazione', pranzo: 'Pranzo', cena: 'Cena', spuntini: 'Spuntini', pasti: 'I pasti', attivita: 'Attività', acqua: 'Acqua', sonno: 'Sonno', integratori: 'Integratori', peso: 'Peso', allenamento: 'Allenamento', percorso: 'Il tuo percorso', prestazioni: 'Cerchio prestazioni', settimana: 'La settimana', programma: 'Il programma', task: 'Da fare', ia: 'Lavora con l’IA', notizie: 'Notizie', note: 'Le note' }
+const LARGHE = { oggi: 6, cibo: 6, colazione: 6, pranzo: 6, cena: 6, spuntini: 6, pasti: 6, attivita: 3, acqua: 3, sonno: 3, integratori: 3, peso: 3, allenamento: 6, percorso: 6, prestazioni: 3, settimana: 6, programma: 12, task: 6, ia: 6, notizie: 6, note: 6 }
 // Piatto in Mirion (Marco, 23-11: «non voglio che sia apribile da Piatto: si apra già quando seleziono Piatto, e devono essere
 // tutte card minimaliste dove posso accedere per variare»): le card che fanno, e quelle del lavoro sul software (tolte all'inizio)
 // Marco, 23-11 sera: «tutto il contenuto della scrivania completa di Piatto trasponilo in card sulla scrivania di Piatto»: un pasto
 // per card e l'attività, come in Piatto; «I pasti» (tutti in una) resta fra le card tolte
 const UN_PASTO = ['colazione', 'pranzo', 'cena', 'spuntini']
 // Mirion Fit (24-11): anche il sonno e gli integratori, come in Piatto
-const DEL_GIORNO = ['oggi', 'cibo', ...UN_PASTO, 'pasti', 'acqua', 'sonno', 'integratori', 'attivita', 'peso', 'allenamento', 'settimana'], DEL_LAVORO = ['programma', 'task', 'ia', 'notizie', 'note']
+const DEL_GIORNO = ['oggi', 'cibo', ...UN_PASTO, 'pasti', 'acqua', 'sonno', 'integratori', 'attivita', 'peso', 'percorso', 'allenamento', 'prestazioni', 'settimana'], DEL_LAVORO = ['programma', 'task', 'ia', 'notizie', 'note']
 // Mirion Fit (Marco, 24-11 sera: «nell'app togli lavora con l'IA in scrivania, e il programma non lo rendere visualizzabile però
 // assicurati che ci siano le card che lo sostituiscano»): nella scrivania di un software con le card del giorno non ci sono più
 // «Il programma» né «Lavora con l'IA»; le card del giorno (Oggi, i pasti, Acqua, Sonno, Integratori, Attività, Peso, Allenamento,
@@ -234,6 +235,10 @@ function carta (p, quale, dati, rifai, dove) {
     riempi(async () => conNumeri(p, await dati.oggi(), d => cardPasti(p, d, rifai)))
   } else if (quale === 'allenamento') {
     riempi(async () => conNumeri(p, await dati.oggi(), d => cardAllenamento(p, d, rifai)))
+  } else if (quale === 'percorso') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardPercorso(d)))
+  } else if (quale === 'prestazioni') {
+    riempi(async () => conNumeri(p, await dati.oggi(), d => cardPrestazioni(d)))
   }
   return fascia('carta-prodotto carta-' + quale, titolo, sopra, corpo)
 }
@@ -466,6 +471,21 @@ function aggiungiCibo (p, pasto, rifai) {
 }
 
 // «Allenamento»: il totale di oggi, gli esercizi fatti (✕ per toglierne uno) e il modulo per aggiungerne uno
+// Mirion Fit in Mirion come sull'app (Marco, 26-11-2026: «su Mirion desktop deve funzionare bene come sull'app… a card»):
+// il percorso con la seduta di oggi e il cerchio delle prestazioni, gli stessi della scheda «Allena» del telefono
+function cardPercorso (d) {
+  const pc = d.percorso
+  if (!pc) return el('p', { class: 'vuoto', testo: 'Nessun percorso: in Mirion Fit si sceglie un allenamento dalla libreria o se ne fa uno su misura.' })
+  return [
+    el('p', {}, el('b', { testo: pc.titolo }), el('small', { class: 'sopra', testo: [pc.libreria ? '  dalla libreria' : pc.scelte ? '  su misura' : null, pc.oggi ? ` · oggi ${pc.oggi}: ${pc.fatti}/${pc.di} esercizi` : null].filter(Boolean).join('') })),
+    el('ul', { class: 'percorso-sedute' }, ...(pc.sedute ?? []).map(s => el('li', { class: s.nome === pc.oggi ? 'oggi' : '' }, el('b', { testo: s.nome }), el('small', { class: 'sopra', testo: (s.esercizi ?? []).join(' · ') }))))]
+}
+function cardPrestazioni (d) {
+  const pr = d.prestazioni
+  if (!pr?.serie) return el('p', { class: 'vuoto', testo: 'Il cerchio si riempie con le serie delle ultime 4 settimane: segna un allenamento.' })
+  const deb = pr.gruppi?.find(g => g.id === pr.debole)
+  return [cerchioSvg(pr), el('small', { class: 'sopra', testo: `${pr.sedute} sedute · costanza ${pr.costanza}% · multiarticolari ${pr.multi}%${deb ? ` · da spingere: ${deb.nome.toLowerCase()}` : ''}` })]
+}
 function cardAllenamento (p, d, rifai) {
   const es = Array.isArray(d.esercizi) ? d.esercizi : []
   const nome = el('input', { placeholder: 'Esercizio (es. Panca piana)', 'aria-label': 'L’esercizio', required: true, maxlength: 60 })

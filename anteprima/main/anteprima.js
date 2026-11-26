@@ -28,6 +28,8 @@
       if (d === undefined) return json({ errore: 'questa parte non c’è nell’anteprima' }, 404)
       return d?.__file ? vero(d.__file) : d?.__stato ? json(d.corpo, d.__stato) : json(d)
     }
+    // «Invita un cliente»: il QR e il link di esempio registrati da costruisci.mjs
+    if (u.pathname === '/api/clienti' && R['POST /api/clienti invita']?.qr) { let b = {}; try { b = JSON.parse(init.body ?? '{}') } catch { } if (String(b.azione).startsWith('invita')) return json(R['POST /api/clienti invita']) }
     if (u.pathname !== '/api/notifiche') avvisa()
     return json({ ok: true, anteprima: true })
   }

@@ -157,3 +157,17 @@ svg.t-cerchio .sotto { fill: var(--tenue); font: 500 11px var(--corpo); }
 .percorso-sedute li > b { font-weight: 650; }
 .percorso-sedute li > small { white-space: normal; line-height: 1.45; }
 .percorso-sedute li { text-align: left; }
+
+/* invita un cliente (26-11-2026): il QR su fondo chiaro, il link e il codice da copiare */
+.t-invito { display: grid; gap: 8px; }
+.t-largo { width: 100%; }
+.t-qr { background: #fff; border-radius: 16px; padding: 10px; width: min(240px, 100%); margin: 2px auto 4px; }
+.t-qr svg { display: block; width: 100%; height: auto; }
+.t-etichetta { color: var(--tenue); font-size: .74rem; }
+.t-codice { display: block; padding: 8px 10px; border-radius: 12px; background: color-mix(in oklch, var(--testo) 6%, transparent); font-size: .8rem; word-break: break-all; user-select: all; }
+.t-codice.grande { font-size: 1rem; letter-spacing: .04em; }
+.t-fila { flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+.t-fila button:not(.t-primario) { border-radius: 14px; padding: 10px 14px; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 50%, transparent); color: inherit; cursor: pointer; }
+
+/* il passaggio al tuo Mirion Fit (26-11-2026) */
+.t-passa { height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 60%, transparent); font: 600 .8rem var(--corpo); color: var(--testo); cursor: pointer; white-space: nowrap; }

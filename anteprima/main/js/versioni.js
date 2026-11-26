@@ -4,6 +4,12 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.49', data: '2026-11-26', titolo: 'Inviti dal telefono, le app nella Squadra, Mirion Fit come sul telefono', novita: [
+    'Mirion Trainer sul telefono: in «Clienti» c’è «Invita un cliente», con il QR, il link e il codice da copiare o mandare.',
+    'Mirion Trainer sul telefono: «Il mio Fit» apre il tuo Mirion Fit, e da lì «Trainer» ti riporta indietro. Ha la sua icona.',
+    'Nella Squadra, solo per Marco: «Mirion Fit e Mirion Trainer», con i trainer da sospendere o togliere, la licenza per uno nuovo, il QR di Mirion Fit e le licenze date, salvate per rimandarle.',
+    'Mirion Fit in Mirion ha le card «Il tuo percorso» e «Cerchio prestazioni», come sul telefono.',
+  ] },
   { versione: '0.1.48', data: '2026-11-26', titolo: 'Cartelle leggere, F11 e card di Trainer colorate', novita: [
     'Cliccando o spostando le schede di una cartella si cambia solo quella cartella: il resto della scrivania non si ricarica.',
     'Una scheda tirata fuori dalla cartella compare subito accanto come card, già da spostare.',

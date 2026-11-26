@@ -270,7 +270,7 @@ function vistaPalestra (stanza, d, rifai) {
     el('p', { class: 'sopra piccolo clienti-nota', testo: 'Qui vedi solo numeri: quanti clienti ha ogni trainer e quanti usano l’app. Chi sono i clienti, i loro dati e i messaggi li vede solo il loro trainer: i clienti hanno dato il consenso a lui. Sospendere ferma il trainer e lascia i clienti; togliere chiude anche i link dei suoi clienti e cancella i loro dati online.' })))
 }
 const numeriTrainer = x => `${x.clienti} ${x.clienti === 1 ? 'cliente' : 'clienti'} · ${x.attivi7} attivi in 7 giorni${x.invitati ? ` · ${x.invitati} inviti in attesa` : ''}`
-function aggiungiTrainer (fai, rifai) {
+export function aggiungiTrainer (fai, rifai) {
   const campo = el('input', { placeholder: 'Il nome del personal trainer, es. Luca Rossi', maxlength: 40, 'aria-label': 'Il nome del personal trainer nuovo' })
   const aggiungi = async () => { const nome = campo.value.trim(); if (!nome) return campo.focus(); const r = await fai({ azione: 'trainer-aggiungi', nome }); if (r?.chiave) chiaveTrainer(r, rifai) }
   return el('form', { class: 'trainer-nuovo', onsubmit: e => { e.preventDefault(); aggiungi() } }, campo, el('button', { type: 'submit', class: 'secondario' }, ic('user-plus'), 'Aggiungi un personal trainer'))
@@ -278,7 +278,7 @@ function aggiungiTrainer (fai, rifai) {
 
 // i trainer della palestra (Marco, 24-11: «fai che Piatto regga più trainer»): solo nella Mirion del titolare. Ogni trainer ha la
 // sua Mirion e i suoi clienti; qui il nome, come entra (licenza o chiave), i numeri e i bottoni degli accessi (26-11)
-function trainerRiga (t, fai, rifai) {
+export function trainerRiga (t, fai, rifai) {
   const quando = x => new Date(x).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   const bottone = (testo, corpo, detto, conferma) => {
     let sicuro = !conferma
@@ -317,13 +317,20 @@ function chiaveTrainer (r, rifai) {
 async function invita (fai, azione = 'invita') {
   const r = await fai({ azione }); if (!r) return
   const t = document.createElement('template'); t.innerHTML = r.qr
+  const codice = r.online ? ((/[?&]k=([\w.~-]+)/.exec(r.url) || [])[1] ?? '') : ''
+  const copia = async (x, detto) => { try { await navigator.clipboard.writeText(x); notifica(detto) } catch { notifica('Non riesco a copiare: seleziona il testo e copialo.', { tipo: 'sempre' }) } }
   const fondo = el('div', { class: 'cassetto-fondo invito-fondo', onclick: e => { if (e.target === fondo) fondo.remove() } },
     el('section', { class: 'invito-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Invita un cliente' },
       el('h2', { testo: 'Fallo inquadrare al cliente' }),
       el('div', { class: 'invito-qr' }, t.content.firstChild),
       el('p', { class: 'sopra', testo: r.online ? 'Mirion Fit online: è il suo link personale, vale finché non smetti di seguirlo. Su iPhone lo apre con Safari e lo aggiunge alla schermata Home; su Android «Installa». Compare qui quando ha dato il consenso.' : `Col telefono sulla stessa rete Wi-Fi. Vale una volta, fino a domani alle ${new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.` }),
       el('code', { class: 'telefono-indirizzo invito-url', testo: r.url }),
-      el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario', onclick: () => { fondo.remove(); location.hash = '#clienti'; dispatchEvent(new HashChangeEvent('hashchange')) } }, 'Fatto'))))
+      // il codice, come sul telefono (26-11-2026): chi ha già Mirion Fit lo incolla in «Trainer»
+      codice ? el('p', { class: 'sopra piccolo', testo: 'Il codice (Mirion Fit → Trainer → incollalo):' }) : null, codice ? el('code', { class: 'telefono-indirizzo invito-url invito-codice', testo: codice }) : null,
+      el('div', { class: 'bottoni' },
+        el('button', { type: 'button', class: 'secondario', onclick: () => copia(r.url, 'Link copiato: mandalo al cliente.') }, ic('copy'), 'Copia il link'),
+        codice ? el('button', { type: 'button', class: 'secondario', onclick: () => copia(codice, 'Codice copiato.') }, ic('copy'), 'Copia il codice') : null,
+        el('button', { type: 'button', class: 'primario', onclick: () => { fondo.remove(); location.hash = '#clienti'; dispatchEvent(new HashChangeEvent('hashchange')) } }, 'Fatto'))))
   document.body.append(fondo)
 }
 
@@ -331,7 +338,7 @@ async function invita (fai, azione = 'invita') {
 // nessuno possa copiare l'app»): porta alla pagina su GitHub con dentro il codice firmato che apre l'app (server/licenza-fit.mjs).
 // L'app scaricata senza questo QR resta chiusa. Senza licenza qui si vede il codice trainer da mandare a Marco e dove incollarla;
 // sulla Mirion di Marco anche come dare la licenza a un altro trainer.
-async function qrApp (fai) {
+export async function qrApp (fai) {
   const r = await fai({ azione: 'qr-app' }); if (!r) return
   const chiudi = () => fondo.remove()
   const corpo = []
@@ -415,7 +422,7 @@ const TEMI = { domanda: 'Domanda su un esercizio', dolore: 'Dolore o fastidio', 
 const FASTIDI = { spalla: 'spalla', schiena: 'schiena', ginocchio: 'ginocchio', gomito: 'gomito o polso', anca: 'anca', altro: 'altro' }
 const escSvg = v => String(v ?? '').replace(/[&<>"']/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]))
 // lo stesso disegno di Mirion Fit (card.js, cerchio): sei spicchi pieni quanto le serie a settimana, al centro il punteggio
-function cerchioSvg (pr) {
+export function cerchioSvg (pr) {
   const c = 110, r0 = 40, r1 = 96, gr = Array.isArray(pr.gruppi) ? pr.gruppi.slice(0, 8) : [], giro = (2 * Math.PI) / Math.max(1, gr.length), gap = 0.035
   const pt = (r, a) => `${(c + r * Math.sin(a)).toFixed(1)},${(c - r * Math.cos(a)).toFixed(1)}`
   const sp = (ra, rb, a0, a1) => `M${pt(ra, a0)} L${pt(rb, a0)} A${rb},${rb} 0 0 1 ${pt(rb, a1)} L${pt(ra, a1)} A${ra},${ra} 0 0 0 ${pt(ra, a0)} Z`

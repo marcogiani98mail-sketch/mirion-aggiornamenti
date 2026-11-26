@@ -87,6 +87,34 @@ async function vistaOggi (v) {
       el('ul', { class: 't-righe' }, ...d.clienti.filter(c => c.piatto?.allena?.percorso?.oggi).map(c => { const p = c.piatto.allena.percorso; return el('li', {}, el('a', { href: '#cliente/' + encodeURIComponent(c.id) }, faccia(c), el('div', {}, el('b', { testo: c.nome }), el('small', { testo: `${p.oggi}${p.di ? ` · ${p.fatti}/${p.di} esercizi` : ''}` })))) }))) : null)
 }
 
+// ---- Invita un cliente (Marco, 26-11-2026: «manca la parte dove si invitano con QR code o link e codice le persone») ----
+// lo stesso invito della stanza Clienti sul computer: online un link personale (vale finché lo segui), se no quello sulla Wi-Fi.
+// Il cliente inquadra il QR; se non può, gli mandi il link o gli detti il codice (Mirion Fit → Trainer → incolla).
+function cartaInvito (d) {
+  const box = el('div', { class: 't-invito' })
+  const fai = async () => {
+    bottone.disabled = true
+    try {
+      const r = await api('/api/clienti', { azione: d.online?.acceso ? 'invita-online' : 'invita' })
+      const qr = el('div', { class: 't-qr' }); qr.innerHTML = r.qr ?? ''
+      const link = r.url ?? r.link ?? '', codice = !r.online ? '' : (/[?&]k=([\w.~-]+)/.exec(link) || /\/([\w-]{12,})\/?(?:[?#]|$)/.exec(link) || [])[1] ?? ''
+      const copia = async (t, detto) => { try { await navigator.clipboard.writeText(t); dimmi(detto) } catch { dimmi('Non riesco a copiare: tieni premuto sul testo.') } }
+      metti(box, qr,
+        el('p', { class: 't-nota', testo: r.online ? 'Fallo inquadrare con la fotocamera: si apre Mirion Fit con il suo link personale, che vale finché lo segui. Compare fra i tuoi clienti quando dà il consenso.' : `Col telefono sulla stessa Wi-Fi del computer. Vale una volta, fino a domani alle ${r.scade ? new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—'}.` }),
+        el('small', { class: 't-etichetta', testo: 'Il link' }), el('code', { class: 't-codice', testo: link }),
+        codice ? el('small', { class: 't-etichetta', testo: 'Il codice (Mirion Fit → Trainer → incollalo)' }) : null, codice ? el('code', { class: 't-codice grande', testo: codice }) : null,
+        el('div', { class: 't-bottoni t-fila' },
+          navigator.share ? el('button', { type: 'button', class: 't-primario', onclick: () => navigator.share({ title: 'Mirion Fit', text: 'Il tuo link per Mirion Fit, con me come trainer:', url: link }).catch(() => {}) }, 'Manda il link') : null,
+          el('button', { type: 'button', onclick: () => copia(link, 'Link copiato.') }, 'Copia il link'),
+          codice ? el('button', { type: 'button', onclick: () => copia(codice, 'Codice copiato.') }, 'Copia il codice') : null,
+          el('button', { type: 'button', onclick: () => { metti(box); box.append(bottone); bottone.disabled = false } }, 'Fatto')))
+    } catch (e) { dimmi(e.message); bottone.disabled = false }
+  }
+  const bottone = el('button', { type: 'button', class: 't-primario t-largo', onclick: fai }, '＋ Invita un cliente')
+  box.append(bottone)
+  return carta('Invita un cliente', 'QR, link o codice', box)
+}
+
 // ---- Clienti ----
 async function vistaClienti (v) {
   const d = await leggi()
@@ -99,8 +127,9 @@ async function vistaClienti (v) {
       el('span', { class: 't-pallino ' + (fermo ? 'fermo' : 'vivo'), 'aria-label': fermo ? 'fermo' : 'attivo' })))
   }))
   metti(v, el('h1', { class: 't-titolo', testo: 'I clienti' }), el('p', { class: 't-sotto', testo: `${d.clienti.length} che condividono con te` }),
+    cartaInvito(d),
     d.clienti.length > 5 ? cerca : null,
-    d.clienti.length ? lista : el('p', { class: 't-vuoto', testo: 'Ancora nessun cliente. Invitali da Mirion sul computer: stanza Clienti → «Invita».' }))
+    d.clienti.length ? lista : el('p', { class: 't-vuoto', testo: 'Ancora nessun cliente: invitalo qui sopra.' }))
 }
 
 // ---- Cerchio della squadra ----
@@ -216,6 +245,20 @@ async function mostra () {
   } catch (e) { metti(v, el('p', { class: 't-vuoto', testo: e.message || 'Il computer non risponde: Mirion è acceso?' })) }
 }
 addEventListener('hashchange', mostra)
+// il tuo Mirion Fit (Marco, 26-11-2026: «al trainer lo puoi far collegare anche al suo Mirion Fit, che è incluso, e può passare a
+// quello da trainer»): la prima volta un invito online per te, poi si apre sempre quello. Nel link c'è «tr», l'indirizzo di questa
+// pagina: Mirion Fit lo tiene e mostra «Mirion Trainer» in alto per tornare qui
+const MIO_FIT = 'mirion-trainer:mio-fit'
+$('#mio-fit').addEventListener('click', async () => {
+  let link = null; try { link = localStorage.getItem(MIO_FIT) } catch { }
+  if (!link) {
+    const d = await leggi().catch(() => null)
+    if (!d?.online?.acceso) return dimmi('Il tuo Mirion Fit usa Mirion Fit online: accendilo in Mirion sul computer, stanza Clienti.')
+    try { const r = await api('/api/clienti', { azione: 'invita-online', etichetta: 'Io, il trainer' }); link = r.url ?? r.link } catch (e) { return dimmi(e.message) }
+    try { localStorage.setItem(MIO_FIT, link) } catch { }
+  }
+  const u = new URL(link); u.searchParams.set('tr', location.origin + location.pathname + '#oggi'); location.href = u.href
+})
 $('#aggiorna').addEventListener('click', async () => { letti = 0; await leggi(true).catch(() => {}); mostra() })
 // le novità ogni minuto, finché la pagina si vede (non nella pagina di un cliente, per non perdere quello che stai scrivendo)
 setInterval(() => { if (!document.hidden && !location.hash.startsWith('#cliente/')) { letti = 0; mostra() } }, 60_000)
