@@ -1,0 +1,200 @@
+/* I temi di Mirion (Marco, 23-11-2026: «questo potrebbe essere quello classico e poi fanne altri due per capire dove possiamo
+   spaziare»). Caricato per ultimo. Classica è Aurora com'è (aurora.css). Carta e Netto cambiano il carattere, non solo il colore:
+   i colori li fa sempre colori.js (Carta con la scala chiara), qui le forme, i caratteri, le ombre e il vetro.
+   La sfumatura scelta in Personalizza vale in tutti e tre. */
+
+/* ---- Carta: chiara, calda, i titoli con le grazie, caselle piene con un'ombra morbida ---- */
+body[data-stile="carta"] {
+  color-scheme: light;
+  --titoli: "Fraunces", Georgia, "Times New Roman", serif;
+  --r: 14px; --vetro: 0px;
+  --luce: inset 0 1px 0 0 rgb(255 255 255 / .9);
+  --ombra-vetro: 0 1px 2px rgb(40 20 50 / .06), 0 10px 28px -14px rgb(40 20 50 / .22);
+  --ombra-su: 0 18px 44px -18px rgb(40 20 50 / .3), 0 0 0 1px rgb(40 20 50 / .06);
+}
+body[data-stile="carta"] h1 { font-weight: 600; letter-spacing: -.015em; }
+body[data-stile="carta"] h1, body[data-stile="carta"] h2, body[data-stile="carta"] h3 { font-variation-settings: "SOFT" 60, "opsz" 48; }
+body[data-stile="carta"] .cima { background: color-mix(in oklch, var(--alto) 88%, transparent); border-bottom-color: var(--linea); }
+body[data-stile="carta"] .cassetto, body[data-stile="carta"] .guida-scatola, body[data-stile="carta"] .primo-scatola, body[data-stile="carta"] .comandi-scatola, body[data-stile="carta"] .finestra-attivazione { background: var(--carta); box-shadow: var(--ombra-su); }
+body[data-stile="carta"] .cassetto-fondo, body[data-stile="carta"] .comandi, body[data-stile="carta"] .guida, body[data-stile="carta"] .scelta-fondo { background: rgb(40 20 50 / .18); }
+body[data-stile="carta"] .menu-destro, body[data-stile="carta"] .casella-menu, body[data-stile="carta"] .notifica, body[data-stile="carta"] .giorno-al-volo, body[data-stile="carta"] .cartella-volo, body[data-stile="carta"] .tecniche { background: var(--carta); }
+body[data-stile="carta"] .stanze a[aria-current="page"] { background: color-mix(in oklch, var(--viola) 14%, var(--carta)); color: var(--testo); }
+body[data-stile="carta"] .banner { background: linear-gradient(150deg, color-mix(in oklch, var(--viola) 16%, var(--carta)), var(--carta) 70%); }
+body[data-stile="carta"] .riquadro-tasto { background: color-mix(in oklch, var(--carta) 92%, transparent); }
+body[data-stile="carta"] input, body[data-stile="carta"] textarea, body[data-stile="carta"] select { background: var(--carta); border-color: var(--linea-forte); }
+body[data-stile="carta"] .gestionale-riquadro { color-scheme: light; }
+body[data-stile="carta"] .versione-attuale { background: var(--carta); }
+
+/* ---- Netto: scura e piatta, angoli vivi, linee sottili, niente vetro né aurora, le etichette a macchina ---- */
+body[data-stile="netto"] {
+  --titoli: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --r: 6px; --vetro: 0px;
+  --luce: none; --ombra-vetro: none;
+  --ombra-su: 0 0 0 1px var(--linea-forte), 0 16px 40px -20px rgb(0 0 0 / .8);
+  background-image: linear-gradient(color-mix(in oklch, var(--linea) 35%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklch, var(--linea) 35%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px; background-attachment: fixed;
+}
+body[data-stile="netto"] h1 { font-weight: 700; letter-spacing: -.04em; }
+body[data-stile="netto"] h2, body[data-stile="netto"] h3 { font-weight: 600; letter-spacing: .02em; text-transform: uppercase; font-size: .78rem; }
+body[data-stile="netto"] .cima { background: var(--fondo); border-bottom-color: var(--linea-forte); }
+body[data-stile="netto"] .riquadro > .riquadro-corpo > *, body[data-stile="netto"] .riquadro-striscia, body[data-stile="netto"] .schede-cartella, body[data-stile="netto"] .fascia, body[data-stile="netto"] .pannello, body[data-stile="netto"] .scelta-carta {
+  border-color: var(--linea-forte); }
+body[data-stile="netto"] .banner { background: var(--carta); border-color: var(--viola); border-left-width: 3px; }
+body[data-stile="netto"] .banner::before { display: none; }
+body[data-stile="netto"] .primario { background: var(--tasto); box-shadow: none; border-radius: var(--r); }
+body[data-stile="netto"] .primario:hover { background: var(--tasto-su); }
+body[data-stile="netto"] .secondario, body[data-stile="netto"] .quieto, body[data-stile="netto"] input, body[data-stile="netto"] textarea, body[data-stile="netto"] select, body[data-stile="netto"] .cerca-tutto { border-radius: var(--r); box-shadow: none; }
+body[data-stile="netto"] .stanze a { border-radius: var(--r); }
+body[data-stile="netto"] .stanze a[aria-current="page"] { background: var(--carta); box-shadow: inset 2px 0 0 var(--viola); }
+body[data-stile="netto"] .cassetto, body[data-stile="netto"] .menu-destro, body[data-stile="netto"] .casella-menu, body[data-stile="netto"] .notifica { background: var(--alto); border-radius: var(--r); }
+body[data-stile="netto"] .versione-attuale, body[data-stile="netto"] .versione-nuova-tasto { border-radius: 3px; font-family: var(--titoli); }
+body[data-stile="netto"] .marchio > span { font-family: var(--titoli); letter-spacing: -.03em; }
+
+/* ---- Spazio: il cielo di notte (Marco, 25-11-2026: «inventa proprio uno stile spaziale»). Le stelle sono un canvas dietro tutto
+   (spazio.js); qui le nebulose sullo sfondo, le caselle di vetro scuro con un filo di luce in cima, i titoli in Space Grotesk ---- */
+body[data-stile="spazio"] {
+  --titoli: "Space Grotesk", "Inter", "Segoe UI Variable Display", system-ui, sans-serif;
+  --r: 18px; --vetro: 1.5px; /* poco sfocato: le stelle si vedono anche dietro le caselle */
+  --luce: inset 0 1px 0 0 rgb(255 255 255 / .07);
+  --ombra-vetro: 0 0 0 1px color-mix(in oklch, var(--lilla) 7%, transparent), 0 18px 50px -24px rgb(0 0 0 / .9);
+  --ombra-su: 0 0 0 1px color-mix(in oklch, var(--lilla) 14%, transparent), 0 24px 60px -20px rgb(0 0 0 / .95), 0 0 50px -20px color-mix(in oklch, var(--viola) 40%, transparent);
+  background-color: var(--fondo);
+  background-image:
+    radial-gradient(1100px 620px at 85% -10%, color-mix(in oklch, var(--viola) calc(var(--aurora-forza) * 48%), transparent), transparent 68%),
+    radial-gradient(800px 520px at -6% 38%, color-mix(in oklch, var(--info) calc(var(--aurora-forza) * 34%), transparent), transparent 70%),
+    radial-gradient(900px 560px at 60% 118%, color-mix(in oklch, var(--accento-2) calc(var(--aurora-forza) * 26%), transparent), transparent 70%),
+    radial-gradient(1400px 900px at 50% 50%, transparent 55%, rgb(0 0 0 / .55));
+  background-attachment: fixed;
+}
+/* le stelle stanno sotto tutto (z-index -1): sopra lo sfondo con le nebulose, che il body passa alla pagina */
+canvas.spazio-stelle { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+body[data-stile="spazio"] h1 { font-weight: 700; letter-spacing: -.035em; }
+body[data-stile="spazio"] h2, body[data-stile="spazio"] h3 { font-weight: 600; letter-spacing: -.01em; }
+body[data-stile="spazio"] .cima { background: color-mix(in oklch, var(--fondo) 45%, transparent); border-bottom-color: color-mix(in oklch, var(--lilla) 10%, transparent); }
+/* le caselle: vetro scuro, un filo di luce che va dall'accento al secondo colore lungo il bordo in alto */
+body[data-stile="spazio"] .riquadro > .riquadro-corpo > *, body[data-stile="spazio"] .riquadro-striscia, body[data-stile="spazio"] .schede-cartella, body[data-stile="spazio"] .fascia, body[data-stile="spazio"] .pannello, body[data-stile="spazio"] .scelta-carta, body[data-stile="spazio"] .banner {
+  background:
+    linear-gradient(90deg, transparent 8%, color-mix(in oklch, var(--lilla) 55%, transparent), color-mix(in oklch, var(--accento-2) 45%, transparent), transparent 92%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, color-mix(in oklch, var(--carta) calc(var(--trasparenza) + 6%), transparent), color-mix(in oklch, var(--fondo) var(--trasparenza), transparent));
+  border-color: color-mix(in oklch, var(--lilla) 10%, transparent); }
+body[data-stile="spazio"] .riquadro > .riquadro-corpo > *:hover, body[data-stile="spazio"] .fascia:hover { border-color: color-mix(in oklch, var(--lilla) 22%, transparent); }
+body[data-stile="spazio"] .primario { box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), 0 0 0 1px color-mix(in oklch, var(--lilla) 30%, transparent), 0 0 24px -6px var(--viola); }
+body[data-stile="spazio"] .stanze a[aria-current="page"] { background: linear-gradient(90deg, color-mix(in oklch, var(--viola) 28%, transparent), transparent); box-shadow: inset 2px 0 0 var(--lilla); }
+body[data-stile="spazio"] .cassetto, body[data-stile="spazio"] .menu-destro, body[data-stile="spazio"] .casella-menu, body[data-stile="spazio"] .notifica { background: color-mix(in oklch, var(--fondo) 80%, transparent); }
+body[data-stile="spazio"] .marchio > span { font-family: var(--titoli); letter-spacing: .02em; }
+.stile-mini.spazio { position: relative; background: radial-gradient(70px 40px at 90% 0%, #8a5cff55, transparent), radial-gradient(60px 40px at 0% 100%, #2a9df455, transparent), #05040a; }
+.stile-mini.spazio::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(1px 1px at 12% 30%, #fff, transparent), radial-gradient(1px 1px at 70% 18%, #fff, transparent), radial-gradient(1.4px 1.4px at 46% 66%, #ebacff, transparent), radial-gradient(1px 1px at 88% 78%, #fff, transparent), radial-gradient(1px 1px at 28% 86%, #cfe0ff, transparent), radial-gradient(1px 1px at 58% 40%, #fff, transparent); }
+.stile-mini.spazio i { position: relative; background: linear-gradient(180deg, #ffffff10, #ffffff05); border: 1px solid #ebacff26; border-radius: 6px; }
+.stile-mini.spazio i:nth-child(3) { box-shadow: inset 0 1px 0 #ebacffaa; }
+
+/* ---- Personalizza: la scelta del tema e del logo ---- */
+.stili-scelta { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .6rem; margin: .4rem 0 .3rem; }
+.stile-voce { all: unset; cursor: pointer; display: grid; gap: .45rem; padding: .55rem; border-radius: 14px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--alto) 70%, transparent); }
+.stile-voce[aria-checked="true"] { border-color: var(--viola); box-shadow: 0 0 0 2px var(--viola-tenue); }
+.stile-voce:focus-visible { outline: 2px solid var(--lilla); outline-offset: 2px; }
+.stile-voce b { font: 600 .92rem var(--corpo); padding: 0 .2rem; }
+.stile-voce small { color: var(--tenue); font-size: .76rem; padding: 0 .2rem; line-height: 1.35; }
+.stile-mini { height: 74px; border-radius: 10px; display: grid; grid-template-columns: 18px 1fr 1fr; grid-template-rows: 14px 1fr 1fr; gap: 4px; padding: 6px; overflow: hidden; }
+.stile-mini i { display: block; border-radius: 4px; }
+.stile-mini i:nth-child(1) { grid-column: 1 / -1; }
+.stile-mini i:nth-child(2) { grid-row: 2 / 4; }
+.stile-mini.classica { background: radial-gradient(90px 60px at 10% 0%, #b666ce66, transparent), #0f0a11; }
+.stile-mini.classica i { background: #ffffff14; border: 1px solid #ffffff1a; border-radius: 6px; }
+.stile-mini.classica i:nth-child(3) { background: linear-gradient(150deg, #b666ce55, #ffffff10); }
+.stile-mini.carta { background: #f6f1f3; }
+.stile-mini.carta i { background: #fff; box-shadow: 0 2px 6px -2px #50285040; border-radius: 5px; }
+.stile-mini.carta i:nth-child(3) { background: linear-gradient(150deg, #ecd9f2, #fff); }
+.stile-mini.netto { background: #0d0d0e; background-image: linear-gradient(#ffffff0d 1px, transparent 1px), linear-gradient(90deg, #ffffff0d 1px, transparent 1px); background-size: 8px 8px; }
+.stile-mini.netto i { background: #18181a; border: 1px solid #3a3a3e; border-radius: 1px; }
+.stile-mini.netto i:nth-child(3) { box-shadow: inset 2px 0 0 #b666ce; }
+
+.loghi-scelta { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: .55rem; margin: .4rem 0 .3rem; }
+.logo-voce { all: unset; cursor: pointer; display: grid; justify-items: center; gap: .35rem; padding: .7rem .4rem .55rem; border-radius: 14px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--alto) 70%, transparent); font-size: .82rem; }
+.logo-voce[aria-checked="true"] { border-color: var(--viola); box-shadow: 0 0 0 2px var(--viola-tenue); }
+.logo-voce:focus-visible { outline: 2px solid var(--lilla); outline-offset: 2px; }
+.logo-voce img, .logo-voce svg { width: 44px; height: 44px; }
+.marchio svg.logo-disegno { width: 26px; height: 26px; flex: none; stroke: none; }
+svg.logo-disegno { stroke: none; }
+.logo-editor { display: grid; gap: .7rem; margin: .6rem 0 .3rem; padding: .9rem 1rem; border-radius: 16px; background: color-mix(in oklch, var(--alto) 70%, transparent); border: 1px solid var(--linea); }
+.logo-editor .riga { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
+.logo-editor .riga > span:first-child { min-width: 6.5rem; color: var(--testo-2); font-size: .84rem; }
+.logo-editor .pillola { all: unset; cursor: pointer; padding: .3rem .65rem; border-radius: 99px; border: 1px solid var(--linea-forte); font-size: .8rem; color: var(--testo-2); }
+.logo-editor .pillola[aria-pressed="true"] { background: var(--viola-tenue); border-color: var(--viola); color: var(--testo); }
+.logo-editor .tinta { all: unset; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .2); }
+.logo-editor .tinta[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fondo), 0 0 0 4px var(--lilla); }
+.logo-editor .tinta.di-mirion { background: conic-gradient(var(--viola), var(--accento-2), var(--viola)); }
+.logo-editor input[type="text"] { width: 11rem; padding: .4rem .6rem; }
+.logo-anteprima { display: flex; align-items: center; gap: .8rem; padding: .5rem .2rem; }
+.logo-anteprima svg, .logo-anteprima img { width: 56px; height: 56px; }
+.logo-anteprima b { font: 600 1.15rem var(--titoli); }
+
+/* in alto non va niente a capo, in nessun tema: il nome lungo o un carattere largo stringono la ricerca, non la spezzano */
+.cerca-tutto { min-width: 0; white-space: nowrap; }
+.cerca-tutto > :first-child { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.orologio { white-space: nowrap; }
+body[data-stile="netto"] .marchio > span { font-size: .95rem; }
+body[data-stile="netto"] .orologio { font-size: .78rem; }
+
+/* ---- Mirion sul telefono (Marco, 23-11 sera: «fammi una versione telefono»; server/telefono.mjs) ----
+   sotto i 760 px le stanze diventano una barra in basso, come nelle app; in alto restano il marchio e la ricerca */
+@media (max-width: 760px) {
+  :root { --barra-sotto: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  .stanze { display: flex !important; position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto; height: var(--barra-sotto); z-index: 20;
+    flex-direction: row; align-items: stretch; gap: .15rem; padding: .3rem .4rem env(safe-area-inset-bottom, 0px); overflow-x: auto; scrollbar-width: none;
+    background: color-mix(in oklch, var(--fondo) 82%, transparent); backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5); border-top: 1px solid var(--linea); }
+  .stanze::-webkit-scrollbar { display: none; }
+  .stanze a, .stanze .cartella-apri { flex: 0 0 auto; width: auto; min-width: 62px; padding: .3rem .4rem; font-size: .64rem; }
+  .stanze .in-fondo { margin-top: 0; }
+  .stanze .cartella-stanze { flex: 0 0 auto; }
+  .voci-prodotti { flex-direction: row; width: auto; margin: 0 0 0 .2rem; padding: 0 0 0 .3rem; border-top: 0; border-left: 1px solid var(--linea); }
+  .voci-prodotti .voci-titolo { display: none; }
+  .voci-prodotti a { width: auto; min-width: 62px; }
+  [data-palco] { padding-bottom: calc(var(--barra-sotto) + 1rem) !important; }
+  .cima { gap: .6rem; padding: 0 .8rem; }
+  .cima .strumenti { display: none; }
+  .cerca-tutto { margin-left: auto; flex: 0 1 auto; }
+  .cerca-tutto kbd { display: none; }
+  .versione-attuale { display: none; }
+  .versione-nuova-tasto { margin-left: 0; } /* sul telefono il numero non c’è, ma la versione nuova sì */
+  .cima .area-attiva, .cima .indietro { display: none; } /* sul telefono l’area si cambia dal computer */
+  .riquadro-comandi { opacity: 1; }
+  .stanza.piena { height: calc(100vh - var(--cima) - var(--barra-sotto)); margin-inline: -1rem; }
+  .gestionale-torna { bottom: .6rem; left: .6rem; }
+}
+/* le impostazioni del telefono */
+.telefono-indirizzi { display: flex; flex-wrap: wrap; gap: .5rem; margin: .4rem 0 .8rem; }
+.telefono-indirizzo { font: 600 1.05rem var(--corpo); padding: .45rem .8rem; border-radius: 10px; background: var(--viola-tenue); border: 1px solid var(--viola-bordo); color: var(--testo); user-select: all; }
+.telefono-codice { display: grid; gap: .2rem; margin: .2rem 0 .8rem; }
+.telefono-codice b { font: 700 2.2rem var(--titoli); letter-spacing: .3em; color: var(--lilla); }
+.telefono-elenco { list-style: none; margin: .8rem 0 .4rem; padding: 0; display: grid; gap: .4rem; }
+.telefono-elenco li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .1rem .8rem; padding: .55rem .8rem; border-radius: 12px; background: color-mix(in oklch, var(--alto) 70%, transparent); border: 1px solid var(--linea); }
+.telefono-elenco li small { grid-column: 1; }
+.telefono-elenco li button { grid-column: 2; grid-row: 1 / 3; }
+
+/* sul telefono le caselle si spostano tenendo premuto (su-misura.js): la casella presa si alza; niente menu del dito lungo */
+.riquadro, .stanze a { -webkit-touch-callout: none; }
+.riquadro.presa { transform: scale(1.02); box-shadow: 0 18px 40px -16px var(--viola); transition: transform .15s; }
+@media (max-width: 760px), (pointer: coarse) { .riquadro-angolo { display: none; } }
+/* col dito la pagina scorre sempre (su-misura.css metteva touch-action: none, che bloccava lo scorrimento sopra le caselle):
+   lo spostamento parte solo dopo il dito tenuto premuto, e intanto ferma lo scorrimento da sé */
+@media (pointer: coarse) {
+  .riquadro, .libreria-carta { touch-action: pan-y; }
+  .stanze a[data-stanza], .cartella-stanze, .strumento[data-id], .tessere > .tessera, .scrivania-pill { touch-action: pan-x pan-y; }
+}
+
+/* il widget del telefono (widget.js): una card sola, a tutto schermo, senza le barre di Mirion */
+body.modo-widget .cima, body.modo-widget .stanze, body.modo-widget .dock { display: none !important; }
+body.modo-widget [data-palco] { top: 0 !important; left: 0 !important; padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem max(1rem, env(safe-area-inset-bottom, 0px)) !important; }
+.widget-solo { max-width: 560px; margin: 0 auto; min-height: calc(100vh - 2rem); display: flex; flex-direction: column; gap: .8rem; justify-content: center; }
+.widget-solo > .fascia, .widget-solo > .riquadro { animation: sale .45s var(--curva, ease) both; }
+.widget-riquadro { cursor: default; touch-action: auto; }
+.widget-apri { align-self: center; text-decoration: none; display: inline-flex; align-items: center; gap: .35rem; }
+.widget-elenco { display: grid; gap: .8rem; }
+.widget-gruppo { display: grid; gap: .4rem; }
+.widget-link { display: flex; flex-wrap: wrap; gap: .4rem; }
+.widget-link a { text-decoration: none; }
+/* il codice a barre (codice-barre.js) */
+.codice-barre { display: grid; gap: .5rem; margin-top: .6rem; padding-top: .6rem; border-top: 1px dashed var(--linea); }
+.codice-cifre { letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.codice-trovato { display: grid; gap: .3rem; padding: .6rem .75rem; border-radius: 12px; background: var(--viola-tenue); }
+.codice-video { width: 100%; max-height: 50vh; border-radius: 14px; background: #000; object-fit: cover; }
