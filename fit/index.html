@@ -103,7 +103,10 @@
   const codice = (/[#&]a=([\w.~-]+)/.exec(location.hash) || [])[1] || (buono(q.get('a')) ? q.get('a') : null)
   const gettone = buono(q.get('k')) ? q.get('k') : null
   const apri = document.getElementById('apri')
-  if (codice) { apri.href = 'app/?' + (gettone ? 'k=' + encodeURIComponent(gettone) + '&' : '') + 'a=' + encodeURIComponent(codice) + '#/diario'; apri.hidden = false }
+  // l'accesso trainer (26-11, app unica Mirion Fit + Trainer): ?t=<chiave> che la Mirion del trainer crea solo con la licenza di Marco
+  const trainer = buono(q.get('t')) ? q.get('t') : null
+  if (trainer) { apri.href = 'app/?t=' + encodeURIComponent(trainer) + '#/t'; apri.textContent = 'Apri Mirion Fit come trainer'; apri.hidden = false }
+  else if (codice) { apri.href = 'app/?' + (gettone ? 'k=' + encodeURIComponent(gettone) + '&' : '') + 'a=' + encodeURIComponent(codice) + '#/diario'; apri.hidden = false }
   else document.getElementById('senza-codice').hidden = false
   fetch('versione.json', { cache: 'no-store' }).then(r => r.json()).then(v => {
     document.getElementById('versione').textContent = `Versione ${v.versione}`
