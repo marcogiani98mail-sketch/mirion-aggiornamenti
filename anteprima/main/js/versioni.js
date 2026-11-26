@@ -4,6 +4,12 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.42', data: '2026-11-26', titolo: 'Il cervello spostato si ritrova da solo', novita: [
+    'Se sposti la cartella del cervello dentro una cartella accanto (come Mirion dentro il Cervello), Mirion la ritrova e si riapre lì, con le tue task e il tuo diario, invece di aprire un cervello vuoto.',
+  ] },
+  { versione: '0.1.41', data: '2026-11-26', titolo: 'Mirion Fit dal cervello di squadra dentro il Cervello', novita: [
+    'Se il cervello di squadra sta in una cartella dentro il tuo Cervello, Mirion prende da lì i suoi software: Mirion Fit si apre anche nel telefono della scrivania.',
+  ] },
   { versione: '0.1.40', data: '2026-11-26', titolo: 'Notifiche ferme, «Da chiudere» e «Nascoste» separate', novita: [
     'Le notifiche in alto hanno sempre la stessa larghezza e il testo al centro; le frecce si fermano all’ultima invece di ricominciare.',
     '«Da chiudere» e «Nascoste» sono due card diverse, e con «Segna tutte fatte» le chiudi tutte con un clic.',
