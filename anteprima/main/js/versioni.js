@@ -4,6 +4,9 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.50', data: '2026-11-26', titolo: 'Mirion sul Mac si aggiorna da sola', novita: [
+    'Sul Mac Mirion si aggiorna da sola, come su Windows: scarica la versione nuova, controlla la firma, sostituisce l’app e si riapre. Niente più pagina di GitHub e .dmg da riscaricare.',
+  ] },
   { versione: '0.1.49', data: '2026-11-26', titolo: 'Inviti dal telefono, le app nella Squadra, Mirion Fit come sul telefono', novita: [
     'Mirion Trainer sul telefono: in «Clienti» c’è «Invita un cliente», con il QR, il link e il codice da copiare o mandare.',
     'Mirion Trainer sul telefono: «Il mio Fit» apre il tuo Mirion Fit, e da lì «Trainer» ti riporta indietro. Ha la sua icona.',
