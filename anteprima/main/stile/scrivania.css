@@ -235,9 +235,9 @@
 .telefoni-fila.impilati { flex-direction: column; align-items: center; }
 .telefoni-fila .telefono-scocca { zoom: var(--zoom, 1); }
 .telefono-finto { margin: 0; display: grid; justify-items: center; gap: .55rem; min-width: 0; }
-.telefoni-fila .telefono-finto { width: calc(300px * var(--zoom, 1)); max-width: 100%; }
+.telefoni-fila .telefono-finto { width: calc(412px * var(--zoom, 1)); max-width: 100%; }
 .telefono-finto figcaption { max-width: 100%; }
-.telefono-scocca { position: relative; width: 300px; height: 640px; border-radius: 46px; padding: 34px 11px 14px; background: linear-gradient(160deg, #2a2633, #0b0a10 40%, #1d1a25);
+.telefono-scocca { position: relative; width: 412px; height: 870px; border-radius: 54px; padding: 40px 11px 16px; background: linear-gradient(160deg, #2a2633, #0b0a10 40%, #1d1a25);
   box-shadow: 0 0 0 1px rgb(255 255 255 / .09), inset 0 0 0 2px #000, 0 30px 70px -28px rgb(0 0 0 / .9), 0 0 60px -30px var(--viola); }
 .telefono-isola { position: absolute; z-index: 2; top: 12px; left: 50%; transform: translateX(-50%); width: 78px; height: 14px; border-radius: 20px; background: #000; pointer-events: none; }
 .telefono-schermo { display: block; width: 100%; height: 100%; border: 0; border-radius: 22px 22px 34px 34px; background: #05040b; overflow: hidden; }

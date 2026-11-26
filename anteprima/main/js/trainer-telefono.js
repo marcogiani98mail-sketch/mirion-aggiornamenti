@@ -134,7 +134,7 @@ async function vistaCliente (v, id) {
         el('p', { testo: [s.fatica ? `fatica ${s.fatica}/10` : 'non ha detto com’è andata', s.fastidio ? `fastidio: ${FASTIDI[s.fastidio] ?? s.fastidio}` : null].filter(Boolean).join(' · ') }),
         s.nota ? el('blockquote', { testo: s.nota }) : null))))) : null,
     pc ? carta('Il suo percorso', pc.oggi ? `oggi ${pc.oggi}` : '', el('p', { class: 't-nota forte', testo: pc.titolo }),
-      el('ul', { class: 't-righe semplici' }, ...(pc.sedute ?? []).map(s => el('li', {}, el('b', { testo: s.nome }), el('small', { testo: (s.esercizi ?? []).join(' · ') }))))) : null,
+      el('ul', { class: 't-righe semplici percorso-sedute' }, ...(pc.sedute ?? []).map(s => el('li', {}, el('b', { testo: s.nome }), el('small', { testo: (s.esercizi ?? []).join(' · ') }))))) : null,
     cartaProgressi(c, () => vistaCliente(v, id)),
     cartaScheda(c),
     cartaChat(c))

@@ -43,7 +43,8 @@ export function casellaTelefoni () {
 
 // i telefoni si adattano alla card (Marco, 26-11: «adatta bene i telefoni»): uno accanto all'altro finché ci stanno, se no uno
 // sotto l'altro; il telefono intero (schermo compreso) si rimpicciolisce con zoom, così l'app dentro resta quella vera da 375 punti
-const LARGO = 300, ALTO = 640, MINIMO = .55
+// lo schermo è largo 390 punti come un iPhone vero (Marco, 26-11: «fai più largo il telefono»): con 278 le app si tagliavano
+const LARGO = 412, ALTO = 870, MINIMO = .45
 function adatta (fila) {
   const misura = () => {
     const w = fila.clientWidth; if (!w) return
