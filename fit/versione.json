@@ -1,9 +1,9 @@
 {
-  "versione": "1.0.9",
-  "codice": 9,
-  "note": "L'icona nuova di Mirion Fit (il manubrio).",
-  "byte": 244422,
-  "sha256": "36c229b9d4fd9da197d6ae118b49923833afeca5fe9f49b382bfff94bdfef61c",
-  "quando": "2026-11-26T18:06:47.928Z",
-  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=9"
+  "versione": "1.0.10",
+  "codice": 10,
+  "note": "Icona a tutto campo, tasto indietro, si aggiorna da sola; la parte trainer si chiama Mirion Trainer.",
+  "byte": 552593,
+  "sha256": "a40732111a5e51517e1c079234d7e0cf1d0c6c9ca2498c04801bbfbd7f7efe29",
+  "quando": "2026-11-26T18:17:06.925Z",
+  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=10"
 }
