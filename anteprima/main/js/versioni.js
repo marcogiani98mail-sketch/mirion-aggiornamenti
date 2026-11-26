@@ -4,6 +4,9 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.47', data: '2026-11-26', titolo: 'La tapparella delle cartelle', novita: [
+    'Nelle cartelle della scrivania lo spazio libero della barra delle schede è la tapparella: un clic chiude la cartella e un altro la riapre, e trascinandola sposti la cartella.',
+  ] },
   { versione: '0.1.46', data: '2026-11-26', titolo: 'Telefoni della scrivania larghi come uno vero', novita: [
     'Nei telefoni di «Le app sul telefono» lo schermo è largo come un iPhone: Mirion Fit e Mirion Trainer si vedono interi, senza tagli e senza la barra per scorrere di lato.',
   ] },

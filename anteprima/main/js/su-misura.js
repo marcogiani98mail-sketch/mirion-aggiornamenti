@@ -93,7 +93,9 @@ export function ordinabile (contenitore, { fatto, unisci = null, fuori = null, a
     let cosa = e.target // il figlio diretto del contenitore che contiene il punto preso (dentro può avere altri data-id)
     while (cosa && cosa.parentElement !== contenitore) cosa = cosa.parentElement
     const blocco = e.target.closest('[data-non-trascinare]')
-    if (!cosa?.dataset?.id || (blocco && blocco !== contenitore && contenitore.contains(blocco)) || e.target.closest('input, select, textarea, [contenteditable]')) return
+    // data-maniglia: un punto dentro una parte data-non-trascinare da cui si trascina lo stesso (la tapparella delle cartelle)
+    const maniglia = e.target.closest('[data-maniglia]'), mia = maniglia && contenitore.contains(maniglia) && !(blocco && maniglia.contains(blocco) && blocco !== maniglia)
+    if (!cosa?.dataset?.id || (blocco && blocco !== contenitore && contenitore.contains(blocco) && !mia) || e.target.closest('input, select, textarea, [contenteditable]')) return
     // col dito (Marco, 23-11 sera: «sul telefono scrollando sposto i widget»): si sposta solo tenendo premuto mezzo secondo, come
     // nelle app; se il dito si muove prima, è lo scorrimento della pagina e la casella resta dov'è
     if (e.pointerType === 'touch') {

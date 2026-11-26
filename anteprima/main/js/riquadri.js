@@ -104,7 +104,7 @@ function scatola (id, lista, contenuti, ridisegna) {
       : tasto(intero === id ? 'x' : 'corners-out', intero === id ? 'Chiudi lo schermo intero' : 'A schermo intero', () => { intero = intero === id ? null : id; ridisegna() }),
     intero !== id && tasto(capo.piccolo ? 'plus' : 'minus', capo.piccolo ? 'Riapri' : 'Rimpicciolisci', () => { misure({ piccolo: !capo.piccolo }); ridisegna() }),
     intero !== id && tasto('x', cart ? `Togli «${F.titoli[mostrata.id]}»${F.scrivania ? ' dalla scrivania' : ''}` : F.scrivania ? 'Togli dalla scrivania' : 'Togli', () => { const m = riq(mostrata.id); if (m) { m.nascosto = true; m.gruppo = null; salva(); ridisegna() } }))
-  if (cart) box.append(schede(cart, lista, mostrata, ridisegna))
+  if (cart) box.append(schede(cart, lista, mostrata, ridisegna, () => { misure({ piccolo: !capo.piccolo }); ridisegna() }, capo.piccolo))
   else if (capo.piccolo) box.append(el('div', { class: 'riquadro-striscia', testo: titolo }))
   box.append(comandi, el('div', { class: 'riquadro-corpo', hidden: capo.piccolo }, capo.piccolo ? null : contenuti[mostrata.id]()))
   if (!capo.piccolo && intero !== id) box.append(angolo(box, misure))
@@ -134,13 +134,19 @@ function colori (vicino, scelto, fai) {
 // le schede di una cartella: un clic mostra quella casella; si trascinano per cambiare l'ordine, e trascinata fuori dalla
 // cartella una scheda torna una casella sola (anche con ⇱); il nome della cartella si cambia scrivendoci sopra.
 // I pulsanti cercano la cartella e le caselle per id al momento del clic, così cambiano sempre la copia giusta.
-function schede (cart, lista, mostrata, ridisegna) {
+// La «tapparella» (Marco, 26-11: «quando clicco sulla tapparella della cartella posso chiuderla e quando la trascino sempre sulla
+// tapparella posso spostarla»): lo spazio vuoto della barra, dopo le schede, chiude e riapre la cartella con un clic e, preso e
+// trascinato, sposta la cartella come il resto della casella (data-maniglia: su-misura.js, ordinabile)
+function schede (cart, lista, mostrata, ridisegna, chiudi = null, chiusa = false) {
   const id = cart.id
   const barra = el('div', { class: 'schede-cartella', role: 'tablist', 'aria-label': cart.nome, 'data-non-trascinare': '' },
     el('input', { class: 'nome-cartella', value: cart.nome, 'aria-label': 'Nome della cartella', size: Math.max(6, cart.nome.length), onchange: e => { const g = gruppo(id); if (g) { g.nome = e.target.value.trim() || 'Cartella'; salva() } } }),
     ...lista.map(r => el('span', { class: 'scheda-cartella', 'data-id': r.id },
       el('button', { type: 'button', role: 'tab', 'aria-selected': String(r === mostrata), testo: F.titoli[r.id], onclick: () => { const g = gruppo(id); if (g) { g.scelto = r.id; salva(); ridisegna() } } }),
-      el('button', { type: 'button', class: 'fuori', title: 'Tira fuori dalla cartella', 'aria-label': `Tira fuori ${F.titoli[r.id]} dalla cartella`, onclick: () => { estrai(id, r.id); salva(); ridisegna() } }, ic('arrow-square-out')))))
+      el('button', { type: 'button', class: 'fuori', title: 'Tira fuori dalla cartella', 'aria-label': `Tira fuori ${F.titoli[r.id]} dalla cartella`, onclick: () => { estrai(id, r.id); salva(); ridisegna() } }, ic('arrow-square-out')))),
+    chiudi ? el('span', { class: 'tapparella', 'data-maniglia': '', role: 'button', tabindex: '0', 'aria-expanded': String(!chiusa), 'aria-label': chiusa ? `Riapri la cartella ${cart.nome}` : `Chiudi la cartella ${cart.nome}`,
+      title: (chiusa ? 'Un clic: riapri' : 'Un clic: chiudi') + ' · trascina per spostare la cartella', onclick: chiudi, onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chiudi() } } },
+      ic(chiusa ? 'caret-down' : 'caret-up')) : '')
   ordinabile(barra, { asse: 'orizzontale', fatto: ids => { ordinaSchede(id, ids); salva(); ridisegna() }, fuori: chi => { estrai(id, chi); salva(); ridisegna() } })
   return barra
 }

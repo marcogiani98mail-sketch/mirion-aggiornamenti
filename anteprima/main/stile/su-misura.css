@@ -56,6 +56,11 @@ body.si-trascina, body.si-trascina * { cursor: grabbing !important; user-select:
 /* una cartella sulla scrivania: le schede in cima */
 .schede-cartella { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; padding: .4rem 6rem .4rem .5rem; margin-bottom: .45rem; border-radius: 14px; background: var(--carta); border: 1px solid var(--linea); }
 .riquadro.piccolo .schede-cartella { margin-bottom: 0; }
+/* la tapparella: lo spazio dopo le schede; un clic chiude o riapre, trascinandola si sposta la cartella */
+.schede-cartella .tapparella { flex: 1 1 3rem; align-self: stretch; min-height: 1.9rem; display: flex; align-items: center; justify-content: flex-end; padding: 0 .4rem; border-radius: 10px; cursor: grab; color: var(--tenue); }
+.schede-cartella .tapparella:hover, .schede-cartella .tapparella:focus-visible { background: color-mix(in oklch, var(--testo) 5%, transparent); color: var(--testo); outline: none; }
+.schede-cartella .tapparella .ic { width: 1rem; height: 1rem; }
+body.si-trascina .schede-cartella .tapparella { cursor: grabbing; }
 .nome-cartella { font: 600 .85rem var(--titoli); color: var(--lilla); background: none; border: 1px solid transparent; border-radius: 8px; padding: .25rem .45rem; min-width: 5ch; }
 .nome-cartella:hover, .nome-cartella:focus { border-color: var(--linea-forte); background: var(--alto); }
 .scheda-cartella { display: inline-flex; align-items: center; border-radius: 999px; background: rgba(255, 255, 255, .04); }
