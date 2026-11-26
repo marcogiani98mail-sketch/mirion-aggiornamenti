@@ -4,6 +4,11 @@
 // dopo un aggiornamento (server/rotte-sistema.mjs) leggono da qui. Niente DOM: lo usa anche il server.
 // A ogni versione nuova: una voce in cima, con le novità dette come le direbbe chi usa Mirion.
 export const VERSIONI = [
+  { versione: '0.1.55', data: '2026-11-26', titolo: 'Accessi beta e la Squadra con le card in più', novita: [
+    'Nella Squadra, solo per Marco, la card «Accessi beta»: chi ha aperto Mirion Trainer e quando, i clienti nuovi su Mirion Fit (dei trainer solo i numeri), le licenze date con chi le ha usate e l’ultimo invio di ognuno da Mirion sul computer. Si mette anche sulla scrivania.',
+    'Quando qualcuno apre Mirion Trainer o si collega un cliente nuovo ti arriva una notifica.',
+    'La Squadra ha card in più, solo sue, fra le icone in cima: «Gli incarichi» (quante cose ha da fare ognuno e le prossime) e «Gli ultimi invii».',
+  ] },
   { versione: '0.1.54', data: '2026-11-26', titolo: 'Aggiornamenti molto più veloci', novita: [
     'Dalla prossima versione Mirion scarica solo i file cambiati, di solito pochi KB invece di 130 MB, e si riapre aggiornata in pochi secondi, su Windows e sul Mac.',
     'Se cambia anche la base del programma (Electron), o se qualcosa va storto, Mirion scarica tutto come prima: l’aggiornamento arriva comunque, sempre con la firma di Marco.',

@@ -14,6 +14,10 @@ import { barraScrivanie } from './scrivanie.js'
 import { progetti, progettiPiccoli, sfoglia } from './progetti.js'
 import { programmi, daChiudere, nascosteNelleNote } from './caselle-nuove.js'
 import { casellaTelefoni } from './telefoni.js' // Mirion Fit e Mirion Trainer come sul telefono (25-11)
+import { accessiBeta, eDiMarco } from './accessi-beta.js' // chi entra nelle app in beta, solo per Marco (26-11 sera)
+// la card «Accessi beta» si offre solo sulla Mirion di Marco: lo si chiede una volta, e se sì la scrivania si ridisegna con l'icona
+let diMarco = false
+eDiMarco().then(si => { if (si) { diMarco = true; dispatchEvent(new CustomEvent('su-misura')) } })
 import { strisciaCosaManca } from './cosa-manca.js'
 import { MISURA, salva, ordinabile, pulsanteAnnulla, scrivania as scrivaniaAttiva } from './su-misura.js'
 import * as software from './prodotto.js'
@@ -72,7 +76,7 @@ let ultima = null
 // farle aprire a schermo intero con un apparato dedicato… deve essere tutto widget e apribile per la vera pagina, completa»):
 // la sua stanza se ce l'ha; se no la sua pagina dentro la scrivania (#scrivania?pagina=…), con tutto lo spazio
 const SPAZI = { conti: '#conti', adesso: '#scadute', giorni: '#calendario', scadute: '#scadute', 'senza-data': '#scadute?vista=senzadata', accessi: '#lavoro', lavagne: '#lavagne', cerca: '#cerca', diario: '#diario', 'studio-pt': '#gestionale?id=studio-pt', notizie: '#notizie',
-  notifiche: '#scrivania?pagina=notifiche', versioni: '#scrivania?pagina=versioni', programmi: '#scrivania?pagina=programmi', cervello: '#scrivania?pagina=cervello', progetti: '#scrivania?pagina=progetti', gestionali: '#scrivania?pagina=gestionali' }
+  notifiche: '#scrivania?pagina=notifiche', versioni: '#scrivania?pagina=versioni', programmi: '#scrivania?pagina=programmi', cervello: '#scrivania?pagina=cervello', progetti: '#scrivania?pagina=progetti', gestionali: '#scrivania?pagina=gestionali', beta: '#scrivania?pagina=beta' }
 let pagina = null // la card aperta come pagina completa, se c'è
 let widget = null // la card aperta da sola, come widget del telefono (widget.js)
 const tutta = () => disegna() // per chi sta dentro una casella e ha un suo «disegna»
@@ -93,7 +97,8 @@ function disegna () {
     scadute: () => extra.scadute(ricarica), accessi: extra.accessi, lavagne: extra.lavagne, cerca: extra.cerca, diario: extra.diario, gestionali: casellaGestionali, conti: casellaConti,
     // Claudio, per ora, non c'è (Marco, 23-11 sera: «per ora Claudio e Turni pulizie toglieli»): la sua card non si disegna
     notizie: casellaNotizie, versioni: () => extra.versioni(pagina === 'versioni'), notifiche: () => casellaNotifiche(s, { tutte: pagina === 'notifiche' }),
-    programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere(), nascoste: () => nascosteNelleNote(), telefoni: casellaTelefoni }
+    programmi: () => programmi(pagina === 'programmi'), 'da-chiudere': () => daChiudere(), nascoste: () => nascosteNelleNote(), telefoni: casellaTelefoni,
+    ...(diMarco ? { beta: () => accessiBeta(pagina === 'beta') } : {}) }
   // il widget: la card da sola, a tutto schermo (widget.js)
   const metti = nodo => { stanza.replaceChildren(nodo); if (ultima) ultima.disegnato = nodo }
   if (widget && contenuti[widget]) return metti(cornice(el('div', { class: 'riquadro widget-riquadro' }, el('div', { class: 'riquadro-corpo' }, contenuti[widget]())), '#scrivania'))

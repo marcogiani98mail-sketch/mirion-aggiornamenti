@@ -13,6 +13,7 @@ import { MISURA, salva, pulsanteAnnulla } from './su-misura.js'
 import { apriInvio } from './invio.js'
 import { numerino } from './notifiche-squadra.js'
 import { accessiApp } from './accessi-app.js'
+import { accessiBeta, eDiMarco } from './accessi-beta.js'
 
 const ORA = iso => new Date(iso).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 let ultimo = null
@@ -22,7 +23,9 @@ let ultimo = null
 // rimettono da «Tolte». La disposizione sta con quella della scrivania (squadra, in disposizione.mjs).
 // la chat e il lavoro degli altri erano stati tolti il 22-11; il 23-11 Marco li rivuole qui, nella sezione della scrivania;
 // il 25-11 il lavoro degli altri va via di nuovo («leva il lavoro degli altri e usiamo solo lo storico»)
-const TITOLI_SQUADRA = { punto: 'Il punto', assegna: 'Assegna una task', chat: 'La chat', lavoro: 'Il tuo lavoro', tue: 'Le tue squadre', storico: 'Lo storico', persone: 'Chi c’è', app: 'Mirion Fit e Mirion Trainer' }
+const TITOLI_SQUADRA = { punto: 'Il punto', assegna: 'Assegna una task', chat: 'La chat', lavoro: 'Il tuo lavoro', tue: 'Le tue squadre', storico: 'Lo storico', persone: 'Chi c’è', app: 'Mirion Fit e Mirion Trainer',
+  // le card in più, solo della Squadra (Marco, 26-11 sera: «squadra rendimela personalizzabile con le card in aggiunta solo per la squadra»)
+  beta: 'Accessi beta', incarichi: 'Gli incarichi', giri: 'Gli ultimi invii' }
 const fascia = (classe, titolo, ...dentro) => el('section', { class: 'fascia ' + classe }, el('header', {}, el('h2', { testo: titolo })), ...dentro)
 let ultima = null
 
@@ -37,7 +40,11 @@ export async function mostra (stanza) {
   const caselle = { punto: puntoSquadra(d, n, rifai), assegna: d.io ? fascia('squadra-assegna', 'Assegna una task', await assegna(d, rifai)) : null, chat: parti.messaggi, lavoro: d.io ? fascia('squadra-lavoro', 'Il tuo lavoro', azioni(d, rifai)) : chiSei(d, rifai), tue, storico: parti.storico,
     persone: fascia('squadra-persone', 'Chi c’è', albero(d, rifai)),
     // gli accessi alle app, solo per il titolare sulla Mirion di Marco (accessi-app.js)
-    app: d.io?.ruolo === 'titolare' ? await accessiApp(rifai).then(x => x && fascia('squadra-app', 'Mirion Fit e Mirion Trainer', x)).catch(() => null) : null }
+    app: d.io?.ruolo === 'titolare' ? await accessiApp(rifai).then(x => x && fascia('squadra-app', 'Mirion Fit e Mirion Trainer', x)).catch(() => null) : null,
+    // chi entra nelle app in beta, solo sulla Mirion di Marco (accessi-beta.js)
+    beta: d.io?.ruolo === 'titolare' && await eDiMarco() ? accessiBeta() : null,
+    incarichi: d.io ? fascia('squadra-incarichi', 'Gli incarichi', incarichi(d)) : null,
+    giri: d.giri?.length ? fascia('squadra-giri', 'Gli ultimi invii', giri(d)) : null }
   ultima = { stanza, d, caselle, github: parti.github }
   disegna()
   // aperta la sezione, le novità sono viste: via il numerino su «Squadra»
@@ -95,6 +102,22 @@ function disegna () {
 addEventListener('su-misura', () => { if (ultima?.stanza.isConnected) disegna() })
 
 const testata = (titolo, sotto) => el('div', { class: 'testata' }, el('div', {}, el('p', { class: 'sopra', testo: sotto }), el('h1', { testo: titolo })))
+
+// «Gli incarichi»: per ognuno che puoi vedere quante cose ha da fare, quante ne ha fatte e le prossime (server: accessi-beta.mjs)
+function incarichi (d) {
+  if (!d.incarichi?.length) return el('p', { class: 'vuoto', testo: 'Nessun incarico da vedere.' })
+  const data = s => new Date(s + 'T12:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+  return el('ul', { class: 'squadra-incarichi-lista' }, ...d.incarichi.map(p => el('li', {},
+    el('div', { class: 'incarichi-testa' }, el('b', { testo: p.nome }), el('span', { class: 'sopra piccolo', testo: `${p.aperte} da fare · ${p.fatte} fatte` }),
+      el('a', { class: 'quieto piccolo', href: '#cerca?n=' + encodeURIComponent(`Incarichi/${p.id}.md`), testo: 'Apri' })),
+    p.prossime.length ? el('ul', { class: 'incarichi-prossime' }, ...p.prossime.map(x => el('li', {}, el('span', { testo: x.testo }), x.data ? el('small', { class: 'sopra', testo: data(x.data) }) : null))) : null)))
+}
+// «Gli ultimi invii»: quando ognuno ha mandato il suo lavoro su GitHub l'ultima volta, e quante volte in settimana
+function giri (d) {
+  return el('ul', { class: 'squadra-giri-lista' }, ...d.giri.map(p => el('li', {},
+    el('b', { testo: p.nome }),
+    el('span', { class: 'sopra piccolo', title: p.cosa ?? '', testo: p.ultimo ? `${ORA(p.ultimo)} · ${p.settimana} ${p.settimana === 1 ? 'invio' : 'invii'} in settimana` : 'ancora nessun invio' }))))
+}
 
 // collegare l'area: indirizzo del repository e cartella dove scaricarlo
 function collega (d) {
