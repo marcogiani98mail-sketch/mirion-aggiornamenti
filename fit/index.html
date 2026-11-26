@@ -110,7 +110,7 @@
   const gettone = buono(q.get('k')) ? q.get('k') : null
   const apri = document.getElementById('apri')
   // «tr» (26-11-2026): il trainer che apre il suo Mirion Fit da Mirion Trainer; l'app lo tiene per tornare indietro
-  const tr = /^https?:\/\/[^\s"'<>]{1,300}trainer\.html(\?g=[A-Za-z0-9_-]{40,100})?(#\w*)?$/.test(q.get('tr') || '') ? q.get('tr') : null
+  const tr = /^https?:\/\/[^\s"'<>]{1,300}trainer\.html(\?(g=[A-Za-z0-9_-]{40,100}|o=[A-Za-z0-9_-]{43}(&a=[A-Za-z0-9._~%-]{10,1600})?))?(#\w*)?$/.test(q.get('tr') || '') ? q.get('tr') : null
   if (codice) { apri.href = 'app/?' + (gettone ? 'k=' + encodeURIComponent(gettone) + '&' : '') + 'a=' + encodeURIComponent(codice) + (tr ? '&tr=' + encodeURIComponent(tr) : '') + '#/diario'; apri.hidden = false }
   else document.getElementById('senza-codice').hidden = false
   fetch('versione.json', { cache: 'no-store' }).then(r => r.json()).then(v => {
