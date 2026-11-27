@@ -1,0 +1,84 @@
+/* Il cruscotto comune di Mirion Fit e Mirion Trainer (27-11-2026): i pezzi di cruscotto.js. Uguale nelle due app
+   (canonico mirion-codice app/stile/cruscotto.css, copia in Mirion Fit public/cruscotto.css). I colori arrivano da ogni app:
+   --cr-a e --cr-b (la sfumatura), --cr-testo, --cr-tenue, --cr-bene, --cr-presto, --cr-male. */
+:root {
+  --cr-velo: rgb(255 255 255 / .085); --cr-linea: rgb(255 255 255 / .07);
+}
+
+/* il mezzo anello */
+.cr-mezzo { position: relative; display: grid; justify-items: center; width: 100%; max-width: 250px; margin: 0 auto; }
+.cr-mezzo svg { width: 100%; height: auto; display: block; overflow: visible; }
+.cr-mezzo .cr-a { stop-color: var(--cr-a, #b666ce); }
+.cr-mezzo .cr-b { stop-color: var(--cr-b, #ee793e); }
+.cr-mezzo-fondo { fill: none; stroke: var(--cr-velo); stroke-width: 14; stroke-linecap: round; }
+.cr-mezzo-pieno { fill: none; stroke-width: 14; stroke-linecap: round; }
+.cr-mezzo.oltre .cr-mezzo-pieno { stroke: var(--cr-male, #ff8f86); }
+.cr-mezzo.fatto .cr-mezzo-pieno { stroke: var(--cr-bene, #87dea0); }
+.cr-mezzo-dentro { position: absolute; left: 0; right: 0; bottom: 2px; display: grid; justify-items: center; gap: 2px; text-align: center; }
+.cr-mezzo-dentro b { font: 700 2.4rem/1 var(--titoli, inherit); letter-spacing: -.04em; color: var(--cr-testo, #fff); font-variant-numeric: tabular-nums; }
+.cr-mezzo-dentro span { font-size: 12.5px; color: var(--cr-tenue, #9a93a8); }
+
+/* tre cifre in fila */
+.cr-tre { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center; border-top: 1px solid var(--cr-linea); padding-top: 12px; }
+.cr-tre > div { display: grid; gap: 1px; padding: 0 4px; min-width: 0; }
+.cr-tre > div + div { border-left: 1px solid var(--cr-linea); }
+.cr-tre b { font: 700 1.15rem var(--titoli, inherit); letter-spacing: -.02em; color: var(--cr-testo, #fff); font-variant-numeric: tabular-nums; }
+.cr-tre span { font-size: 11.5px; color: var(--cr-tenue, #9a93a8); line-height: 1.25; }
+
+/* le barre di avanzamento */
+.cr-barre-lista { display: grid; gap: 12px; }
+.cr-barra-riga { display: grid; gap: 6px; min-width: 0; }
+.cr-riga { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-width: 0; }
+.cr-riga > span { font-size: 14px; color: var(--cr-testo, #fff); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cr-riga > b { font-weight: 600; font-size: 13.5px; color: var(--cr-testo, #fff); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cr-riga > b small { display: inline; color: var(--cr-tenue, #9a93a8); font-weight: 500; font-size: 12px; }
+.cr-barra { height: 6px; border-radius: 99px; background: var(--cr-velo); overflow: hidden; }
+.cr-barra i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--cr-a, #b666ce), var(--cr-b, #ee793e)); }
+.cr-barra-riga.basso .cr-barra i { background: var(--cr-presto, #f6bb66); }
+.cr-barra-riga.oltre .cr-barra i { background: var(--cr-male, #ff8f86); }
+.cr-barra-riga.fatto .cr-barra i { background: var(--cr-bene, #87dea0); }
+
+/* la striscia della costanza */
+.cr-traccia { display: grid; grid-template-columns: repeat(var(--n, 30), minmax(0, 1fr)); gap: 3px; height: 28px; }
+.cr-traccia.fine { height: 16px; gap: 2px; }
+.cr-traccia i { border-radius: 4px; background: var(--cr-velo); }
+.cr-traccia.fine i { border-radius: 3px; }
+.cr-traccia i.si { background: linear-gradient(180deg, var(--cr-a, #b666ce), var(--cr-b, #ee793e)); }
+.cr-traccia i.meta { background: color-mix(in oklch, var(--cr-presto, #f6bb66) 60%, transparent); }
+.cr-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--cr-tenue, #9a93a8); }
+.cr-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.cr-legenda i { width: 10px; height: 10px; border-radius: 3px; background: var(--cr-velo); }
+.cr-legenda i.si { background: linear-gradient(180deg, var(--cr-a, #b666ce), var(--cr-b, #ee793e)); }
+.cr-legenda i.meta { background: color-mix(in oklch, var(--cr-presto, #f6bb66) 60%, transparent); }
+
+/* l'etichetta di stato */
+.cr-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; line-height: 1.3; white-space: nowrap; color: var(--cr-tenue, #c4bdd3); background: var(--cr-velo); font-variant-numeric: tabular-nums; }
+.cr-pill.bene { color: var(--cr-bene, #87dea0); background: color-mix(in oklch, var(--cr-bene, #87dea0) 14%, transparent); }
+.cr-pill.presto { color: var(--cr-presto, #f6bb66); background: color-mix(in oklch, var(--cr-presto, #f6bb66) 15%, transparent); }
+.cr-pill.male { color: var(--cr-male, #ff8f86); background: color-mix(in oklch, var(--cr-male, #ff8f86) 14%, transparent); }
+.cr-pill.viola { color: color-mix(in oklch, var(--cr-a, #b666ce) 55%, #fff); background: color-mix(in oklch, var(--cr-a, #b666ce) 20%, transparent); }
+
+/* il riquadro con una cifra */
+.cr-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 900px) { .cr-tiles.quattro { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.cr-tile { display: grid; gap: 6px; align-content: start; padding: 13px; border-radius: 18px; background: var(--cr-velo); color: inherit; text-decoration: none; min-width: 0; }
+.cr-tile-ico { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--cr-a, #b666ce), var(--cr-b, #ee793e)); font-size: 14px; }
+.cr-tile-ico svg { width: 16px; height: 16px; }
+.cr-tile-et { font-size: 12px; color: var(--cr-tenue, #9a93a8); line-height: 1.25; }
+.cr-tile-giu { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.cr-tile-giu b { font: 700 1.7rem/1 var(--titoli, inherit); letter-spacing: -.03em; color: var(--cr-testo, #fff); font-variant-numeric: tabular-nums; }
+
+/* le barre della settimana: tenui, una accesa */
+.cr-barre { position: relative; display: grid; grid-template-columns: repeat(var(--n, 7), minmax(0, 1fr)); gap: 8px; height: 150px; align-items: end; }
+.cr-barre > div { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
+.cr-barre i { display: block; width: min(100%, 34px); border-radius: 8px; background: var(--cr-velo); min-height: 2px; max-height: calc(100% - 40px); }
+.cr-barre > div.su i { background: linear-gradient(180deg, var(--cr-a, #b666ce), var(--cr-b, #ee793e)); }
+.cr-barre > div.oltre i { background: color-mix(in oklch, var(--cr-male, #ff8f86) 35%, transparent); }
+.cr-barre > div.su.oltre i { background: var(--cr-male, #ff8f86); }
+.cr-barre span { font-size: 11px; color: var(--cr-tenue, #9a93a8); line-height: 1; white-space: nowrap; }
+.cr-barre > div.su span { color: var(--cr-testo, #fff); font-weight: 600; }
+.cr-barre em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--cr-testo, #fff); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cr-meta { position: absolute; left: 0; right: 0; margin: 0; border: 0; border-top: 1px dashed color-mix(in oklch, var(--cr-tenue, #9a93a8) 55%, transparent); pointer-events: none; }
+
+/* il tondo con le iniziali */
+.cr-volto { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--cr-a, #b666ce), var(--cr-b, #ee793e)); }

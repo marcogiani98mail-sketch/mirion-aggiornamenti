@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05040b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mirion Trainer">
+<link rel="manifest" href="/trainer.webmanifest">
+<link rel="apple-touch-icon" href="/icone/trainer-180.png">
+<link rel="icon" href="/mirion-trainer.svg" type="image/svg+xml">
+<title>Mirion Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/stile/cruscotto.css">
+<link rel="stylesheet" href="/stile/trainer-telefono.css">
+</head>
+<body data-stile="spazio">
+<header class="t-cima">
+  <button type="button" id="indietro" class="t-su" aria-label="Indietro" hidden>‹</button>
+  <img src="/mirion-trainer.svg" alt="" width="30" height="30">
+  <div><b>Mirion Trainer</b><small id="club">…</small></div>
+  <button type="button" id="mio-fit" class="t-passa" title="Il tuo Mirion Fit: il tuo diario e i tuoi allenamenti">Il mio Fit</button>
+  <button type="button" id="aggiorna" class="t-tondo" aria-label="Aggiorna">↻</button>
+</header>
+<main id="vista" class="t-vista" aria-live="polite"><p class="t-vuoto">Leggo i clienti…</p></main>
+<nav class="t-barra" aria-label="Sezioni">
+  <a href="#oggi" data-v="oggi"><span aria-hidden="true">✦</span>Oggi</a>
+  <a href="#clienti" data-v="clienti"><span aria-hidden="true">◉</span>Clienti</a>
+  <a href="#squadra" data-v="squadra"><span aria-hidden="true">◎</span>Cerchio</a>
+</nav>
+<script type="module" src="/js/trainer-telefono.js"></script>
+</body>
+</html>

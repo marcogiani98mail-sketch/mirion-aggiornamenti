@@ -1,0 +1,501 @@
+// Mirion Trainer sul telefono (Marco, 25-11-2026: «l'app da telefono per il trainer deve gestire questa cosa, quindi creala»).
+// Una pagina sola, pensata per il pollice, nello stile Spazio: «Oggi» (quello che chiede una mano: dolori, avvisi dall'app,
+// messaggi senza risposta, chi è fermo), «Clienti», «Cerchio» (la squadra in classifica) e la pagina di ogni cliente con il
+// cerchio delle prestazioni, com'è andata ogni seduta, il percorso, la scheda da mandare e la chat.
+// Si apre dal telefono abbinato, sulla porta del telefono di Mirion (telefono.mjs): parla con lo stesso server del computer,
+// con le stesse API della stanza Clienti (/api/clienti). Si installa come app con «Aggiungi a schermata Home» (trainer.webmanifest).
+import { daGuardare, squadra, quandoBreve, giorniDa, TEMI, FASTIDI, etichettaGuarda, iconaGuarda } from './trainer-oggi.js'
+import { accendiStelle } from './spazio.js'
+import { BASE_API, ONLINE } from './trainer-config.js' // '' = il server di Mirion sul computer; ONLINE: la web app senza computer
+import { creaOnline } from './trainer-online.js'
+import { daDovePartire, trovaScheda, salvaMia, caricaMie } from './schede-pronte.js'
+import * as AS from './trainer-aspetto.js'
+import { montaIndietro, sfondoTondo, sposta, alterna, proponiInstallazione } from './cornice.js' // la cornice in comune con Mirion Fit: ‹ in alto, colori, card
+import { DOMANDE_CHECK, storiaCheck, giornoCheck, quandoCheck } from './check-storia.js'
+import * as CR from './cruscotto.js' // le dashboard nuove (27-11-2026), in comune con Mirion Fit: riquadri, barre, costanza, etichette
+AS.applicaColori() // i colori scelti in Personalizza, prima del primo disegno
+// la web app su GitHub Pages (26-11-2026 sera, Marco: «Sì, online da solo»): i dati da Mirion Fit online, non dal computer
+const online = ONLINE ? creaOnline({ qr: globalThis.mirionQr }) : null
+
+const $ = s => document.querySelector(s)
+function el (tag, attr = {}, ...figli) {
+  const e = document.createElement(tag)
+  for (const [k, v] of Object.entries(attr)) {
+    if (v == null || v === false) continue
+    if (k === 'testo') e.textContent = v
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+    else if (k === 'style' && typeof v === 'object') for (const [p, x] of Object.entries(v)) e.style.setProperty(p, x)
+    else e.setAttribute(k, v === true ? '' : v)
+  }
+  for (const f of figli.flat()) if (f != null && f !== false) e.append(f.nodeType ? f : String(f))
+  return e
+}
+// le schede da cui partire (le mie, prese dal computer o dal server, poi le pronte), per le tendine
+const opzioni = primo => [el('option', { value: '', testo: primo }), ...daDovePartire().map(g => el('optgroup', { label: g.gruppo }, ...g.voci.map(v => el('option', { value: v.id, testo: v.titolo }))))]
+async function api (url, corpo) {
+  if (online) return online.api(url, corpo)
+  const r = await fetch(BASE_API + url, corpo === undefined ? { credentials: BASE_API ? 'include' : 'same-origin' } : { method: 'POST', credentials: BASE_API ? 'include' : 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) })
+  const d = await r.json().catch(() => ({ errore: 'risposta illeggibile' }))
+  if (r.status === 401 && !d.accesso && !BASE_API) { location.href = '/'; throw new Error('Abbina prima il telefono') } // la porta del telefono chiede il codice
+  if (!r.ok || d?.errore) throw new Error(d?.errore ?? `errore ${r.status}`)
+  return d
+}
+// le viste: quello che non c'è (null) non si mette
+const metti = (v, ...x) => v.replaceChildren(...x.flat().filter(n => n != null && n !== false))
+let avviso = null
+function dimmi (testo) {
+  avviso?.remove()
+  avviso = el('div', { class: 't-avviso', role: 'status', testo }); document.body.append(avviso)
+  setTimeout(() => avviso?.remove(), 3800)
+}
+const iniziali = s => String(s ?? '?').split(/\s+/).map(x => x[0]).join('').slice(0, 2).toUpperCase()
+const faccia = c => c.faccia ? el('img', { class: 't-faccia', src: c.faccia, alt: '' }) : el('span', { class: 't-faccia', 'aria-hidden': 'true', testo: iniziali(c.nome) })
+const giornoCorto = g => new Date(g + 'T12:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+// un pezzo di una vista che si può spostare o nascondere in Personalizza (trainer-aspetto.js)
+const parte = (id, n) => { if (n) n.dataset.parte = id; return n }
+// un pezzo del cruscotto (cruscotto.js dà l'HTML): nel DOM com'è
+const daHtml = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstElementChild }
+// le icone piccole dei riquadri, disegnate qui (righe bianche su fondo sfumato)
+const ICO = {
+  gente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M18 15c2 .5 3 2.5 3 5"/></svg>',
+  pesi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>',
+  cerchio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><path d="M12 8v4l3 2"/></svg>',
+  fermo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M10 9v6M14 9v6"/></svg>',
+}
+// la settimana di un cliente: 7 quadratini, acceso se si è allenato, a metà se ha scritto solo il diario
+const giorniCliente = c => {
+  const p = c.piatto ?? {}, s = Array.isArray(p.settimana) ? p.settimana.slice(-7) : []
+  // l'elenco ha allenati7; la pagina del cliente ha le sedute (sessioni) con il giorno
+  const fatte = new Set((Array.isArray(p.sessioni) ? p.sessioni : []).map(x => x.giorno))
+  const a = Array.isArray(p.allenati7) ? p.allenati7.slice(-7) : s.map(x => fatte.has(x.giorno))
+  const n = Math.max(s.length, a.length)
+  return n ? Array.from({ length: n }, (_, i) => { const kc = s[i]?.kcal ?? 0, al = a[i] === true; return { v: al ? 1 : kc > 0 ? 2 : 0, titolo: `${s[i]?.giorno ?? ''}: ${al ? 'allenato' : kc > 0 ? 'solo il diario' : 'niente'}` } }) : null
+}
+// Ogni pagina in una card sola, come il Diario di Mirion Fit (27-11-2026 notte, Marco: «unisci tutto ad una singola come abbiamo
+// fatto su diario, tutte le pagine… sullo stesso stile… tassello per tassello»): sotto il titolo della pagina, i pezzi (riquadri,
+// card, elenchi) entrano in una card grande, uno sotto l'altro divisi da una riga sottile; ogni pezzo ha l'icona sfumata a tema.
+// L'ordine e quelli nascosti restano di Personalizza (si chiama dopo AS.ordina).
+const ICO_PEZZO = [
+  [/guardare|avvisi/i, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'],
+  [/costanza|ultimi|seduta/i, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>'],
+  [/sedute|percorso/i, ICO.pesi],
+  [/invita|clienti/i, ICO.gente],
+  [/scheda|check/i, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/></svg>'],
+  [/media|cerchio/i, ICO.cerchio],
+  [/classifica|progressi/i, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8"/></svg>'],
+  [/messaggi/i, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v11H9l-5 4z"/></svg>'],
+]
+const ICO_BREVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>'
+function unaCarta (v, testa = ['t-titolo', 't-sotto', 't-strumenti', 't-persona']) {
+  const pezzi = [...v.children].filter(n => n.nodeType === 1 && !testa.some(c => n.classList.contains(c)))
+  if (pezzi.length < 2) return
+  const box = el('section', { class: 't-carta t-unica' })
+  pezzi[0].before(box)
+  for (const n of pezzi) {
+    const h = n.classList.contains('t-carta') ? n.querySelector(':scope > header') : null
+    n.classList.remove('t-carta'); n.classList.add('t-pezzo')
+    if (h && !h.querySelector('.t-pezzo-icona')) {
+      const t = h.querySelector('h2'), icona = (ICO_PEZZO.find(([re]) => re.test(t?.textContent ?? '')) ?? [null, ICO_BREVE])[1]
+      if (t) t.before(el('span', { class: 't-pezzo-icona', 'aria-hidden': 'true' }, daHtml(icona)))
+    }
+    box.append(n)
+  }
+}
+
+const carta = (titolo, sopra, ...dentro) => el('section', { class: 't-carta' }, el('header', {}, el('h2', { testo: titolo }), sopra ? el('small', { testo: sopra }) : null), ...dentro)
+
+// il cerchio delle prestazioni: lo stesso esagono di Mirion Fit (26-11-2026: «diagramma esagonale… sotto settori per muscoli…
+// fasce di colori più specifiche»): ogni gruppo diviso nei suoi muscoli, ognuno colorato con la sua fascia, la linea che li unisce
+const FASCE = [[0.25, 'f1', 'da cominciare'], [0.5, 'f2', 'poco'], [0.75, 'f3', 'a metà'], [1, 'f4', 'quasi'], [Infinity, 'f5', 'pieno']]
+const fascia5 = p => FASCE.find(([x]) => p < x)[1]
+const escSvg = v => String(v ?? '').replace(/[&<>"']/g, x => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]))
+const virg = v => String(Math.round((+v || 0) * 10) / 10).replace('.', ',')
+function cerchio (pr, piccolo = false) {
+  const c = 110, R = 92, gr = Array.isArray(pr?.gruppi) ? pr.gruppi.slice(0, 8) : [], n = Math.max(3, gr.length)
+  const vert = (i, r = R) => { const a = (i * 2 * Math.PI) / n - Math.PI / 2 - Math.PI / n; return [c + r * Math.cos(a), c + r * Math.sin(a)] }
+  const P = ([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`, lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+  const pieno = v => Math.max(0, Math.min(1, +v || 0))
+  const griglia = [0.25, 0.5, 0.75, 1].map(f => `<polygon class="esa-riga ${f === 1 ? 'bordo' : ''}" points="${Array.from({ length: n }, (_, i) => P(vert(i, R * f))).join(' ')}"/>`).join('')
+  const raggi = Array.from({ length: n }, (_, i) => { const [x, y] = vert(i); return `<line class="esa-raggio" x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>` }).join('')
+  const parti = gr.map((g, i) => {
+    const A = vert(i), B = vert(i + 1), mus = Array.isArray(g.muscoli) && g.muscoli.length ? g.muscoli : [{ nome: g.nome, serie: g.serie, obiettivo: g.obiettivo, pieno: g.pieno }]
+    const sotto = mus.map((m, j) => {
+      const a = lerp(A, B, j / mus.length), b = lerp(A, B, (j + 1) / mus.length), f = pieno(m.pieno)
+      return `<polygon class="esa-sotto" points="${c},${c} ${P(a)} ${P(b)}"/>${f > 0.01 ? `<polygon class="esa-pieno ${fascia5(+m.pieno || 0)}" points="${c},${c} ${P(lerp([c, c], a, f))} ${P(lerp([c, c], b, f))}"><title>${escSvg(m.nome)}: ${virg(m.serie)} serie a settimana su ${virg(m.obiettivo)}</title></polygon>` : ''}${j ? `<line class="esa-taglio" x1="${c}" y1="${c}" x2="${a[0].toFixed(1)}" y2="${a[1].toFixed(1)}"/>` : ''}`
+    }).join('')
+    const et = lerp([c, c], lerp(A, B, 0.5), 1.2)
+    return `<g class="esa-gruppo ${g.id === pr.debole ? 'debole' : ''}">${sotto}${piccolo ? '' : `<text x="${et[0].toFixed(1)}" y="${et[1].toFixed(1)}" class="nome" text-anchor="middle" dominant-baseline="middle">${escSvg(g.nome)}</text>`}</g>`
+  }).join('')
+  const linea = gr.map((g, i) => P(lerp([c, c], lerp(vert(i), vert(i + 1), 0.5), Math.max(0.04, pieno(g.pieno))))).join(' ')
+  const box = el('figure', { class: 't-esagono' + (piccolo ? ' piccolo' : '') })
+  box.innerHTML = `<svg viewBox="${piccolo ? '14 14 192 192' : '-18 -6 256 232'}" class="t-cerchio${piccolo ? ' piccolo' : ''}" role="img" aria-label="Cerchio prestazioni: ${escSvg(pr?.punteggio ?? '–')} su 100">${parti}${griglia}${raggi}${gr.length ? `<polygon class="esa-linea" points="${linea}"/>` : ''}<circle cx="${c}" cy="${c}" r="${piccolo ? 22 : 25}" class="esa-centro"/><text x="${c}" y="${c + (piccolo ? 6 : 4)}" class="punti" text-anchor="middle">${escSvg(pr?.punteggio ?? '–')}</text>${piccolo ? '' : `<text x="${c}" y="${c + 17}" class="sotto" text-anchor="middle">su 100</text>`}</svg>` +
+    (piccolo ? '' : `<figcaption class="esa-legenda">${FASCE.map(([x, k, nome], i) => `<span><i class="${k}"></i>${i < 4 ? `fino al ${Math.round(x * 100)}%` : '100%'} · ${nome}</span>`).join('')}</figcaption>`)
+  return box
+}
+
+let dati = null, letti = 0
+async function leggi (forza = false) {
+  if (!forza && dati && Date.now() - letti < 30_000) return dati
+  dati = await api('/api/clienti'); letti = Date.now()
+  $('#club').textContent = dati.club ?? ''
+  return dati
+}
+
+// ---- Oggi ----
+async function vistaOggi (v) {
+  const d = await leggi(), lista = daGuardare(d.clienti), sq = squadra(d.clienti)
+  const ora = new Date().getHours(), saluto = ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera'
+  metti(v, 
+    el('h1', { class: 't-titolo', testo: saluto }),
+    el('p', { class: 't-sotto', testo: lista.length ? `${lista.length} ${lista.length === 1 ? 'cosa chiede' : 'cose chiedono'} una mano` : 'Tutto tranquillo fra i tuoi clienti' }),
+    el('div', { class: 't-strumenti' }, el('a', { class: 't-chip', href: '#personalizza' }, '⚙ Personalizza')),
+    parte('cifre', daHtml(`<div class="cr-tiles quattro t-riquadri">${[
+      CR.tile({ icona: ICO.gente, etichetta: 'Clienti', numero: sq.clienti, href: '#clienti' }),
+      CR.tile({ icona: ICO.pesi, etichetta: 'Allenati in settimana', numero: sq.allenati, stato: CR.pill(`su ${sq.clienti}`, sq.clienti && sq.allenati >= sq.clienti ? 'bene' : '') }),
+      CR.tile({ icona: ICO.cerchio, etichetta: 'Cerchio medio', numero: sq.cerchio ?? '–', stato: sq.cerchio != null ? CR.pill('su 100', sq.cerchio >= 70 ? 'bene' : sq.cerchio < 55 ? 'presto' : '') : '', href: '#squadra' }),
+      CR.tile({ icona: ICO.fermo, etichetta: 'Fermi', numero: sq.fermi, stato: CR.pill(sq.fermi ? 'da sentire' : 'nessuno', sq.fermi ? 'presto' : 'bene') }),
+    ].join('')}</div>`)),
+    parte('guarda', carta('Da guardare oggi', lista.length ? 'le più urgenti in cima' : '',
+      lista.length ? el('ul', { class: 't-guarda' }, ...lista.slice(0, 20).map(x => el('li', { class: x.peso >= 90 ? 'urgente' : '' },
+        el('a', { href: '#cliente/' + encodeURIComponent(x.id) }, el('span', { class: 't-icona t-icona-tema', 'aria-hidden': 'true' }, daHtml(iconaGuarda(x))),
+          el('div', {}, el('b', { testo: x.titolo }), el('small', { testo: [x.nome, quandoBreve(x.quando)].filter(Boolean).join(' · ') }), x.testo ? el('p', { testo: x.testo }) : null),
+          daHtml(CR.pill(...etichettaGuarda(x)))))))
+        : el('p', { class: 't-vuoto', testo: 'Quando un cliente scrive dall’app, segna un fastidio a fine seduta o si ferma, compare qui.' }))),
+    d.clienti.some(giorniCliente) ? parte('costanza', carta('La costanza dei clienti', 'ultimi 7 giorni',
+      el('ul', { class: 't-tracce' }, ...d.clienti.filter(giorniCliente).map(c => { const g = giorniCliente(c); return el('li', {}, el('a', { href: '#cliente/' + encodeURIComponent(c.id) }, el('span', { testo: c.nome }), daHtml(CR.traccia(g, { fine: true, etichetta: `${c.nome}: ${g.filter(x => x.v === 1).length} allenamenti in 7 giorni` })), el('b', { testo: String(g.filter(x => x.v === 1).length) }))) })),
+      daHtml(CR.legenda([['si', 'allenato'], ['meta', 'solo il diario'], ['', 'niente']])))) : null,
+    d.clienti.some(c => c.piatto?.allena?.percorso?.oggi) ? parte('sedute', carta('Le sedute di oggi', 'dal percorso di ognuno',
+      el('ul', { class: 't-righe' }, ...d.clienti.filter(c => c.piatto?.allena?.percorso?.oggi).map(c => { const p = c.piatto.allena.percorso; return el('li', {}, el('a', { href: '#cliente/' + encodeURIComponent(c.id) }, faccia(c), el('div', { class: 't-largo-dentro' }, el('b', { testo: c.nome }), el('small', { testo: p.oggi }), p.di ? daHtml(CR.barra('Esercizi fatti', p.fatti ?? 0, p.di, { classe: p.fatti >= p.di ? 'fatto' : '' })) : null))) })))) : null)
+  AS.ordina(v, 'oggi'); unaCarta(v)
+}
+
+// ---- Invita un cliente (Marco, 26-11-2026: «manca la parte dove si invitano con QR code o link e codice le persone») ----
+// lo stesso invito della stanza Clienti sul computer: online un link personale (vale finché lo segui), se no quello sulla Wi-Fi.
+// Il cliente inquadra il QR; se non può, gli mandi il link o gli detti il codice (Mirion Fit → Trainer → incolla).
+function cartaInvito (d) {
+  const box = el('div', { class: 't-invito' })
+  const fai = async () => {
+    bottone.disabled = true
+    try {
+      const r = await api('/api/clienti', { azione: d.online?.acceso ? 'invita-online' : 'invita' })
+      const qr = el('div', { class: 't-qr' }); qr.innerHTML = r.qr ?? ''
+      const link = r.url ?? r.link ?? '', codice = !r.online ? '' : (/[?&]k=([\w.~-]+)/.exec(link) || /\/([\w-]{12,})\/?(?:[?#]|$)/.exec(link) || [])[1] ?? ''
+      const copia = async (t, detto) => { try { await navigator.clipboard.writeText(t); dimmi(detto) } catch { dimmi('Non riesco a copiare: tieni premuto sul testo.') } }
+      metti(box, qr,
+        el('p', { class: 't-nota', testo: r.online ? 'Fallo inquadrare con la fotocamera: si apre Mirion Fit con il suo link personale, che vale finché lo segui. Compare fra i tuoi clienti quando dà il consenso.' : `Col telefono sulla stessa Wi-Fi del computer. Vale una volta, fino a domani alle ${r.scade ? new Date(r.scade).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—'}.` }),
+        el('small', { class: 't-etichetta', testo: 'Il link' }), el('code', { class: 't-codice', testo: link }),
+        codice ? el('small', { class: 't-etichetta', testo: 'Il codice (Mirion Fit → Trainer → incollalo)' }) : null, codice ? el('code', { class: 't-codice grande', testo: codice }) : null,
+        el('div', { class: 't-bottoni t-fila' },
+          navigator.share ? el('button', { type: 'button', class: 't-primario', onclick: () => navigator.share({ title: 'Mirion Fit', text: 'Il tuo link per Mirion Fit, con me come trainer:', url: link }).catch(() => {}) }, 'Manda il link') : null,
+          el('button', { type: 'button', onclick: () => copia(link, 'Link copiato.') }, 'Copia il link'),
+          codice ? el('button', { type: 'button', onclick: () => copia(codice, 'Codice copiato.') }, 'Copia il codice') : null,
+          el('button', { type: 'button', onclick: () => { metti(box); box.append(bottone); bottone.disabled = false } }, 'Fatto')))
+    } catch (e) { dimmi(e.message); bottone.disabled = false }
+  }
+  const bottone = el('button', { type: 'button', class: 't-primario t-largo', onclick: fai }, '＋ Invita un cliente')
+  box.append(bottone)
+  return carta('Invita un cliente', 'QR, link o codice', box)
+}
+
+// ---- Clienti ----
+async function vistaClienti (v) {
+  const d = await leggi()
+  const cerca = el('input', { type: 'search', class: 't-cerca', placeholder: 'Cerca un cliente', 'aria-label': 'Cerca un cliente', oninput: () => { const q = cerca.value.trim().toLowerCase(); for (const li of lista.children) li.hidden = q && !li.dataset.nome.includes(q) } })
+  const lista = el('ul', { class: 't-righe t-clienti' }, ...d.clienti.map(c => {
+    const a = c.piatto?.allena, g = giorniDa(c.ultimo), fermo = g >= 3
+    return el('li', { 'data-nome': c.nome.toLowerCase() }, el('a', { href: '#cliente/' + encodeURIComponent(c.id) }, faccia(c),
+      el('div', {}, el('b', { testo: c.nome }), el('small', { testo: [fermo ? (c.ultimo ? `fermo da ${g} giorni` : 'mai') : `attivo · ${quandoBreve(c.ultimo)}`, a?.percorso?.titolo].filter(Boolean).join(' · ') })),
+      giorniCliente(c) ? daHtml(CR.traccia(giorniCliente(c), { fine: true, etichetta: 'Gli ultimi 7 giorni' })) : null,
+      a?.punteggio != null ? daHtml(CR.pill(String(a.punteggio), a.punteggio < 55 ? 'presto' : 'viola')) : null,
+      el('span', { class: 't-pallino ' + (fermo ? 'fermo' : 'vivo'), 'aria-label': fermo ? 'fermo' : 'attivo' })))
+  }))
+  metti(v, el('h1', { class: 't-titolo', testo: 'I clienti' }), el('p', { class: 't-sotto', testo: `${d.clienti.length} che condividono con te` }),
+    el('div', { class: 't-strumenti' }, el('a', { class: 't-chip', href: '#personalizza' }, '⚙ Personalizza')),
+    parte('invito', cartaInvito(d)),
+    parte('schede', cartaSchedeInsieme(d)),
+    parte('elenco', el('div', { class: 't-elenco' }, d.clienti.length > 5 ? cerca : null,
+      d.clienti.length ? lista : el('p', { class: 't-vuoto', testo: 'Ancora nessun cliente: invitalo con «Invita un cliente».' }))))
+  AS.ordina(v, 'clienti'); unaCarta(v)
+}
+
+// una scheda pronta (o una delle mie) a più clienti insieme, come la card «Le schede» sul computer (27-11-2026: «ogni modifica va
+// fatta sia sul telefono sia sul computer»). I kg di ognuno si mettono poi nella sua scheda
+function cartaSchedeInsieme (d) {
+  const possibili = d.clienti.filter(c => c.online && !c.tolto)
+  if (!possibili.length) return null
+  let scelta = null
+  const titolo = el('input', { maxlength: 60, placeholder: 'Il titolo della scheda', 'aria-label': 'Il titolo della scheda' })
+  const esercizi = el('ul', { class: 't-righe semplici' })
+  const spunte = possibili.map(c => el('label', { class: 't-spunta' }, el('input', { type: 'checkbox', value: c.id }), el('span', { testo: c.nome }), el('small', { testo: c.scheda ? `ora: ${c.scheda.titolo || 'senza titolo'}` : 'nessuna scheda' })))
+  const dentro = el('div', { class: 't-modulo', hidden: true }, titolo, esercizi, el('small', { class: 't-nota', testo: 'A chi la mandi' }), ...spunte,
+    el('div', { class: 't-bottoni' }, el('button', { type: 'button', class: 't-primario', onclick: async e => {
+      const chi = spunte.map(l => l.querySelector('input')).filter(i => i.checked).map(i => possibili.find(c => c.id === i.value))
+      if (!chi.length) return dimmi('Spunta almeno un cliente.')
+      const b = e.currentTarget; b.disabled = true; let ok = 0
+      for (const c of chi) { try { await api('/api/clienti', { azione: 'scheda', id: c.id, scheda: { titolo: titolo.value.trim() || scelta.titolo, nota: scelta.nota ?? '', esercizi: scelta.esercizi } }); ok++ } catch (err) { dimmi(`${c.nome}: ${err.message}`) } }
+      b.disabled = false; if (ok) dimmi(`La scheda è arrivata a ${ok === 1 ? chi[0].nome : ok + ' clienti'}. I kg li metti nella scheda di ognuno.`)
+    } }, 'Manda')))
+  const scegli = el('select', { 'aria-label': 'Parti da una scheda pronta', onchange: () => {
+    scelta = trovaScheda(scegli.value); dentro.hidden = !scelta; if (!scelta) return
+    titolo.value = scelta.titolo
+    esercizi.replaceChildren(...scelta.esercizi.map(x => el('li', {}, el('b', { testo: x.nome }), el('small', { testo: `${x.serie} × ${x.rip}${x.recupero ? ` · recupero ${x.recupero} s` : ''}` }))))
+  } }, ...opzioni('Scegli una scheda pronta…'))
+  caricaMie(api).then(cambiate => { if (cambiate) scegli.replaceChildren(...opzioni('Scegli una scheda pronta…')) })
+  return carta('Manda una scheda', 'a uno o più clienti', el('div', { class: 't-modulo' }, scegli), dentro)
+}
+
+// ---- Cerchio della squadra ----
+async function vistaSquadra (v) {
+  const sq = squadra((await leggi()).clienti)
+  metti(v, el('h1', { class: 't-titolo', testo: 'Il cerchio' }), el('p', { class: 't-sotto', testo: 'Le serie a settimana per gruppo muscolare e la costanza, ultime 4 settimane' }),
+    carta('La media della squadra', 'su 100', daHtml(`<div class="t-mezzo">${CR.mezzoAnello((sq.cerchio ?? 0) / 100, sq.cerchio ?? '–', 'su 100', { etichetta: `Il cerchio medio della squadra: ${sq.cerchio ?? 'nessuno'} su 100` })}${sq.classifica.length ? CR.tre([[sq.classifica[0].punteggio, `${sq.classifica[0].nome.split(' ')[0]}, il più alto`], [sq.classifica.length, sq.classifica.length === 1 ? 'cliente' : 'clienti'], [sq.classifica.at(-1).punteggio, `${sq.classifica.at(-1).nome.split(' ')[0]}, il più basso`]]) : ''}${sq.fastidi ? `<div class="t-centro">${CR.pill(`${sq.fastidi} ${sq.fastidi === 1 ? 'seduta' : 'sedute'} con un fastidio in 14 giorni`, 'presto')}</div>` : ''}</div>`)),
+    sq.classifica.length ? carta('La classifica', 'tocca per aprire', el('ol', { class: 't-classifica' }, ...sq.classifica.map(x => el('li', {},
+      el('a', { href: '#cliente/' + encodeURIComponent(x.id) }, el('span', { testo: x.nome }), el('i', { style: { '--pieno': x.punteggio + '%' }, class: x.punteggio < 55 ? 'basso' : '' }), el('b', { testo: x.punteggio }),
+        el('small', { testo: [x.costanza != null ? `costanza ${x.costanza}%` : null, x.debole ? `da spingere: ${x.debole.toLowerCase()}` : null].filter(Boolean).join(' · ') }))))))
+      : el('p', { class: 't-vuoto', testo: 'Il cerchio arriva quando i clienti si allenano con Mirion Fit.' }))
+  unaCarta(v)
+}
+
+// ---- Un cliente ----
+async function vistaCliente (v, id) {
+  const c = await api('/api/clienti/uno?id=' + encodeURIComponent(id)), p = c.piatto ?? {}, pr = p.prestazioni, pc = p.percorso
+  const ses = Array.isArray(p.sessioni) ? p.sessioni : [], av = Array.isArray(p.avvisi) ? p.avvisi : []
+  const deb = pr?.gruppi?.find(g => g.id === pr.debole)
+  metti(v, 
+    el('header', { class: 't-persona' }, faccia(c), el('div', {}, el('h1', { testo: c.nome }), el('small', { testo: [`aggiornato ${quandoBreve(c.ultimo) || 'mai'}`, p.allena?.percorso?.titolo ?? null].filter(Boolean).join(' · ') })),
+      daHtml(giorniDa(c.ultimo) >= 3 ? CR.pill('fermo', 'presto') : CR.pill('attivo', 'bene'))),
+    profiloCliente(c),
+    av.length ? carta('Gli avvisi dall’app', `${av.length}`, el('ul', { class: 't-guarda' }, ...[...av].reverse().slice(0, 6).map(a => el('li', { class: a.tema === 'dolore' ? 'urgente' : '' },
+      el('div', { class: 't-riga' }, el('span', { class: 't-icona', 'aria-hidden': 'true', testo: a.tema === 'dolore' ? '🩹' : a.tema === 'salto' ? '⏸️' : a.tema === 'scheda' ? '📋' : '💬' }),
+        el('div', {}, el('small', { testo: [TEMI[a.tema], quandoBreve(a.quando)].filter(Boolean).join(' · ') }), el('p', { testo: a.testo }))))))) : null,
+    pr?.serie ? carta('Cerchio prestazioni', `${pr.sedute} sedute · costanza ${pr.costanza}%`, cerchio(pr),
+      el('p', { class: 't-nota', testo: `Multiarticolari ${pr.multi}% · carichi liberi ${pr.liberi}% · macchine ${pr.macchine}%.${deb ? ` Da spingere: ${deb.nome.toLowerCase()}.` : ''}` }),
+      pr.record?.length ? el('ul', { class: 't-righe semplici' }, ...pr.record.map(r => el('li', {}, el('b', { testo: r.nome }), el('small', { testo: `massimale stimato ${String(r.kg).replace('.', ',')} kg${r.prima ? ` (${r.kg >= r.prima ? '+' : ''}${String(Math.round((r.kg - r.prima) * 10) / 10).replace('.', ',')})` : ''}` })))) : null) : null,
+    ses.length ? carta('Com’è andata ogni seduta', 'fatica da 1 a 10', el('ul', { class: 't-sedute' }, ...ses.slice(0, 8).map(s => el('li', { class: s.fastidio ? 'fastidio' : '' },
+      el('span', { class: 't-fatica', testo: s.fatica ?? '–' }),
+      el('div', {}, el('small', { testo: [giornoCorto(s.giorno), s.seduta].filter(Boolean).join(' · ') }),
+        el('p', { testo: [s.fatica ? `fatica ${s.fatica}/10` : 'non ha detto com’è andata', s.fastidio ? `fastidio: ${FASTIDI[s.fastidio] ?? s.fastidio}` : null].filter(Boolean).join(' · ') }),
+        s.nota ? el('blockquote', { testo: s.nota }) : null))))) : null,
+    pc ? carta('Il suo percorso', pc.oggi ? `oggi ${pc.oggi}` : '', el('p', { class: 't-nota forte', testo: pc.titolo }),
+      el('ul', { class: 't-righe semplici percorso-sedute' }, ...(pc.sedute ?? []).map(s => el('li', {}, el('b', { testo: s.nome }), el('small', { testo: (s.esercizi ?? []).join(' · ') }))))) : null,
+    cartaCheck(p.completo?.check ?? (p.check ? [p.check] : [])),
+    cartaProgressi(c, () => vistaCliente(v, id)),
+    cartaScheda(c),
+    cartaChat(c))
+  unaCarta(v)
+}
+
+// il riassunto del cliente in cima (27-11-2026, le dashboard nuove): tre cifre, la settimana a quadratini, le calorie di oggi
+function profiloCliente (c) {
+  const p = c.piatto ?? {}, g = giorniCliente(c), v = n => String(n).replace('.', ',')
+  if (!c.piatto) return null
+  const ob = p.obiettivo?.kcal, mang = p.mangiato?.kcal
+  return carta('In breve', p.giorno ? `dati di ${giornoCorto(p.giorno)}` : '', daHtml(`<div class="t-breve">
+    ${CR.tre([[p.peso?.attuale ? v(p.peso.attuale) : '–', p.peso?.diff30 != null ? `kg · ${p.peso.diff30 > 0 ? '+' : ''}${v(p.peso.diff30)} in 30 g` : 'kg'], [g ? g.filter(x => x.v === 1).length : '–', 'allenamenti in 7 g'], [p.allena?.punteggio ?? p.prestazioni?.punteggio ?? '–', 'cerchio']])}
+    ${ob ? CR.barra('Calorie di oggi', mang ?? 0, ob, { unita: 'kcal', classe: mang > ob * 1.1 ? 'oltre' : '' }) : ''}
+    ${p.obiettivo?.proteine ? CR.barra('Proteine', p.mangiato?.proteine ?? 0, p.obiettivo.proteine, { unita: 'g', classe: (p.mangiato?.proteine ?? 0) < p.obiettivo.proteine * 0.6 ? 'basso' : '' }) : ''}
+    ${p.obiettivo?.acqua ? CR.barra('Acqua', (p.acqua ?? 0) / 1000, p.obiettivo.acqua / 1000, { unita: 'l' }) : ''}
+    ${g ? `<div class="t-breve-sett"><span>Ultimi 7 giorni</span>${CR.traccia(g, { fine: true })}${p.giorniDiFila > 1 ? CR.pill(`${p.giorniDiFila} di fila`, 'bene') : ''}</div>` : ''}
+  </div>`))
+}
+
+// i check (27-11-2026): l'ultimo in evidenza, poi quelli prima giorno per giorno (check-storia.js, uguale al computer)
+function cartaCheck (check) {
+  const { ultimo: u, giorni, quanti } = storiaCheck(check)
+  if (!u) return null
+  const breve = x => DOMANDE_CHECK.map(([k, t]) => `${t.replace(/ \(.*\)/, '')} ${x[k] ?? '–'}`).join(' · ')
+  return carta('I check', `${quanti} in tutto`,
+    el('div', { class: 't-check-ultimo' }, el('small', { testo: 'l’ultimo · ' + quandoCheck(u) }),
+      daHtml(`<div class="cr-barre-lista">${DOMANDE_CHECK.map(([k, t]) => CR.barra(t, u[k] ?? 0, 5, { classe: u[k] && u[k] <= 2 ? 'basso' : '' })).join('')}</div>`),
+      u.nota ? el('blockquote', { testo: u.nota }) : null),
+    ...giorni.map((g, i) => el('details', { class: 't-check-giorno', open: i === 0 },
+      el('summary', { testo: giornoCheck(g.giorno, true) + (g.voci.length > 1 ? ` · ${g.voci.length} check` : '') }),
+      el('ul', { class: 't-righe semplici' }, ...g.voci.map(x => el('li', {}, el('b', { testo: x.ora ?? 'check' }), el('small', { testo: breve(x) }), x.nota ? el('small', { testo: '«' + x.nota + '»' }) : null))))))
+}
+
+// la scheda dal telefono: una riga per esercizio, «Squat 4x8 80» (nome, serie×ripetizioni, kg)
+function cartaScheda (c) {
+  if (!c.online) return carta('La scheda', '', el('p', { class: 't-nota', testo: 'La scheda e i messaggi si mandano ai clienti di Mirion Fit online. Invitalo dal computer: stanza Clienti → «Invita su Mirion Fit online».' }))
+  const s = c.scheda
+  const righe = el('textarea', { rows: 6, name: 'righe', placeholder: 'Squat 4x8 80\nPanca piana 4x8 60\nLat machine 3x10 50\nPlank 3x45', 'aria-label': 'Gli esercizi, uno per riga' })
+  righe.value = (s?.esercizi ?? []).map(e => `${e.nome} ${e.serie ?? 3}x${e.rip ?? 10}${e.kg ? ' ' + String(e.kg).replace('.', ',') : ''}`).join('\n')
+  const titolo = el('input', { name: 'titolo', placeholder: 'Il titolo (es. Forza A)', value: s?.titolo ?? '', maxlength: 60, 'aria-label': 'Il titolo della scheda' })
+  // in base a come va (26-11-2026): «Proponi» riscrive le righe con i kg da provare (dall'ultima volta); se è vuota, con gli
+  // esercizi che fa di più
+  const andamento = Array.isArray(c.piatto?.andamento) ? c.piatto.andamento : []
+  const rigaDi = a => `${a.nome} ${a.serie?.length || 3}x${a.rip ?? 10}${(a.proposta?.kg ?? a.kg) ? ' ' + String(a.proposta?.kg ?? a.kg).replace('.', ',') : ''}`
+  const proponi = () => {
+    const perNome = new Map(andamento.map(a => [a.nome.toLowerCase(), a]))
+    const scritte = righe.value.split('\n').map(r => r.trim()).filter(Boolean)
+    righe.value = scritte.length ? scritte.map(r => { const a = [...perNome.entries()].find(([n]) => r.toLowerCase().startsWith(n))?.[1]; return a ? rigaDi(a) : r }).join('\n') : andamento.slice(0, 6).map(rigaDi).join('\n')
+    dimmi('Ecco i kg da provare, da come è andata l’ultima volta.')
+  }
+  // «Parti da» (27-11-2026, Marco: «dai la possibilità da Mirion Trainer di portare schedine al proprio cliente»): una scheda pronta
+  // o una delle mie riempie le righe; «Salva fra le mie» la tiene per gli altri clienti, anche sul computer
+  let base = new Map()
+  const scegli = el('select', { 'aria-label': 'Parti da una scheda pronta', onchange: () => {
+    const sch = trovaScheda(scegli.value); scegli.value = ''; if (!sch) return
+    titolo.value = sch.titolo; base = new Map(sch.esercizi.map(e => [e.nome.toLowerCase(), e]))
+    righe.value = sch.esercizi.map(e => `${e.nome} ${e.serie ?? 3}x${e.rip ?? 10}${e.kg ? ' ' + String(e.kg).replace('.', ',') : ''}`).join('\n')
+    dimmi(`«${sch.titolo}»: aggiungi i kg dopo ogni riga, poi «Manda la scheda».`)
+  } }, ...opzioni('Parti da una scheda pronta…'))
+  caricaMie(api).then(cambiate => { if (cambiate) scegli.replaceChildren(...opzioni('Parti da una scheda pronta…')) })
+  const comeVa = andamento.length ? el('ul', { class: 't-righe semplici' }, ...andamento.slice(0, 6).map(a => el('li', {}, el('b', { testo: a.nome }),
+    el('small', { testo: `ultima: ${(a.serie ?? []).map(x => x.kg ? `${String(x.kg).replace('.', ',')} kg × ${x.rip}` : `${x.rip} rip.`).join(' · ')}${a.proposta ? ` → ${String(a.proposta.kg).replace('.', ',')} kg` : ''}` })))) : null
+  return carta('La scheda', s ? `ora: ${s.titolo || 'senza titolo'}` : 'nessuna', comeVa, el('form', { class: 't-modulo', onsubmit: async e => {
+    e.preventDefault()
+    // quello che il telefono non mostra (la nota, il recupero, l'esercizio della libreria scritti dal computer) resta com'era
+    // per gli esercizi con lo stesso nome: prima si perdeva (analisi del 26-11, T1)
+    const prima = new Map((s?.esercizi ?? []).map(e => [String(e.nome ?? '').trim().toLowerCase(), e]))
+    const tieni = nome => { const v = prima.get(nome.toLowerCase()) ?? base.get(nome.toLowerCase()); return { esercizioId: v?.esercizioId ?? '', recupero: v?.recupero ?? null, note: v?.note ?? '' } }
+    const esercizi = righe.value.split('\n').map(r => r.trim()).filter(Boolean).slice(0, 20).map(r => {
+      const m = /^(.*?)\s+(\d{1,2})\s*[x×]\s*([\d-]{1,7})(?:\s+(\d+(?:[.,]\d+)?))?\s*(?:kg)?$/i.exec(r)
+      const nome = m ? m[1].trim() : r
+      return m ? { ...tieni(nome), nome, serie: +m[2], rip: m[3], kg: m[4] ? +m[4].replace(',', '.') : null } : { ...tieni(nome), nome, serie: 3, rip: '10', kg: null }
+    })
+    if (!esercizi.length) return dimmi('Scrivi almeno un esercizio.')
+    try { await api('/api/clienti', { azione: 'scheda', id: c.id, scheda: { titolo: titolo.value.trim(), nota: s?.nota ?? '', esercizi } }); dimmi(`La scheda è arrivata a ${c.nome}.`) } catch (err) { dimmi(err.message) }
+  } }, scegli, titolo, righe, el('div', { class: 't-bottoni' }, andamento.length ? el('button', { type: 'button', onclick: proponi }, 'Proponi in base a come va') : null,
+    el('button', { type: 'button', onclick: () => { const es = righe.value.split('\n').map(r => r.trim()).filter(Boolean).map(r => { const m = /^(.*?)\s+(\d{1,2})\s*[x×]\s*([\d-]{1,7})(?:\s+(\d+(?:[.,]\d+)?))?/i.exec(r); return m ? { nome: m[1].trim(), serie: +m[2], rip: m[3], kg: m[4] ? +m[4].replace(',', '.') : null } : { nome: r, serie: 3, rip: '10', kg: null } }); dimmi(salvaMia({ titolo: titolo.value, esercizi: es }) ? 'Salvata fra le tue schede: la ritrovi in «Parti da».' : 'Scrivi almeno un esercizio.') } }, 'Salva fra le mie'),
+    el('button', { class: 't-primario' }, 'Manda la scheda'))))
+}
+
+// i progressi che il cliente condivide (26-11-2026): li commenti dal telefono, il commento gli arriva in Mirion Fit
+function cartaProgressi (c, rifai) {
+  if (!c.online) return null
+  const lista = Array.isArray(c.progressi) ? c.progressi : []
+  const da = lista.filter(x => !(x.commenti ?? []).length).length
+  return carta('I progressi', lista.length ? (da ? `${da} da commentare` : 'tutti commentati') : 'nessuno ancora', lista.length ? el('ul', { class: 't-guarda' }, ...lista.slice(0, 8).map(x => {
+    const testo = el('input', { maxlength: 600, placeholder: 'Il tuo commento', 'aria-label': 'Il commento' })
+    return el('li', { class: (x.commenti ?? []).length ? '' : 'nuovo' },
+      el('div', {}, el('small', { testo: quandoBreve(x.quando) }), el('p', {}, el('b', { testo: x.titolo })), x.testo ? el('small', { testo: x.testo }) : null, x.nota ? el('blockquote', { testo: x.nota }) : null,
+        ...(x.commenti ?? []).map(k => el('div', { class: 't-bolla mia' }, el('p', { testo: k.testo }))),
+        el('form', { class: 't-scrivi', onsubmit: async e => { e.preventDefault(); if (!testo.value.trim()) return; try { await api('/api/clienti', { azione: 'commenta', id: c.id, progresso: x.id, testo: testo.value }); dimmi(`Commento mandato a ${c.nome}.`); rifai() } catch (err) { dimmi(err.message) } } },
+          testo, el('button', { class: 't-primario t-tondo', 'aria-label': 'Commenta' }, '➤'))))
+  })) : el('p', { class: 't-vuoto', testo: `Quando ${c.nome} condivide un progresso da Mirion Fit, lo commenti da qui.` }))
+}
+
+// la chat con il cliente, con le risposte veloci per gli avvisi
+function cartaChat (c) {
+  if (!c.online) return null
+  const fila = el('div', { class: 't-chat' })
+  const ora = q => new Date(q).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const disegna = mm => { fila.replaceChildren(...(mm.length ? mm.slice(-40).map(m => el('div', { class: `t-bolla ${m.da === 'trainer' ? 'mia' : 'sua'} ${m.tema === 'dolore' ? 'dolore' : ''}` }, m.da !== 'trainer' && TEMI[m.tema] ? el('small', { testo: TEMI[m.tema] }) : null, el('p', { testo: m.testo }), el('time', { testo: ora(m.quando) }))) : [el('p', { class: 't-vuoto', testo: `Scrivi a ${c.nome}: gli arriva su Mirion Fit.` })])); fila.scrollTop = fila.scrollHeight }
+  disegna(c.messaggi ?? [])
+  const testo = el('textarea', { rows: 1, placeholder: `Scrivi a ${c.nome}`, 'aria-label': 'Il messaggio', maxlength: 1000 })
+  const veloci = ['Come va il fastidio? Oggi scarica pure e salta gli esercizi che fanno male.', 'Grande seduta, continua così!', 'Ti aggiorno la scheda entro stasera.']
+  const manda = async t => {
+    if (!t.trim()) return
+    try { await api('/api/clienti', { azione: 'messaggio', id: c.id, testo: t }); testo.value = ''; const n = await api('/api/clienti/uno?id=' + encodeURIComponent(c.id)); disegna(n.messaggi ?? []); letti = 0 } catch (err) { dimmi(err.message) }
+  }
+  return carta('I messaggi', 'su Mirion Fit', fila,
+    el('div', { class: 't-veloci' }, ...veloci.map(t => el('button', { type: 'button', onclick: () => { testo.value = t; testo.focus() } }, t.split(/[.!?]/)[0]))),
+    el('form', { class: 't-scrivi', onsubmit: e => { e.preventDefault(); manda(testo.value) } }, testo, el('button', { class: 't-primario t-tondo', 'aria-label': 'Manda' }, '➤')))
+}
+
+// ---- Personalizza (Marco, 27-11-2026: «fai personalizzare anche l'area del trainer»), come in Mirion Fit ----
+function vistaPersonalizza (v) {
+  const s = AS.leggiColori(), k = AS.cursori(s)
+  const tondo = x => ({ background: sfondoTondo(x) })
+  const sfumature = el('div', { class: 't-sfumature', role: 'group', 'aria-label': 'Le sfumature' }, ...AS.sfumature().map(x =>
+    el('button', { type: 'button', class: 't-sfumatura' + (s?.tema === x.id ? ' sel' : ''), 'aria-pressed': String(s?.tema === x.id), onclick: () => { AS.salvaColori({ tema: x.id }); vistaPersonalizza(v) } },
+      el('i', { style: tondo(x) }), el('span', { testo: x.nome }))))
+  const cursori = AS.qualiCursori().map(([id, nome, min, max, u]) => {
+    const valore = el('b', { testo: Math.round(k[id]) + u })
+    const r = el('input', { type: 'range', min, max, step: 1, value: Math.round(k[id]), 'aria-label': nome, oninput: () => {
+      valore.textContent = r.value + u
+      const ora = AS.leggiColori() ?? { tema: 'viola' }; AS.salvaColori({ ...ora, colori: { ...AS.cursori(ora), [id]: +r.value } })
+    } })
+    return el('label', { class: 't-cursore' }, el('span', {}, el('span', { testo: nome }), valore), r)
+  })
+  const elencoCard = vista => {
+    const { ordine, nascoste } = AS.sceltaCard(vista)
+    const cambia = (ord, nas) => { AS.salvaCard(vista, { ordine: ord, nascoste: nas }); vistaPersonalizza(v) }
+    const su = (id, d) => cambia(sposta(ordine, id, d), nascoste)
+    return el('ul', { class: 't-righe t-personalizza' }, ...ordine.map((id, i) => el('li', { class: nascoste.includes(id) ? 'spenta' : '' },
+      el('b', { testo: AS.CARD[vista][id] }),
+      el('span', { class: 't-fila' },
+        el('button', { type: 'button', class: 't-tondo piccolo', 'aria-label': 'Più su', disabled: i === 0, onclick: () => su(id, -1) }, '↑'),
+        el('button', { type: 'button', class: 't-tondo piccolo', 'aria-label': 'Più giù', disabled: i === ordine.length - 1, onclick: () => su(id, 1) }, '↓'),
+        el('button', { type: 'button', class: 't-tondo piccolo', 'aria-label': nascoste.includes(id) ? 'Mostra' : 'Nascondi', onclick: () => cambia(ordine, alterna(nascoste, id)) }, nascoste.includes(id) ? '○' : '●')))))
+  }
+  metti(v, el('h1', { class: 't-titolo', testo: 'Personalizza' }),
+    el('p', { class: 't-sotto', testo: 'I colori e le card di Oggi e di Clienti. Valgono su questo telefono.' }),
+    carta('I colori', s ? 'scelti da te' : 'quelli di sempre', sfumature, el('div', { class: 't-cursori' }, ...cursori),
+      el('div', { class: 't-bottoni' }, el('button', { type: 'button', disabled: !s, onclick: () => { AS.salvaColori(null); vistaPersonalizza(v) } }, 'Torna ai colori di sempre'))),
+    carta('Le card di Oggi', '● si vede · ○ nascosta', elencoCard('oggi')),
+    carta('Le card di Clienti', '● si vede · ○ nascosta', elencoCard('clienti'),
+      el('div', { class: 't-bottoni' }, el('button', { type: 'button', onclick: () => { AS.salvaCard('oggi', null); AS.salvaCard('clienti', null); vistaPersonalizza(v) } }, 'Rimetti le card come all’inizio'))))
+}
+
+// ---- il giro delle viste ----
+async function mostra () {
+  const [nome, ...resto] = (location.hash.slice(1) || 'oggi').split('/'), v = $('#vista')
+  for (const a of document.querySelectorAll('.t-barra a')) a.setAttribute('aria-current', String(a.dataset.v === nome || (nome === 'cliente' && a.dataset.v === 'clienti')))
+  try {
+    if (nome === 'cliente' && resto[0]) await vistaCliente(v, decodeURIComponent(resto.join('/')))
+    else if (nome === 'clienti') await vistaClienti(v)
+    else if (nome === 'squadra') await vistaSquadra(v)
+    else if (nome === 'personalizza') vistaPersonalizza(v)
+    else await vistaOggi(v)
+    scrollTo(0, 0)
+  } catch (e) { metti(v, el('p', { class: 't-vuoto', testo: e.message || (online ? 'Mirion Fit online non risponde: riprova fra poco.' : 'Il computer non risponde: Mirion è acceso?') })) }
+}
+addEventListener('hashchange', mostra)
+// il tasto ‹ in alto, come in Mirion Fit (cornice.js): dal cliente all'elenco, da Personalizza a Oggi; in cima a una sezione non c'è
+montaIndietro($('#indietro'), [[/^#cliente\//, '#clienti'], [/^#personalizza/, '#oggi']])
+// il tuo Mirion Fit (Marco, 26-11-2026: «al trainer lo puoi far collegare anche al suo Mirion Fit, che è incluso, e può passare a
+// quello da trainer»): la prima volta un invito online per te, poi si apre sempre quello. Nel link c'è «tr», l'indirizzo di questa
+// pagina: Mirion Fit lo tiene e mostra «Mirion Trainer» in alto per tornare qui
+const MIO_FIT = 'mirion-trainer:mio-fit'
+$('#mio-fit').addEventListener('click', async () => {
+  let link = null; try { link = localStorage.getItem(MIO_FIT) } catch { }
+  if (!link) {
+    const d = await leggi().catch(() => null)
+    if (!d?.online?.acceso) return dimmi('Il tuo Mirion Fit usa Mirion Fit online: accendilo in Mirion sul computer, stanza Clienti.')
+    try { const r = await api('/api/clienti', { azione: 'invita-online', etichetta: 'Io, il trainer' }); link = r.url ?? r.link } catch (e) { return dimmi(e.message) }
+    try { localStorage.setItem(MIO_FIT, link) } catch { }
+  }
+  // il link per tornare porta il gettone di rientro: da Mirion Fit si rientra senza rifare l'abbinamento (server/telefono.mjs)
+  let g = null; if (!BASE_API && !online) try { g = (await (await fetch('/telefono/rientro', { method: 'POST', credentials: 'same-origin' })).json()).g } catch { }
+  const u = new URL(link); u.searchParams.set('tr', online ? location.origin + location.pathname + location.search + '#oggi' : location.origin + location.pathname + (g ? '?g=' + g : '') + '#oggi')
+  location.href = direttoInFit(u).href
+})
+// subito dentro Mirion Fit (27-11-2026, Marco: «quando passo al fit da trainer vallo istantaneamente, non c'è bisogno della schermata
+// di mezzo»): l'invito porta alla pagina del QR (…/fit/?k=…&a=…), che mostra «Apri Mirion Fit»; qui si salta e si va dritti alla web
+// app (…/fit/app/?k=…&a=…&tr=…#/diario), come farebbe quel bottone. Un link che non è della pagina del QR resta com'è
+function direttoInFit (u) {
+  if (!/\/fit\/?$/.test(u.pathname)) return u
+  // senza il codice «a» si va dentro lo stesso: la web app apre il lucchetto con l'invito ancora valido (fit-online.js invitoValido)
+  const a = (/[#&]a=([\w.~-]+)/.exec(u.hash) || [])[1] || u.searchParams.get('a')
+  if (!u.searchParams.get('k') && !a) return u
+  const d = new URL(u.pathname.replace(/\/?$/, '/') + 'app/', u.origin)
+  for (const k of ['k', 'tr']) if (u.searchParams.get(k)) d.searchParams.set(k, u.searchParams.get(k))
+  if (a) d.searchParams.set('a', a); d.hash = '#/diario'
+  // nello stesso ordine del bottone della pagina: k, a, tr
+  const q = new URLSearchParams(); for (const k of ['k', 'a', 'tr']) if (d.searchParams.get(k)) q.set(k, d.searchParams.get(k))
+  d.search = q.toString()
+  return d
+}
+// ↻ (Marco, 27-11: «fai funzionare aggiorna su Mirion Trainer»): prima rileggeva solo i dati e la pagina restava quella di prima;
+// adesso chiede al service worker la versione nuova della web app e ricarica tutto, dati compresi
+$('#aggiorna').addEventListener('click', async e => {
+  const b = e.currentTarget; b.disabled = true; b.classList.add('gira')
+  try { const r = await navigator.serviceWorker?.getRegistration?.(); await r?.update() } catch { /* senza service worker si ricarica e basta */ }
+  try { sessionStorage.setItem('mirion-trainer:aggiornato', '1') } catch { }
+  location.reload()
+})
+try { if (sessionStorage.getItem('mirion-trainer:aggiornato')) { sessionStorage.removeItem('mirion-trainer:aggiornato'); setTimeout(() => dimmi('Aggiornato: i clienti e l’app sono all’ultima versione.'), 400) } } catch { }
+// le novità ogni minuto, finché la pagina si vede (non nella pagina di un cliente, per non perdere quello che stai scrivendo)
+setInterval(() => { if (!document.hidden && !location.hash.startsWith('#cliente/')) { letti = 0; mostra() } }, 60_000)
+accendiStelle({ ferme: true }) // ferme: niente animazioni (27-11-2026, Marco: «leva tutte le animazioni»)
+mostra()
+
+// Installarla dal telefono (27-11-2026, Marco: «rendi da telefono tutte e due installabili tramite web app»): la riga di cornice.js,
+// la stessa di Mirion Fit. Sull'iPhone il manifest si toglie, come in Mirion Fit: «Aggiungi alla schermata Home» tiene così
+// l'indirizzo di adesso, con la chiave; su Android il manifest resta e la chiave è già salvata sul telefono (trainer-online.js).
+{
+  const iphone = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  if (iphone) document.querySelector('link[rel="manifest"]')?.remove()
+  proponiInstallazione({ nome: 'Mirion Trainer', classi: { riga: 't-avviso t-installa', tasto: 't-chip', pieno: 't-primario' } })
+}

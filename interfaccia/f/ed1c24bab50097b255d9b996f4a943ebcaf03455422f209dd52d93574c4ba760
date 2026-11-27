@@ -1,0 +1,61 @@
+// Il cruscotto comune di Mirion Fit e Mirion Trainer (27-11-2026, Marco: «prendi le dashboard più clean che trovi gratuite e
+// rivisitiamole per Mirion Fit e Trainer… per ogni cosa»). Lo stile viene dai kit gratuiti Tremor (Apache 2.0), Shadcn Admin e
+// TailAdmin (MIT): solo l'idea, i disegni sono nostri. I pezzi: il mezzo anello con tre cifre sotto, la barra di avanzamento con
+// valore e obiettivo, la striscia della costanza (un quadratino per giorno), l'etichetta di stato, il riquadro con una cifra.
+// Solo HTML in stringa, senza dipendenze, così lo usano tutte e due le app (Fit con le stringhe, il Trainer con daHtml).
+// Canonico: mirion-codice app/js/cruscotto.js; copia identica in Mirion Fit public/cruscotto.js (la controlla prova.mjs).
+// Lo stile sta in cruscotto.css, anche lui uguale nelle due app; i colori li dà ogni app con --cr-a e --cr-b.
+
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const giusto = p => Math.max(0, Math.min(100, Number.isFinite(p) ? p : 0))
+let conta = 0
+
+// il mezzo anello (da TailAdmin): pct da 0 a 1, il numero grande e la riga sotto. classe 'oltre' lo colora di rosso
+export function mezzoAnello (pct, numero, sotto = '', { classe = '', etichetta = '' } = {}) {
+  const id = 'cr-sf-' + (++conta), p = giusto(pct * 100)
+  return `<div class="cr-mezzo ${esc(classe)}"${etichetta ? ` role="img" aria-label="${esc(etichetta)}"` : ''}>
+    <svg viewBox="0 0 200 112" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" x2="1"><stop offset="0" class="cr-a"/><stop offset="1" class="cr-b"/></linearGradient></defs>
+      <path class="cr-mezzo-fondo" d="M18 100 A82 82 0 0 1 182 100" pathLength="100"/>
+      ${p > 0.5 ? `<path class="cr-mezzo-pieno" d="M18 100 A82 82 0 0 1 182 100" pathLength="100" stroke-dasharray="${p.toFixed(1)} 100" stroke="url(#${id})"/>` : ''}</svg>
+    <div class="cr-mezzo-dentro"><b>${numero}</b>${sotto ? `<span>${sotto}</span>` : ''}</div></div>`
+}
+
+// tre cifre in fila, divise da una riga sottile: [[numero, testo], …]
+export const tre = voci => `<div class="cr-tre">${voci.map(([n, t]) => `<div><b>${n}</b><span>${t}</span></div>`).join('')}</div>`
+
+// la barra di avanzamento (da Tremor): nome a sinistra, valore e obiettivo a destra, la barra sottile sotto.
+// classe: 'basso' la fa arancio (resta indietro), 'oltre' rossa; destra: il testo a destra al posto di «valore / meta unità»
+export function barra (nome, valore, meta, { unita = '', classe = '', destra = '', pct = null } = {}) {
+  const p = giusto(pct != null ? pct * 100 : meta ? (valore / meta) * 100 : 0)
+  const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',')
+  const testo = destra || `${fmt(valore)}${meta != null ? ` <small>/ ${fmt(meta)}${unita ? ' ' + unita : ''}</small>` : unita ? ` <small>${unita}</small>` : ''}`
+  return `<div class="cr-barra-riga ${esc(classe)}"><div class="cr-riga"><span>${nome}</span><b>${testo}</b></div><div class="cr-barra"><i style="width:${p.toFixed(1)}%"></i></div></div>`
+}
+
+// la striscia della costanza (il «Tracker» di Tremor): un quadratino per giorno, dal più vecchio a oggi.
+// giorni: [{ v: 0 | 1 | 2, titolo }] (0 niente, 1 fatto, 2 a metà); fine: la versione bassa, per una riga per cliente
+export function traccia (giorni, { fine = false, etichetta = '' } = {}) {
+  return `<div class="cr-traccia${fine ? ' fine' : ''}" style="--n:${giorni.length}"${etichetta ? ` role="img" aria-label="${esc(etichetta)}"` : ''}>${giorni.map(g => `<i class="${g.v === 1 ? 'si' : g.v === 2 ? 'meta' : ''}"${g.titolo ? ` title="${esc(g.titolo)}"` : ''}></i>`).join('')}</div>`
+}
+
+// la legenda sotto una striscia o un grafico: [[classe, testo], …] con classe 'si', 'meta' o ''
+export const legenda = voci => `<div class="cr-legenda">${voci.map(([k, t]) => `<span><i class="${k}"></i>${t}</span>`).join('')}</div>`
+
+// l'etichetta di stato (da Shadcn e TailAdmin): tono 'bene', 'presto', 'male', 'viola' o '' (neutra)
+export const pill = (testo, tono = '') => `<span class="cr-pill ${esc(tono)}">${testo}</span>`
+
+// il riquadro con una cifra (da Shadcn): icona (HTML), etichetta, numero grande e, a destra, un'etichetta di stato
+export const tile = ({ icona = '', etichetta, numero, stato = '', href = '' }) => {
+  const dentro = `${icona ? `<span class="cr-tile-ico">${icona}</span>` : ''}<span class="cr-tile-et">${etichetta}</span><span class="cr-tile-giu"><b>${numero}</b>${stato}</span>`
+  return href ? `<a class="cr-tile" href="${esc(href)}">${dentro}</a>` : `<div class="cr-tile">${dentro}</div>`
+}
+
+// le barre della settimana (da TailAdmin): tenui, e una sola accesa (oggi, o quella scelta) con il suo numero sopra.
+// righe: [{ valore, etichetta, titolo }]; su: l'indice acceso (di solito l'ultimo); meta: la riga dell'obiettivo
+export function barre (righe, { su = righe.length - 1, meta = null, testo = v => String(Math.round(v)), oltre = null } = {}) {
+  const max = Math.max(meta || 0, ...righe.map(r => r.valore), 1)
+  return `<div class="cr-barre" style="--n:${righe.length}">${righe.map((r, i) => `<div class="${i === su ? 'su' : ''}${oltre && oltre(r) ? ' oltre' : ''}"${r.titolo ? ` title="${esc(r.titolo)}"` : ''}>${i === su && r.valore ? `<em>${esc(testo(r.valore))}</em>` : ''}<i style="height:calc((100% - 40px) * ${(Math.max(r.valore ? 0.03 : 0.015, r.valore / max)).toFixed(3)})"></i><span>${esc(r.etichetta)}</span></div>`).join('')}${meta ? `<hr class="cr-meta" style="bottom:calc(17px + (100% - 40px) * ${(meta / max).toFixed(3)})">` : ''}</div>`
+}
+
+// le iniziali in un tondo, per le liste (Davide M. → DM)
+export const iniziali = nome => String(nome ?? '').trim().split(/\s+/).slice(0, 2).map(p => p[0] ?? '').join('').toUpperCase() || '·'
