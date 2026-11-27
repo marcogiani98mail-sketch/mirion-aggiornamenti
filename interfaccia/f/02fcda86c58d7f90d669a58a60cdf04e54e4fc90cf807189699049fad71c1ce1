@@ -1,0 +1,13 @@
+// I check del cliente per il trainer (Marco, 27-11-2026: «i check fanne fare anche più di uno… l'importante che al trainer ne
+// compaia sempre uno aggiornato e possa vedere tutti quelli precedenti in base al giorno»). Lo usano Mirion Trainer sul computer
+// (clienti.js) e sul telefono (trainer-telefono.js): l'ultimo in evidenza, gli altri raggruppati per giorno, dal più recente.
+export const DOMANDE_CHECK = [['energia', 'Energia'], ['fame', 'Fame (5 = mai)'], ['stress', 'Stress (5 = niente)'], ['motivazione', 'Voglia di allenarsi'], ['piano', 'Ha seguito il piano']]
+const chiave = c => `${c.data}T${/^\d{2}:\d{2}$/.test(c?.ora ?? '') ? c.ora : '12:00'}${c.quando ?? ''}`
+export function storiaCheck (check) {
+  const tutti = (Array.isArray(check) ? check : []).filter(c => /^\d{4}-\d{2}-\d{2}$/.test(c?.data ?? '')).sort((a, b) => chiave(b).localeCompare(chiave(a)))
+  const giorni = []
+  for (const c of tutti.slice(1)) { const g = giorni.at(-1); if (g?.giorno === c.data) g.voci.push(c); else giorni.push({ giorno: c.data, voci: [c] }) }
+  return { ultimo: tutti[0] ?? null, giorni, quanti: tutti.length }
+}
+export const giornoCheck = (d, lungo) => new Date(d + 'T12:00').toLocaleDateString('it-IT', lungo ? { weekday: 'long', day: 'numeric', month: 'long' } : { weekday: 'short', day: 'numeric', month: 'short' })
+export const quandoCheck = c => `${giornoCheck(c.data, true)}${c.ora ? ' alle ' + c.ora : ''}`

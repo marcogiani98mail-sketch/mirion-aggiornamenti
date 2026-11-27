@@ -1,0 +1,52 @@
+// Personalizza di Mirion Trainer sul telefono (Marco, 27-11-2026: «fai personalizzare anche l'area del trainer»). Come
+// «Personalizza» di Mirion Fit (Piatto, public/aspetto.js) e di Mirion sul computer: una sfumatura pronta, i cursori dello spazio
+// dei colori e quali card vedere in «Oggi» e in «Clienti», in che ordine. Si tiene sul telefono
+// (localStorage), come in Mirion Fit. Senza una scelta resta la grafica di sempre (lo Spazio). Sul computer la dashboard di Mirion
+// Trainer si personalizza già da Mirion (le card della disposizione e Personalizza → i colori).
+import { SFUMATURE, variabili } from './colori.js'
+import { creaColori, ordineCard } from './cornice.js' // i pezzi in comune con Mirion Fit
+
+const K = { colori: 'mirion-trainer:colori', card: 'mirion-trainer:card' }
+const leggiJson = k => { try { return JSON.parse(localStorage.getItem(k) || 'null') } catch { return null } }
+const scrivi = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)) } catch { /* vale finché la pagina è aperta */ } }
+
+// ---- i colori ----
+export const BASE = { saturazione: 100, buio: 65 } // il fondo quasi nero dello Spazio
+const COL = creaColori(SFUMATURE, BASE)
+export const sfumature = COL.sfumature
+export const qualiCursori = COL.quali
+export function leggiColori () { return COL.valida(leggiJson(K.colori)) }
+export const cursori = (s = leggiColori()) => COL.cursori(s)
+const NOMI = ['--fondo', '--carta', '--linea', '--testo', '--testo-2', '--tenue', '--viola', '--lilla', '--accento-2', '--info', '--bene', '--presto', '--scaduto']
+export function applicaColori (s = leggiColori()) {
+  if (typeof document === 'undefined') return
+  const r = document.documentElement, meta = document.querySelector('meta[name="theme-color"]')
+  for (const k of NOMI) r.style.removeProperty(k)
+  if (!s) { meta?.setAttribute('content', '#05040b'); return }
+  const { variabili: v } = variabili({ tema: s.tema, colori: cursori(s), stile: 'classica' })
+  for (const k of NOMI) if (v[k]) r.style.setProperty(k, v[k])
+  meta?.setAttribute('content', v['--fondo'])
+}
+export function salvaColori (s) { scrivi(K.colori, s); applicaColori(s) }
+
+// ---- le card di «Oggi» e di «Clienti» ----
+export const CARD = {
+  oggi: { cifre: 'I numeri della squadra', guarda: 'Da guardare oggi', sedute: 'Le sedute di oggi' },
+  clienti: { invito: 'Invita un cliente', schede: 'Manda una scheda', elenco: 'L’elenco dei clienti' },
+}
+export const sceltaCard = vista => ordineCard(Object.keys(CARD[vista] ?? {}), leggiJson(K.card)?.[vista] ?? {})
+export function salvaCard (vista, scelta) {
+  const tutto = leggiJson(K.card) ?? {}
+  if (scelta) tutto[vista] = scelta; else delete tutto[vista]
+  scrivi(K.card, Object.keys(tutto).length ? tutto : null)
+}
+// rimette in ordine i pezzi di una vista (quelli con data-parte) e toglie quelli nascosti
+export function ordina (v, vista) {
+  const { ordine, nascoste } = sceltaCard(vista)
+  const pezzi = new Map([...v.children].filter(n => n.dataset?.parte).map(n => [n.dataset.parte, n]))
+  if (!pezzi.size) return
+  const segno = document.createComment('card'); [...pezzi.values()][0].before(segno)
+  for (const n of pezzi.values()) n.remove()
+  for (const id of ordine) if (pezzi.has(id) && !nascoste.includes(id)) segno.before(pezzi.get(id))
+  segno.remove()
+}
