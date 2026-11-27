@@ -1,0 +1,98 @@
+// «Porta dentro i file del computer» (server/importa.mjs; Marco, 24-11-2026: «si importino i file del computer in un unico cervello…
+// copiandoli, per andare avanti con il lavoro sin da subito»). Tre passi, ognuno con il suo tasto: scegli le cartelle e conta,
+// copia nel cervello, fai ordinare all'IA del tuo piano (Claude Code o Codex). Niente parte da solo.
+import { el, api, notifica, STATO } from './base.js'
+import { sezioneGithub } from './github-mio.js'
+import { ic } from './icone.js'
+
+const mb = b => b >= 1e9 ? `${(b / 1e9).toLocaleString('it-IT', { maximumFractionDigits: 1 })} GB` : `${Math.max(0.1, b / 1e6).toLocaleString('it-IT', { maximumFractionDigits: 1 })} MB`
+const tanti = (n, uno, piu) => `${n.toLocaleString('it-IT')} ${n === 1 ? uno : piu}`
+let scelte = null, conFoto = false, giro = null
+
+export async function mostra (stanza) {
+  clearTimeout(giro)
+  stanza.replaceChildren(el('p', { class: 'vuoto', testo: 'Guardo le cartelle…' }))
+  let d
+  try { d = await api('/api/importa') } catch (e) { return stanza.replaceChildren(el('p', { class: 'vuoto', testo: e.message })) }
+  scelte ??= new Map(d.proposte.map(p => [p.cartella, { ...p, si: p.nome !== 'Immagini' }]))
+  const rifai = () => mostra(stanza)
+  const passo1 = el('section', { class: 'fascia importa-passo' })
+  const passo2 = el('section', { class: 'fascia importa-passo', hidden: true })
+  const passo3 = el('section', { class: 'fascia importa-passo' })
+
+  // 1. le cartelle
+  const elenco = el('div', { class: 'importa-cartelle' }, ...[...scelte.values()].map(s => el('label', { class: 'importa-cartella' },
+    el('input', { type: 'checkbox', checked: s.si, onchange: e => { s.si = e.target.checked; passo2.hidden = true } }),
+    el('span', {}, el('b', { testo: s.nome }), el('small', { class: 'sopra', testo: s.cartella })))))
+  const altra = el('input', { type: 'text', placeholder: /Mac/.test(navigator.userAgent) ? '/Users/…/Lavoro' : 'C:\\Users\\…\\Lavoro', 'aria-label': 'Un\'altra cartella' })
+  const aggiungi = c => { c = String(c ?? '').trim(); if (!c) return; if (!scelte.has(c)) scelte.set(c, { nome: c.split(/[\\/]/).filter(Boolean).pop() ?? c, cartella: c, si: true }); rifai() }
+  passo1.append(
+    el('h2', {}, el('span', { class: 'importa-numero', testo: '1' }), 'Quali cartelle'),
+    el('p', { class: 'sopra', testo: 'Mirion guarda dentro e conta i documenti, i fogli di calcolo e le presentazioni. Per ora non copia niente.' }),
+    elenco,
+    el('div', { class: 'importa-altra' }, altra,
+      window.delionApp?.scegliCartella ? el('button', { type: 'button', class: 'secondario piccolo', onclick: async () => aggiungi(await window.delionApp.scegliCartella('La cartella da portare dentro')) }, 'Scegli…') : null,
+      el('button', { type: 'button', class: 'secondario piccolo', onclick: () => aggiungi(altra.value) }, 'Aggiungi')),
+    el('label', { class: 'importa-foto' }, el('input', { type: 'checkbox', checked: conFoto, onchange: e => { conFoto = e.target.checked; passo2.hidden = true } }), el('span', { testo: 'Anche le foto e le immagini (i video mai)' })),
+    el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario', onclick: conta }, ic('magnifying-glass'), 'Conta cosa c’è')))
+
+  async function conta () {
+    const cartelle = [...scelte.values()].filter(s => s.si).map(s => s.cartella)
+    if (!cartelle.length) return notifica('Scegli almeno una cartella.')
+    passo2.hidden = false; passo2.replaceChildren(el('p', { class: 'vuoto', testo: 'Conto… (con tante cartelle ci vuole qualche secondo)' }))
+    let r; try { r = await api('/api/importa', { azione: 'esplora', cartelle, foto: conFoto }) } catch (e) { return passo2.replaceChildren(el('p', { class: 'problema', testo: e.message })) }
+    const file = r.cartelle.reduce((t, c) => t + c.file, 0), byte = r.cartelle.reduce((t, c) => t + c.byte, 0)
+    const segreti = r.cartelle.reduce((t, c) => t + c.saltati.segreti, 0), grandi = r.cartelle.reduce((t, c) => t + c.saltati.grandi, 0), foto = r.cartelle.reduce((t, c) => t + c.saltati.foto, 0)
+    passo2.replaceChildren(
+      el('h2', {}, el('span', { class: 'importa-numero', testo: '2' }), 'Copia nel cervello'),
+      el('ul', { class: 'pasto-voci' }, ...r.cartelle.map(c => el('li', {}, el('span', {}, el('b', { testo: c.nome }), ' · ', Object.entries(c.perTipo).map(([t, n]) => tanti(n, d.tipi[t]?.uno ?? t, d.tipi[t]?.tanti ?? t)).join(', ') || 'niente da copiare'),
+        el('small', { class: 'sopra', testo: `${tanti(c.file, 'file', 'file')} · ${mb(c.byte)}${c.troppe ? ' · troppi file: contati i primi' : ''}` })))),
+      el('p', { class: 'sopra piccolo', testo: [segreti ? `${tanti(segreti, 'file sembra', 'file sembrano')} password o chiavi: restano dove sono` : null, grandi ? `${tanti(grandi, 'file è', 'file sono')} sopra i 100 MB: restano dove sono` : null, foto ? `${tanti(foto, 'foto', 'foto')} non ${foto === 1 ? 'scelta' : 'scelte'}` : null].filter(Boolean).join(' · ') }),
+      el('p', { class: 'sopra', testo: `Le copie vanno in «${d.radice ? 'Importati' : '…'}», dentro il cervello. Gli originali restano dove sono, e la copia resta su questo computer.` }),
+      el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario', disabled: !file, onclick: async () => {
+        try { await api('/api/importa', { azione: 'copia', cartelle, foto: conFoto }); passo2.hidden = true; segui() } catch (e) { notifica(e.message, { tipo: 'sempre' }) }
+      } }, ic('copy'), `Copia ${tanti(file, 'file', 'file')} (${mb(byte)})`)))
+  }
+
+  // mentre copia: a che punto è
+  const avanzamento = el('div', { class: 'importa-avanza', hidden: true })
+  async function segui () {
+    let s; try { s = await api('/api/importa') } catch { return }
+    const l = s.lavoro; if (!l) return
+    avanzamento.hidden = false
+    avanzamento.replaceChildren(el('b', { testo: l.fase === 'copio' ? 'Copio…' : l.fase === 'fatto' ? 'Fatto.' : 'Non è andata: ' + (l.errore ?? '') }),
+      el('span', { class: 'sopra', testo: ` ${tanti(l.fatti, 'file copiato', 'file copiati')} (${mb(l.byte)})${l.gia ? `, ${tanti(l.gia, 'c’era già', 'c’erano già')}` : ''}${l.errori.length ? `, ${tanti(l.errori.length, 'non si è copiato', 'non si sono copiati')}` : ''}` }),
+      l.errori.length ? el('details', {}, el('summary', { testo: 'Quali' }), el('ul', {}, ...l.errori.map(x => el('li', { testo: x })))) : null)
+    if (l.fase === 'copio') giro = setTimeout(segui, 700)
+    else if (l.fase === 'fatto') { notifica('I file sono nel cervello, in «Importati».'); rifai() }
+  }
+
+  // 3. l'IA del piano a pagamento, sul cervello
+  const ci = d.gia.length > 0
+  const visto = el('input', { type: 'checkbox', onchange: () => { for (const b of passo3.querySelectorAll('[data-ia]')) b.disabled = !visto.checked } })
+  const ordina = async (quale, nome) => {
+    try { await api('/api/ia/chiedi', quale === 'codex' ? { ia: 'codex', testo: d.richiesta } : { modo: 'code', ia: 'claude', testo: d.richiesta }); notifica(`${nome} si apre sul cervello con la richiesta pronta: premi Invio lì.`) } catch (e) { notifica(e.message, { tipo: 'sempre' }) }
+  }
+  passo3.append(
+    el('h2', {}, el('span', { class: 'importa-numero', testo: '3' }), 'Fai ordinare all’IA'),
+    el('p', { class: 'sopra', testo: ci ? `Nel cervello ci sono già: ${d.gia.join(', ')}. Claude (o Codex) li legge e scrive le note: una per cliente, il listino, le procedure, le cose da fare. Segue «Importati/Come ordinarli», che puoi cambiare.` : 'Prima copia i file (passi 1 e 2): poi Claude o Codex li leggono e scrivono le note.' }),
+    el('p', { class: 'sopra piccolo', testo: 'Serve il piano a pagamento: Claude Pro (o Max) per Claude Code, ChatGPT Plus (o Pro) per Codex.' }),
+    el('div', { class: 'importa-privacy' },
+      el('p', { testo: 'Prima di cominciare: dentro ci sono dati sulla salute dei tuoi clienti, e l’IA li legge. Nelle impostazioni di Claude (Privacy, «Aiuta a migliorare Claude») o di ChatGPT (Controlli dati, «Migliora il modello per tutti») spegni l’uso delle tue chat per addestrare l’IA. Puoi anche togliere da «Importati» i file che non vuoi far leggere.' }),
+      el('label', {}, visto, el('span', { testo: ' Ho controllato: si può cominciare' }))),
+    el('div', { class: 'bottoni' },
+      d.ia?.claude !== false ? el('button', { type: 'button', class: 'primario', 'data-ia': 'claude', disabled: true, onclick: () => ordina('claude', 'Claude') }, ic('sparkle'), 'Fai ordinare a Claude') : null,
+      d.ia?.codex === true ? el('button', { type: 'button', class: 'secondario', 'data-ia': 'codex', disabled: true, onclick: () => ordina('codex', 'Codex') }, 'Fai ordinare a Codex') : null,
+      d.ia?.claude === false && d.ia?.codex !== true ? el('a', { class: 'secondario', href: '#impostazioni', testo: 'Installa Claude o ChatGPT (Impostazioni)' }) : null))
+  if (!ci) passo3.classList.add('spento')
+
+  // nell'edizione per un cliente, prima di tutto il suo GitHub (github-mio.js, 25-11)
+  const github = STATO.edizione?.tipo === 'cliente' ? await sezioneGithub().catch(() => null) : null
+  stanza.replaceChildren(el('div', { class: 'pagina-completa importa' },
+    el('header', { class: 'pagina-cima' }, el('div', {},
+      el('p', { class: 'sopra', testo: 'Il tuo cervello, da subito' }),
+      el('h1', { testo: 'Porta dentro i file del computer' }),
+      el('p', { class: 'sopra', testo: 'Mirion copia i tuoi documenti nel cervello: gli originali restano dove sono, la copia resta su questo computer. Poi l’IA del tuo piano li legge e li trasforma in note con cui lavorare.' }))),
+    github, passo1, passo2, avanzamento, passo3))
+  if (d.lavoro?.fase === 'copio') segui()
+}

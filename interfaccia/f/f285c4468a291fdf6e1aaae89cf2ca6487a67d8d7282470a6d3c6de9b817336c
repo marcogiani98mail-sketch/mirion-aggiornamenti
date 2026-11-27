@@ -1,0 +1,42 @@
+// Quando un pulsante deve aprire Claude o Obsidian e sul computer non c'è (Marco, 20-11: «si aprono solo se il cliente ce l'ha…
+// e viene un consiglio di farlo in caso non ce l'abbiano»): un riquadro che dice cosa manca, a cosa serve, e lo installa con un clic.
+import { el, api, notifica } from './base.js'
+
+const PROGRAMMI = {
+  claude: { nome: 'Claude per il computer', serve: 'I pulsanti «Fallo con Claude» aprono l\'app di Claude sul tuo cervello, con la richiesta già scritta: Claude lavora direttamente nelle tue note. Serve un piano a pagamento di Claude.', sito: 'https://claude.ai/download' },
+  codex: { nome: 'ChatGPT per il computer', serve: 'I pulsanti «Fallo con Codex» aprono Codex, dentro l\'app ChatGPT, sul tuo cervello con la richiesta già scritta: Codex lavora direttamente nelle tue note. Serve il tuo account ChatGPT.', sito: 'https://chatgpt.com/download' },
+  obsidian: { nome: 'Obsidian', serve: 'Le note del tuo cervello si aprono e si scrivono in Obsidian. È gratuito.', sito: 'https://obsidian.md/download' },
+}
+let aperto = null
+
+export function consiglia (chi) {
+  const p = PROGRAMMI[chi]; if (!p || aperto) return
+  const stato = el('p', { class: 'sopra', role: 'status' })
+  const fondo = el('div', { class: 'consiglio-fondo', onclick: e => { if (e.target === fondo) chiudi() } })
+  const chiudi = () => { fondo.remove(); aperto = null; clearInterval(timer) }
+  let timer = null
+  const installa = async e => {
+    e.currentTarget.disabled = true
+    // Mirion non installa (Marco, 21-11): si apre la pagina ufficiale, la persona installa lì, e il riquadro se ne accorge
+    api('/api/apri', { app: 'web', nota: p.sito }).catch(err => { stato.textContent = err.message })
+    stato.textContent = 'Installalo dalla pagina che si è aperta: me ne accorgo da solo quando c\'è.'
+    timer = setInterval(async () => {
+      const c = (await api('/api/installazione')).controlli[chi]
+      if (c.presente) { clearInterval(timer); stato.textContent = `${p.nome} è installato: ora il pulsante funziona.`; notifica(`${p.nome} è installato.`, { tipo: 'sempre' }) }
+      else if (typeof c.inCorso === 'string' && c.inCorso !== 'in corso' && c.inCorso !== 'finita') { clearInterval(timer); stato.textContent = c.inCorso }
+    }, 3000)
+  }
+  aperto = fondo
+  fondo.append(el('div', { class: 'consiglio', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'consiglio-t' },
+    el('img', { src: `/icone/${chi}.png`, alt: '', width: 44, height: 44 }),
+    el('h2', { id: 'consiglio-t', testo: `${p.nome} non è su questo computer` }),
+    el('p', { testo: p.serve }),
+    el('p', { class: 'sopra', testo: 'Si scarica dalla sua pagina ufficiale: dopo, il pulsante che hai premuto funziona.' }),
+    stato,
+    el('div', { class: 'bottoni' },
+      el('button', { type: 'button', class: 'primario', testo: 'Scaricalo dal sito', onclick: installa }),
+      el('button', { type: 'button', class: 'quieto', testo: 'Non ora', onclick: chiudi }))))
+  document.body.append(fondo)
+  fondo.querySelector('.primario').focus()
+  addEventListener('keydown', function esc (e) { if (e.key === 'Escape') { chiudi(); removeEventListener('keydown', esc) } })
+}

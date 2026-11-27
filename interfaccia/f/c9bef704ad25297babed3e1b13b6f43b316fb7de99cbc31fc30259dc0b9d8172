@@ -1,0 +1,60 @@
+// Il primo sguardo: la prima volta (o da Impostazioni → «Rileggi tutto il cervello») Delion legge tutto il vault
+// e ti dice, una riga alla volta, cosa ha trovato; poi ti chiede il calendario, così gli impegni diventano cose da fare.
+import { el, api, notifica, quando, nomeNota } from './base.js'
+import { obsidian } from './ia.js'
+
+const n = x => Number(x ?? 0).toLocaleString('it-IT')
+const pezzi = (lista, f) => el('ul', { class: 'pezzi' }, ...lista.map(x => el('li', {}, ...f(x))))
+
+export async function primoSguardo (forza) {
+  const s = await api('/api/installazione').catch(() => null)
+  if (!s || (!forza && (s.segnati?.['primo-sguardo'] || !s.controlli.vault.presente))) return
+  const corpo = el('div', { class: 'primo-corpo', 'aria-live': 'polite' },
+    el('p', { class: 'grande', testo: 'Sto leggendo il tuo cervello…' }), el('p', { class: 'sopra vault-percorso', testo: s.controlli.vault.cartella ?? '' }), el('div', { class: 'lettura', 'aria-hidden': 'true' }))
+  const fondo = el('div', { class: 'consiglio-fondo primo' }, el('div', { class: 'consiglio primo-scatola', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'primo-t' },
+    el('div', { class: 'guida-testa' }, el('img', { src: '/marchio.svg', alt: '', width: 40, height: 40 }),
+      el('div', {}, el('h2', { id: 'primo-t', testo: 'Mirion conosce il tuo cervello' }), el('p', { class: 'sopra', testo: 'La prima volta legge tutte le note, una per una, e ti dice cosa ha trovato. Da qui in poi le rilegge ogni volta che apri la scrivania.' }))),
+    corpo))
+  document.body.append(fondo)
+  let d
+  try { d = await api('/api/primo-sguardo') } catch (e) { corpo.replaceChildren(el('p', { testo: 'Non sono riuscito a leggere il cervello: ' + e.message })); return }
+  const c = d.caselle, righe = [
+    ['Le note', [el('b', { testo: `${n(d.note)} note, ${n(d.parole)} parole` }), d.dal && el('span', { testo: ` · la più vecchia è del ${new Date(d.dal + 'T12:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}` })]],
+    ['Dove stanno', [pezzi(d.cartelle, x => [x.nome, el('small', { testo: n(x.note) })])]],
+    ['Le cose da fare', [el('b', { testo: `${n(c.aperte)} aperte, ${n(c.fatte)} già fatte` }),
+      el('span', { testo: ` · ${n(c.prossimi)} nei prossimi giorni, ${n(c.scadute)} scadute, ${n(c.senzaData)} senza data` })]],
+    d.progetti.length && ['I progetti', [pezzi(d.progetti, p => [p.nome, el('small', { testo: p.percento + '%' })])]],
+    d.argomenti.length && ['Di cosa parla', [pezzi(d.argomenti, a => [a.nome, el('small', { testo: n(a.note) })])]],
+    ['Toccate di recente', [pezzi(d.recenti, r => [nomeNota(r.nota), el('small', { testo: quando(r.quando) }), obsidian(r.nota, '')])]],
+    d.lavagne && ['Le lavagne', [el('b', { testo: n(d.lavagne) })]],
+  ].filter(Boolean)
+  corpo.replaceChildren(el('dl', { class: 'trovato' }, ...righe.flatMap(([t, v], i) => [el('dt', { class: 'entra', style: { '--i': i * 2 }, testo: t }), el('dd', { class: 'entra', style: { '--i': i * 2 + 1 } }, ...v)])),
+    calendario(d.calendario),
+    el('p', { class: 'sopra piccolo', testo: d.ms < 1000 ? 'Letto in meno di un secondo.' : `Letto in ${(d.ms / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} secondi.` }),
+    el('div', { class: 'bottoni' }, el('button', { type: 'button', class: 'primario', testo: 'Comincia', onclick: async () => {
+      await api('/api/installazione/segna', { passo: 'primo-sguardo', fatto: true }).catch(() => {}); fondo.remove(); location.hash = 'scrivania'; location.reload()
+    } })))
+  fondo.querySelector('.primario').focus()
+}
+
+// il calendario: collegato, o il campo per collegarlo; collegato, gli impegni dei prossimi giorni diventano cose da fare
+function calendario (collegato) {
+  const box = el('section', { class: 'primo-calendario' }, el('h3', { testo: 'Il calendario' }))
+  if (collegato) return box.append(el('p', { testo: 'È collegato: gli impegni dei prossimi giorni che non sono nelle note diventano cose da fare, nella nota «Delion/Dal calendario».' })), box
+  const campo = el('input', { type: 'url', placeholder: 'https://calendar.google.com/calendar/ical/…/basic.ics', 'aria-label': 'Indirizzo segreto in formato iCal', autocomplete: 'off' })
+  const esito = el('p', { class: 'sopra', role: 'status' })
+  box.append(el('p', { testo: 'Collegalo e gli impegni dei prossimi giorni che non sono nelle note diventano cose da fare, con la loro data.' }),
+    el('form', { class: 'riga-form', onsubmit: async e => {
+      e.preventDefault()
+      if (!/^https:\/\//.test(campo.value.trim())) { esito.textContent = 'Serve l\'indirizzo che comincia con https://'; return }
+      try {
+        await api('/api/impostazioni', { GOOGLE_ICAL: campo.value.trim() })
+        const sc = await api('/api/scadenze'), cal = sc.calendario
+        if (cal.errore) { esito.textContent = 'Il calendario non risponde: ' + cal.errore; return }
+        esito.textContent = `Collegato. ${cal.aggiunte.length ? `${cal.aggiunte.length} impegni sono diventati cose da fare.` : 'Nei prossimi giorni non ci sono impegni nuovi.'}`
+        notifica('Calendario collegato.', { tipo: 'sempre' })
+      } catch (err) { esito.textContent = err.message }
+    } }, campo, el('button', { class: 'secondario', testo: 'Collega' })),
+    el('small', { class: 'sopra', testo: 'In Google Calendar: Impostazioni → il tuo calendario → «Indirizzo segreto in formato iCal». Mirion lo legge soltanto, senza permessi da dare. Puoi farlo anche dopo, in Impostazioni.' }), esito)
+  return box
+}
