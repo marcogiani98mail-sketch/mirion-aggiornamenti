@@ -64,7 +64,7 @@ var Rr=Object.defineProperty;var Gr=(i,a)=>{for(var o in a)Rr(i,o,{get:a[o],enum
     </div>
     <div class="scegli-pasto" role="group" aria-label="Il pasto">${x}</div>
     <div class="pasto-scelto">
-      <div class="riga pasto-riga"><b>${v(d.nome)}</b>${n?"":`<button class="btn piccolo tondo pasto-piu" data-az="aggiungi" data-pasto="${d.id}" data-giorno="${a}" aria-label="Aggiungi a ${v(d.nome.toLowerCase())}">${S("plus")}</button>`}<span class="tenue piccolo">${O(y.kcal)}${C?` / ${O(C)}`:""} kcal · <a href="#/pagina/pasto-${d.id}/${a}">apri</a></span></div>
+      <div class="riga pasto-riga"><b>${v(d.nome)}</b>${n?"":`<button class="btn piccolo pasto-piu" data-az="aggiungi" data-pasto="${d.id}" data-giorno="${a}" aria-label="Aggiungi a ${v(d.nome.toLowerCase())}">${S("plus")}<span>Aggiungi</span></button>`}<span class="tenue piccolo">${O(y.kcal)}${C?` / ${O(C)}`:""} kcal · <a href="#/pagina/pasto-${d.id}/${a}">apri</a></span></div>
       ${C?`<div class="pasto-barra">${Ro(y.kcal,C,y.kcal>C*1.1?"oltre":y.kcal>=C*.9?"fatto":"")}</div>`:""}
       ${f.length?`<ul class="voci">${f.map(z=>`<li><button class="voce" data-az="modifica-voce" data-id="${v(z.id)}" data-giorno="${a}" ${n?"disabled":""}>
         <span><b>${v(z.nome)}</b><small class="tenue">${T(z.grammi)} g${z.marca?` · ${v(z.marca)}`:""}</small></span><span class="dett">${O(z.kcal)}</span></button></li>`).join("")}</ul>`:`<p class="vuoto-piccolo">Ancora niente a ${v(d.nome.toLowerCase())}.</p>`}
