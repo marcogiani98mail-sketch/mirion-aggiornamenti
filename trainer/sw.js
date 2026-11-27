@@ -1,5 +1,5 @@
-// il service worker di Mirion Trainer web app (telefono/crea-trainer-web.mjs), versione 201795801292
-const CASSETTO = 'mirion-trainer-201795801292', FILE = ["./","trainer.html","index.html","app.js?v=201795801292","trainer-telefono.css","mirion-trainer.svg","icona-180.png"];
+// il service worker di Mirion Trainer web app (telefono/crea-trainer-web.mjs), versione 201795801372
+const CASSETTO = 'mirion-trainer-201795801372', FILE = ["./","trainer.html","index.html","app.js?v=201795801372","trainer-telefono.css","mirion-trainer.svg","icona-180.png"];
 self.addEventListener('install', (e) => e.waitUntil(caches.open(CASSETTO).then((c) => c.addAll(FILE)).then(() => self.skipWaiting())));
 self.addEventListener('activate', (e) => e.waitUntil((async () => { for (const k of await caches.keys()) if (k !== CASSETTO) await caches.delete(k); await self.clients.claim(); })()));
 self.addEventListener('fetch', (e) => {
