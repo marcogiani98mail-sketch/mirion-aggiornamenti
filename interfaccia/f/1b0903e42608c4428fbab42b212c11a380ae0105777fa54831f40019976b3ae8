@@ -1,0 +1,87 @@
+// La stanza Flussi (Marco, 27-11-2026: «crea una sezione apposita dove posso controllare i flussi»; «trattale come delle card, tutta
+// la pagina deve essere compatibile»): in cima «La mappa» (flussi-mappa.js) o «I piani», i piani a passi che Claude Code tiene nel
+// cervello (server/flussi.mjs). Tutto con le sezioni e le card della scrivania, così prende il tema scelto in Personalizza.
+// Si rilegge da sola ogni 10 secondi finché è aperta.
+import { el, api } from './base.js'
+import { disegnaMappa, sezione } from './flussi-mappa.js'
+import { ic } from './icone.js'
+
+const NOMI = { 'da fare': 'da fare', 'in corso': 'in corso', fatto: 'fatto', fermo: 'fermo' }
+const SEGNO = { 'da fare': '○', 'in corso': '▶', fatto: '✓', fermo: '■' }
+const OGNI = 10_000 // ogni quanto si rilegge, in millisecondi
+const classe = s => (s || 'da fare').replace(' ', '-')
+let scelto = null, ultimo = '', timer = null, vista = 'mappa' // «La mappa» (i collegamenti) o «I piani»
+
+const durata = p => {
+  if (!p.inizio || !p.fine) return ''
+  const m = Math.round((new Date(p.fine) - new Date(p.inizio)) / 60000)
+  return m < 1 ? '' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`
+}
+// gli indirizzi nel testo diventano link (si aprono fuori da Mirion)
+const conLink = s => String(s ?? '').split(/(https?:\/\/[^\s]+)/).map((t, i) => i % 2
+  ? el('a', { href: t, target: '_blank', rel: 'noopener', testo: t.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60) }) : t)
+const statoPasso = s => el('span', { class: 'flusso-stato ' + classe(s) }, el('i', { 'aria-hidden': 'true' }), NOMI[s])
+
+function riquadro (p, i) {
+  return el('article', { class: 'fascia flusso-passo ' + classe(p.stato) },
+    el('div', { class: 'flusso-riga' }, el('small', { class: 'sezione-marchio', testo: 'Passo ' + (i + 1) }), statoPasso(p.stato)),
+    el('h3', { testo: p.titolo }),
+    p.prompt && el('p', { class: 'flusso-prompt', testo: p.prompt }),
+    p.esito && el('p', { class: 'flusso-esito' }, ...conLink(p.esito)),
+    p.passi.length > 0 && el('ul', { class: 'flusso-sotto' }, ...p.passi.map(q => el('li', { class: classe(q.stato) }, el('span', { 'aria-hidden': 'true', testo: SEGNO[q.stato] }), el('span', { testo: q.titolo })))),
+    p.file.length > 0 && el('div', { class: 'flusso-file' }, ...p.file.map(f => el('span', {}, ic('paperclip'), ...conLink(f)))),
+    el('div', { class: 'flusso-piede' }, p.ora && el('span', {}, ic('clock'), 'alle ' + p.ora), durata(p) && el('span', { testo: durata(p) })))
+}
+
+function piano (F) {
+  const passi = F.passi, conta = s => passi.filter(p => p.stato === s).length, tot = passi.length || 1
+  const adesso = passi.findIndex(p => p.stato === 'in corso')
+  return [
+    el('div', { class: 'flussi-cima' },
+      el('section', { class: 'fascia flusso-testa' },
+        el('small', { class: 'sezione-marchio', testo: 'Il flusso' }), el('h2', { testo: F.titolo }),
+        F.errore && el('p', { class: 'flusso-errore', testo: F.errore }),
+        F.richiesta && el('p', { class: 'flusso-richiesta', testo: F.richiesta }),
+        el('div', { class: 'flusso-barra' },
+          el('div', { class: 'flusso-pista', role: 'img', 'aria-label': `${conta('fatto')} passi fatti su ${passi.length}` },
+            ...['fatto', 'in corso', 'fermo'].map(s => el('span', { class: classe(s), style: { width: conta(s) / tot * 100 + '%' } }))),
+          el('span', { testo: `${conta('fatto')} di ${passi.length} fatti` }))),
+      adesso >= 0 && el('section', { class: 'fascia flusso-adesso' }, el('small', { class: 'sezione-marchio', testo: 'Adesso · passo ' + (adesso + 1) }),
+        el('b', { testo: passi[adesso].titolo }), passi[adesso].esito && el('p', { class: 'flusso-esito' }, ...conLink(passi[adesso].esito)))),
+    sezione({ nome: 'I passi', marchio: `${passi.length} passi`, icona: 'check-square', tinta: '#8a6cef' },
+      el('div', { class: 'flusso-passi' }, ...passi.map(riquadro))),
+    F.cronologia.length > 0 && sezione({ nome: "Com'è andata", marchio: 'la cronologia', icona: 'clock', tinta: '#94a3b8' },
+      el('ol', { class: 'fascia flusso-cronologia' }, ...F.cronologia.slice().reverse().map(c => el('li', {}, el('time', { testo: c.ora }), el('span', {}, ...conLink(c.testo))))))
+  ]
+}
+
+function disegna (stanza, flussi, mappa) {
+  const rifai = () => disegna(stanza, flussi, mappa)
+  const testata = el('div', { class: 'testata' }, el('div', {},
+    el('p', { class: 'sopra', testo: 'La mappa di dove gira tutto e i piani a passi di Claude Code: si aggiornano da soli' }),
+    el('h1', { testo: 'Flussi' })),
+    el('div', { class: 'per-persona', role: 'group', 'aria-label': 'Cosa guardare' },
+      ...[['mappa', 'La mappa'], ['piani', 'I piani']].map(([id, nome]) => el('button', { type: 'button', 'aria-pressed': String(vista === id), onclick: () => { vista = id; rifai() } }, nome))))
+  if (vista === 'mappa') {
+    const box = el('div', { class: 'mappa' })
+    stanza.replaceChildren(testata, box)
+    return mappa ? disegnaMappa(box, mappa) : box.replaceChildren(el('p', { class: 'vuoto', testo: 'Nel cervello non c’è ancora la mappa: Claude Code la scrive in _Sistema/mappa/mappa.json.' }))
+  }
+  if (!flussi.length) return stanza.replaceChildren(testata, el('p', { class: 'vuoto', testo: 'Nessun flusso nel cervello. Claude Code li crea con node _Sistema/lavagna.js «@Nome» piano «Titolo» «passo 1» …, e qui compaiono da soli.' }))
+  if (!flussi.some(f => f.nome === scelto)) scelto = flussi[0].nome
+  stanza.replaceChildren(testata,
+    el('div', { class: 'per-persona flussi-scelta', role: 'group', 'aria-label': 'I flussi' },
+      ...flussi.map(f => el('button', { type: 'button', 'aria-pressed': String(f.nome === scelto), onclick: () => { scelto = f.nome; rifai() } }, f.nome))),
+    ...piano(flussi.find(f => f.nome === scelto)))
+}
+
+export async function mostra (stanza) {
+  const giro = async () => {
+    if (stanza.hidden) { clearInterval(timer); timer = null; return } // la stanza chiusa non si rilegge più
+    const [flussi, mappa] = await Promise.all([api('/api/flussi').catch(() => null), api('/api/flussi/mappa').catch(() => null)])
+    const firma = JSON.stringify([flussi, mappa])
+    if (flussi && firma !== ultimo) { ultimo = firma; disegna(stanza, flussi, mappa) }
+  }
+  ultimo = ''; await giro()
+  clearInterval(timer); timer = setInterval(giro, OGNI)
+}
