@@ -1,9 +1,9 @@
 {
-  "versione": "1.0.19",
-  "codice": 19,
-  "note": "",
-  "byte": 565014,
-  "sha256": "a6b98f5ab5beeca92f22356d7bfb3fc11153df300dc16645a0dc043ecb99d37f",
-  "quando": "2026-11-26T21:26:30.998Z",
-  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=19"
+  "versione": "1.0.20",
+  "codice": 20,
+  "note": "Il diario online non si perde più cambiando telefono, l'invito del trainer apre sempre l'app, puoi cancellare tutti i tuoi dati online da Io → Esci, nuovo consenso con l'informativa privacy.",
+  "byte": 569181,
+  "sha256": "3d16acd9410fc4a60a2175fa596afa2c1484a10530eee212d96747bf6fbec0ae",
+  "quando": "2026-11-26T23:19:00.376Z",
+  "apk": "https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit/MirionFit.apk?v=20"
 }
