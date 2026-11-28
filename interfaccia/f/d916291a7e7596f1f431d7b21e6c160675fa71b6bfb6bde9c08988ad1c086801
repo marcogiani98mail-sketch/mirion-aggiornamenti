@@ -1,0 +1,121 @@
+// Mirion Trainer sul telefono senza il computer (Marco, 26-11-2026 sera: «deve essere per forza collegato con il computer? non
+// può funzionare separatamente?» → «Sì, online da solo»). La web app su GitHub Pages (telefono/crea-trainer-web.mjs) parla con
+// Mirion Fit online (Supabase, /api/trainer) invece che con la Mirion del computer. Questo file fa da traduttore: risponde alle
+// stesse strade che la pagina usa con il computer (GET /api/clienti, GET /api/clienti/uno, POST /api/clienti) con i dati del
+// server, così trainer-telefono.js resta uno solo.
+// - La chiave: la dà la Mirion del trainer (stanza Clienti → «Sul telefono», azione «accesso-app» del server, solo con la licenza
+//   firmata da Marco). Sta nell'indirizzo (?o=…), perché su iPhone l'icona della schermata Home tiene l'indirizzo e non i dati di
+//   Safari; si tiene anche sul telefono. Con «a» c'è il codice che apre Mirion Fit ai clienti invitati da qui.
+// - Si vedono i clienti di Mirion Fit online che hanno dato il consenso a questo trainer: gli altri restano solo sul computer.
+// - GDPR: la chiave apre solo i clienti di questo trainer; Marco (il titolare) non li vede.
+export const CONFIG = 'https://marcogiani98mail-sketch.github.io/mirion-aggiornamenti/fit-online/config.json'
+const K = { chiave: 'mirion-trainer:chiave', a: 'mirion-trainer:a', api: 'mirion-trainer:api' }
+const API_BUONA = /^https:\/\/[^\s"'<>]{4,200}[^/]$/
+const CHIAVE = /^[A-Za-z0-9_-]{43}$/
+const leggiLS = k => { try { return localStorage.getItem(k) } catch { return null } }
+const scriviLS = (k, v) => { try { localStorage.setItem(k, v) } catch { /* resta nell'indirizzo */ } }
+
+// la chiave e il codice di Mirion Fit, dall'indirizzo (e da lì sul telefono)
+export function accesso (href = location.href) {
+  let u = null; try { u = new URL(href) } catch { }
+  const o = u?.searchParams.get('o'), a = u?.searchParams.get('a')
+  if (CHIAVE.test(o || '')) scriviLS(K.chiave, o)
+  if (/^[A-Za-z0-9._~-]{10,1500}$/.test(a || '')) scriviLS(K.a, a)
+  const chiave = CHIAVE.test(o || '') ? o : leggiLS(K.chiave)
+  return { chiave: CHIAVE.test(chiave || '') ? chiave : null, a: leggiLS(K.a) }
+}
+
+async function indirizzo (prendi) {
+  const c = leggiLS(K.api); if (API_BUONA.test(c || '')) return c
+  const r = await prendi(CONFIG, { cache: 'no-store' }).catch(() => null)
+  const d = r?.ok ? await r.json().catch(() => null) : null
+  if (!API_BUONA.test(d?.api || '')) throw new Error('Mirion Fit online non risponde: riprova fra poco.')
+  scriviLS(K.api, d.api); return d.api
+}
+
+// quello che la pagina usa del riepilogo di Mirion Fit (come allenaInBreve in server/clienti.mjs)
+function allenaInBreve (p) {
+  const pr = p?.prestazioni, ses = Array.isArray(p?.sessioni) ? p.sessioni : [], av = Array.isArray(p?.avvisi) ? p.avvisi : []
+  if (!pr && !ses.length && !av.length && !p?.percorso) return null
+  const deb = pr?.gruppi?.find?.(g => g.id === pr.debole)
+  return { punteggio: pr?.punteggio ?? null, costanza: pr?.costanza ?? null, sedute: pr?.sedute ?? null, debole: deb?.nome ?? null,
+    ultima: ses[0] ? { giorno: ses[0].giorno, seduta: ses[0].seduta ?? '', fatica: ses[0].fatica ?? null, fastidio: ses[0].fastidio ?? '', nota: String(ses[0].nota ?? '').slice(0, 140) } : null,
+    fastidi14: ses.filter(x => x.fastidio && (Date.now() - Date.parse(x.giorno + 'T12:00')) < 14 * 864e5).length,
+    avvisi: av.slice(-3), percorso: p?.percorso ? { titolo: p.percorso.titolo ?? '', oggi: p.percorso.oggi ?? null, fatti: p.percorso.fatti ?? 0, di: p.percorso.di ?? 0 } : null }
+}
+const FOTO = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/
+
+// un cliente del server → quello che la pagina conosce (come datiDi in server/clienti.mjs)
+export function cliente (o, tutto = false) {
+  const p = o.riepilogo && typeof o.riepilogo === 'object' ? o.riepilogo : null
+  const messaggi = Array.isArray(o.messaggi) ? o.messaggi : [], progressi = Array.isArray(o.progressi) ? o.progressi : []
+  const ultimo = messaggi.at(-1)
+  const foto = p?.persona?.foto
+  const base = { id: o.id, nome: o.nome || o.etichetta || 'Cliente', consenso: o.consenso, ultimo: o.ultimo ?? null, collegato: Boolean(p), online: true, tolto: Boolean(o.tolto), bloccato: o.bloccato ?? null,
+    ...(FOTO.test(foto || '') ? { faccia: foto } : {}), ...(o.scheda ? { scheda: o.scheda } : {}) }
+  if (tutto) return { ...base, piatto: p, checkin: [], messaggi: messaggi.slice(-200), progressi: progressi.slice().reverse() }
+  const giorni = p?.completo?.giorni ?? []
+  return { ...base, piatto: p ? { giorno: p.giorno, obiettivo: p.obiettivo, mangiato: p.mangiato, acqua: p.acqua, peso: p.peso, allenamento: p.allenamento, giorniDiFila: p.giorniDiFila, settimana: p.settimana,
+    allenati7: giorni.slice(-7).map(g => (g.allenamento?.esercizi ?? 0) > 0), pesi: (p.completo?.pesi ?? []).slice(-12), sonno: p.sonno ?? null, sonno7: p.sonno7 ?? null, scheda: p.scheda ?? null,
+    allena: allenaInBreve(p) } : null, checkin: [],
+    ultimoMessaggio: ultimo ? { da: ultimo.da, quando: ultimo.quando, tema: ultimo.tema ?? null, testo: String(ultimo.testo ?? '').slice(0, 160) } : null,
+    progressiDaCommentare: progressi.filter(x => !(x.commenti ?? []).length).length }
+}
+
+// il traduttore: api(url, corpo) con le stesse risposte della Mirion del computer
+export function creaOnline ({ prendi = fetch, qr = null, href } = {}) {
+  const { chiave, a } = accesso(href)
+  let ultimo = null, quando = 0, inCorso = null // l'ultima risposta del server (per la pagina di un cliente) e quando è arrivata
+  async function server (metodo, corpo) {
+    if (!chiave) throw Object.assign(new Error('Questo telefono non ha ancora l’accesso: sul computer apri Mirion → Clienti → «Sul telefono» e inquadra il QR.'), { accesso: true })
+    const base = await indirizzo(prendi)
+    const r = await prendi(base + '/api/trainer', { method: metodo, cache: 'no-store', headers: { authorization: 'Bearer ' + chiave, ...(corpo ? { 'content-type': 'application/json' } : {}) }, ...(corpo ? { body: JSON.stringify(corpo) } : {}) })
+    const d = await r.json().catch(() => ({ errore: 'risposta illeggibile' }))
+    if (r.status === 401) throw Object.assign(new Error('L’accesso di questo telefono è stato tolto o è scaduto: chiedine uno nuovo dal computer (Clienti → «Sul telefono»).'), { accesso: true })
+    if (!r.ok || d?.errore) throw new Error(d?.errore ?? `Mirion Fit online risponde ${r.status}`)
+    return d
+  }
+  // una lettura alla volta (28-11-2026, Marco: «Trainer molto più lenta che Fit»): il server legge i clienti uno per uno, quindi
+  // due richieste insieme (la vista e «Le mie schede») ne facevano due intere; adesso la seconda aspetta la prima
+  function tutti () {
+    inCorso ??= server('GET').then(d => { ultimo = d; quando = Date.now(); return d }).finally(() => { inCorso = null })
+    return inCorso
+  }
+  const recente = () => (ultimo && Date.now() - quando < 30_000 ? ultimo : null)
+  const trova = async id => { const d = ultimo ?? await tutti(); const o = (d.clienti ?? []).find(x => x.id === id && x.consenso && !x.tolto); if (!o) throw new Error('cliente sconosciuto'); return o }
+
+  return {
+    attivo: Boolean(chiave),
+    async api (url, corpo) {
+      if (corpo === undefined && url === '/api/clienti') {
+        const d = await tutti()
+        return { club: d.io?.nome ?? '', clienti: (d.clienti ?? []).filter(o => o.consenso && !o.tolto).map(o => cliente(o)), online: { acceso: true }, io: d.io }
+      }
+      if (corpo === undefined && url.startsWith('/api/clienti/uno')) {
+        const id = new URL(url, 'https://x/').searchParams.get('id') ?? ''
+        return cliente(await trova(id), true)
+      }
+      if (url !== '/api/clienti' || !corpo) throw new Error('non disponibile dal telefono')
+      if (corpo.azione === 'messaggio') { const r = await server('POST', { azione: 'messaggio', id: corpo.id, testo: corpo.testo }); const o = await trova(corpo.id).catch(() => null); if (o) o.messaggi = [...(o.messaggi ?? []), r.messaggio]; return r }
+      if (corpo.azione === 'scheda') { const r = await server('POST', { azione: 'scheda', id: corpo.id, scheda: corpo.scheda }); const o = await trova(corpo.id).catch(() => null); if (o) o.scheda = r.scheda; return r }
+      // «Le mie schede» del trainer (27-11): le stesse della Mirion sul computer, sul server per questo trainer
+      if (corpo.azione === 'mie-schede') {
+        if (Array.isArray(corpo.schede)) return server('POST', { azione: 'mie-schede', schede: corpo.schede })
+        const d = recente() ?? await tutti(); return d.mie ?? { schede: [], quando: null }
+      }
+      // l'accesso a Mirion Fit (28-11-2026): un cliente in pausa, o (solo il titolare) Mirion Fit chiusa a tutti
+      if (corpo.azione === 'blocca' || corpo.azione === 'sblocca') { const o = await trova(corpo.id); const r = await server('POST', { azione: corpo.azione === 'blocca' ? 'blocca-cliente' : 'sblocca-cliente', id: o.id }); o.bloccato = r.bloccato; ultimo = null; return r }
+      if (corpo.azione === 'fit-chiudi' || corpo.azione === 'fit-apri') { const r = await server('POST', { azione: 'fit-chiuso', chiuso: corpo.azione === 'fit-chiudi' }); ultimo = null; return r }
+      if (corpo.azione === 'commenta') { const r = await server('POST', { azione: 'commenta', id: corpo.id, progresso: corpo.progresso, testo: corpo.testo }); ultimo = null; return r }
+      if (corpo.azione === 'invita-online' || corpo.azione === 'invita') {
+        const r = await server('POST', { azione: 'invita', etichetta: corpo.etichetta ?? '' })
+        // il codice che apre Mirion Fit (la licenza del trainer), come fa la Mirion del computer
+        // il più fresco è quello che la Mirion del computer lascia sul server ogni giorno (vale 14 giorni); se no quello del QR
+        const codice = r.codiceApp || a
+        if (codice && r.link?.includes('?k=')) r.link += '&a=' + encodeURIComponent(codice)
+        return { ...r, url: r.link, online: true, qr: qr ? qr(r.link) : '' }
+      }
+      throw new Error('non disponibile dal telefono')
+    },
+  }
+}
