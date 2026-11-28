@@ -6,8 +6,8 @@
   "start_url": "./#/diario",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0f0a11",
-  "theme_color": "#0f0a11",
+  "background_color": "#15101f",
+  "theme_color": "#15101f",
   "icons": [
     {
       "src": "icona.png",

@@ -15,25 +15,26 @@
 <title>Mirion Trainer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="cruscotto.css">
-<link rel="stylesheet" href="trainer-telefono.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&display=swap">
+<link rel="stylesheet" href="cruscotto.css?v=201795827305">
+<link rel="stylesheet" href="trainer-telefono.css?v=201795827305">
+<link rel="stylesheet" href="trainer-movimento.css?v=201795827305">
 </head>
 <body data-stile="spazio">
 <header class="t-cima">
-  <button type="button" id="indietro" class="t-su" aria-label="Indietro" hidden>‹</button>
+  <button type="button" id="indietro" class="t-su" aria-label="Indietro" hidden><svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
   <img src="mirion-trainer.svg" alt="" width="30" height="30">
   <div><b>Mirion Trainer</b><small id="club">…</small></div>
   <button type="button" id="mio-fit" class="t-passa" title="Il tuo Mirion Fit: il tuo diario e i tuoi allenamenti">Il mio Fit</button>
-  <button type="button" id="aggiorna" class="t-tondo" aria-label="Aggiorna">↻</button>
+  <button type="button" id="aggiorna" class="t-tondo" aria-label="Aggiorna"><svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg></button>
 </header>
 <main id="vista" class="t-vista" aria-live="polite"><p class="t-vuoto">Leggo i clienti…</p></main>
 <nav class="t-barra" aria-label="Sezioni">
-  <a href="#oggi" data-v="oggi"><span aria-hidden="true">✦</span>Oggi</a>
-  <a href="#clienti" data-v="clienti"><span aria-hidden="true">◉</span>Clienti</a>
-  <a href="#squadra" data-v="squadra"><span aria-hidden="true">◎</span>Cerchio</a>
+  <a href="#oggi" data-v="oggi"><span aria-hidden="true"><svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>Oggi</a>
+  <a href="#clienti" data-v="clienti"><span aria-hidden="true"><svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M18 15c2 .5 3 2.5 3 5"/></svg></span>Clienti</a>
+  <a href="#squadra" data-v="squadra"><span aria-hidden="true"><svg class="t-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><path d="M12 8v4l3 2"/></svg></span>Cerchio</a>
 </nav>
-<script type="module" src="app.js?v=201795822699"></script>
+<script type="module" src="app.js?v=201795827305"></script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {})</script>
 </body>
 </html>
