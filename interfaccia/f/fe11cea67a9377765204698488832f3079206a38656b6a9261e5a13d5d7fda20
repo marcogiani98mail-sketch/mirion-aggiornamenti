@@ -1,0 +1,109 @@
+// La mappa del sistema, dentro la stanza Flussi (Marco, 27-11-2026: «la lavagna la voglio con i collegamenti… come la prima ma
+// stile Mirion», poi «trattale come delle card, tutta la pagina deve essere compatibile»): ogni corsia è una sezione come quelle
+// della scrivania (sezione-riquadri, con il suo colore e la sua icona), ogni cosa è una card (fascia), e i fili dicono cosa passa
+// da una all'altra. Un clic su una card accende i suoi fili e apre il dettaglio. I dati: GET /api/flussi/mappa.
+import { el } from './base.js'
+import { ic } from './icone.js'
+
+export const NOMI = { ok: 'funziona', attenzione: 'da guardare', rotto: 'fermo', daconfermare: 'da confermare' }
+// il colore e l'icona di ogni corsia, come le sezioni della scrivania; una corsia nuova prende il grigio
+const CORSIE = { pc: ['#8a6cef', 'desktop'], chiavi: ['#fbbf24', 'eye-slash'], github: ['#94a3b8', 'folder-simple'], online: ['#34d399', 'paper-plane-tilt'], claude: ['#fb923c', 'sparkle'], fuori: ['#38bdf8', 'users-three'] }
+let scelto = null, cerca = '', soloProblemi = false, tuttiFili = true, osserva = null
+
+export const stato = s => el('span', { class: 'flusso-stato ' + s }, el('i', { 'aria-hidden': 'true' }), NOMI[s] ?? s)
+export function sezione ({ nome, sopra = '', marchio = '', icona = 'squares-four', tinta = '#94a3b8' }, ...dentro) {
+  return el('section', { class: 'sezione-riquadri flussi-sezione', style: { '--tinta': tinta }, 'aria-label': nome },
+    el('header', { class: 'sezione-cima' }, el('span', { class: 'sezione-segno', 'aria-hidden': 'true' }, ic(icona)),
+      el('div', {}, marchio ? el('small', { class: 'sezione-marchio', testo: marchio }) : null, el('h2', { testo: nome })),
+      sopra ? el('span', { class: 'sopra piccolo', testo: sopra }) : null), ...dentro)
+}
+
+export function disegnaMappa (box, M) {
+  const nodo = Object.fromEntries(M.nodi.map(n => [n.id, n])), vicini = {}
+  M.fili.forEach(([a, b]) => { (vicini[a] ??= new Set()).add(b); (vicini[b] ??= new Set()).add(a) })
+  const fili = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); fili.setAttribute('class', 'mappa-fili'); fili.setAttribute('aria-hidden', 'true')
+  const scheda = el('aside', { class: 'fascia mappa-scheda', hidden: true, 'aria-live': 'polite' })
+  const corsie = el('div', { class: 'mappa-corsie' }, ...M.corsie.map(c => {
+    const [tinta, icona] = CORSIE[c.id] ?? ['#94a3b8', 'squares-four']
+    return sezione({ nome: c.nome, marchio: c.sotto, icona, tinta },
+      el('div', { class: 'mappa-nodi' }, ...M.nodi.filter(n => n.corsia === c.id).map(n => el('button', {
+        type: 'button', class: 'fascia mappa-nodo ' + n.stato, 'data-id': n.id, 'aria-label': `${n.nome}, ${NOMI[n.stato]}`, onclick: () => apri(scelto === n.id ? null : n.id)
+      }, el('div', { class: 'flusso-riga' }, el('small', { class: 'sezione-marchio', testo: M.tipi[n.tipo] || n.tipo }), stato(n.stato)),
+      el('b', { testo: n.nome }), el('small', { class: 'mappa-breve', testo: n.breve })))))
+  }))
+  const tela = el('div', { class: 'mappa-tela' }, fili, corsie)
+
+  function centro (id) {
+    const e = corsie.querySelector(`[data-id="${CSS.escape(id)}"]`); if (!e || e.hidden) return null
+    const r = e.getBoundingClientRect(), b = tela.getBoundingClientRect()
+    return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2, l: r.left - b.left, r: r.right - b.left }
+  }
+  // i fili: curve dal lato che guarda l'altra card; nella stessa colonna escono a destra e girano
+  function disegnaFili () {
+    let h = ''
+    for (const [a, b, cosa] of M.fili) {
+      const A = centro(a), B = centro(b), tocca = scelto && (a === scelto || b === scelto)
+      if (!A || !B || (!tuttiFili && !tocca)) continue
+      const stessa = Math.abs(A.x - B.x) < 40, avanti = B.x > A.x
+      const x1 = stessa || avanti ? A.r : A.l, x2 = stessa ? B.r : avanti ? B.l : B.r, piega = stessa ? 60 : Math.max(40, Math.abs(x2 - x1) / 2)
+      const c1 = stessa ? x1 + piega : x1 + (avanti ? piega : -piega), c2 = stessa ? x2 + piega : x2 - (avanti ? piega : -piega)
+      h += `<path d="M${x1},${A.y} C${c1},${A.y} ${c2},${B.y} ${x2},${B.y}" class="${tocca ? 'acceso' : scelto ? 'spento' : ''}"/>`
+      if (tocca) h += `<text x="${(x1 + x2) / 2 + (stessa ? piega * 0.75 : 0)}" y="${(A.y + B.y) / 2 - 5}" text-anchor="middle">${String(cosa).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</text>`
+    }
+    fili.innerHTML = h
+  }
+  function filtra () {
+    const q = cerca.trim().toLowerCase()
+    for (const e of corsie.querySelectorAll('.mappa-nodo')) {
+      const n = nodo[e.dataset.id], t = [n.nome, n.breve, n.dove, n.prova, ...n.dettagli].join(' ').toLowerCase()
+      e.hidden = (soloProblemi && n.stato === 'ok') || (q && !t.includes(q))
+      e.classList.toggle('scelto', n.id === scelto)
+      e.classList.toggle('lontano', Boolean(scelto) && n.id !== scelto && !vicini[scelto]?.has(n.id))
+    }
+    requestAnimationFrame(disegnaFili)
+  }
+  function apri (id) {
+    scelto = id
+    if (!id) { scheda.hidden = true; return filtra() }
+    const n = nodo[id], dom = M.domande.filter(d => d.nodo === id)
+    const legati = M.fili.filter(([a, b]) => a === id || b === id).map(([a, b, cosa]) => { const o = a === id ? b : a
+      return el('li', {}, a === id ? '→ ' : '← ', el('button', { type: 'button', class: 'mappa-link', onclick: () => apri(o), testo: nodo[o].nome }), el('small', { testo: ' ' + cosa })) })
+    const voce = (t, ...v) => [el('dt', { testo: t }), el('dd', {}, ...v)]
+    // una tendina piccola (Marco, 28-11: «scende proprio la tendina con due cose principali; se la voglio me la fai aprire»):
+    // a colpo d'occhio cos'è e dove sta; il resto (dettagli, cosa non torna, collegamenti, la prova) con «Apri tutto»
+    const altri = dom.length ? n.dettagli : n.dettagli.slice(1) // il primo dettaglio è già «In breve»
+    const resto = el('dl', { class: 'mappa-resto', hidden: true },
+      ...(altri.length ? voce('Dettagli', el('ul', {}, ...altri.map(d => el('li', { testo: d })))) : []),
+      ...(dom.length ? voce('Cosa non torna', el('ul', {}, ...dom.map(d => el('li', { testo: d.testo })))) : []),
+      ...voce('Collegata a', el('ul', {}, ...legati)), ...voce('La prova', el('code', { testo: n.prova })))
+    const apriTutto = el('button', { type: 'button', class: 'mappa-apri', 'aria-expanded': 'false', onclick: () => {
+      resto.hidden = !resto.hidden; apriTutto.setAttribute('aria-expanded', String(!resto.hidden))
+      apriTutto.replaceChildren(ic(resto.hidden ? 'caret-down' : 'caret-up'), resto.hidden ? 'Apri tutto' : 'Chiudi'); requestAnimationFrame(disegnaFili)
+    } }, ic('caret-down'), 'Apri tutto')
+    scheda.replaceChildren(el('button', { type: 'button', class: 'mappa-chiudi', 'aria-label': 'Chiudi', onclick: () => apri(null) }, ic('x')),
+      el('dl', { class: 'mappa-due' }, ...voce('Dove sta', n.dove), ...(dom.length ? voce('Da guardare', dom[0].testo) : voce('In breve', n.dettagli[0] ?? n.breve))),
+      apriTutto, resto)
+    // il dettaglio scende a tendina da sotto la card toccata (Marco, 28-11-2026: «deve scendere a tendina dalla cosa toccata»),
+    // non più dal lato destro: sta nella stessa colonna, subito sotto la card, e i fili si ridisegnano attorno
+    const card = corsie.querySelector(`[data-id="${CSS.escape(id)}"]`)
+    if (card) card.after(scheda); else tela.after(scheda)
+    scheda.hidden = false; scheda.classList.remove('scende'); void scheda.offsetWidth; scheda.classList.add('scende'); filtra()
+    card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }
+
+  const interruttore = (testo, get, set) => { const b = el('button', { type: 'button', 'aria-pressed': String(get()), testo, onclick: () => { set(!get()); b.setAttribute('aria-pressed', String(get())); filtra() } }); return b }
+  box.replaceChildren(
+    el('div', { class: 'flussi-cima' },
+      M.primo && el('button', { type: 'button', class: 'fascia mappa-primo', onclick: () => apri(M.primo.nodo) },
+        el('small', { class: 'sezione-marchio', testo: 'Il passo di adesso' }), el('span', { testo: M.primo.testo })),
+      el('div', { class: 'fascia mappa-comandi' },
+        el('input', { type: 'search', placeholder: 'Cerca: token, Netlify, Sava, 0.1.58…', 'aria-label': 'Cerca nella mappa', value: cerca, oninput: e => { cerca = e.target.value; filtra() } }),
+        el('div', { class: 'per-persona', role: 'group', 'aria-label': 'Cosa si vede' }, interruttore('Solo i problemi', () => soloProblemi, v => { soloProblemi = v }), interruttore('Tutti i fili', () => tuttiFili, v => { tuttiFili = v })),
+        el('p', { class: 'mappa-legenda' }, ...Object.keys(NOMI).map(k => el('span', {}, stato(k), ` ${M.nodi.filter(n => n.stato === k).length}`)),
+          M.aggiornato && el('span', { class: 'sopra piccolo', testo: 'aggiornata il ' + M.aggiornato })))),
+    M.domande.length > 0 && sezione({ nome: 'Cosa non torna', marchio: `${M.domande.length} cose`, icona: 'warning', tinta: '#ffb648' },
+      el('div', { class: 'mappa-domande' }, ...M.domande.map(d => el('button', { type: 'button', class: 'fascia mappa-domanda', onclick: () => apri(d.nodo) }, stato(nodo[d.nodo].stato), el('span', { testo: d.testo }))))),
+    tela, scheda)
+  osserva?.disconnect(); osserva = new ResizeObserver(() => requestAnimationFrame(disegnaFili)); osserva.observe(tela)
+  if (scelto && nodo[scelto]) apri(scelto); else { scelto = null; filtra() }
+}
