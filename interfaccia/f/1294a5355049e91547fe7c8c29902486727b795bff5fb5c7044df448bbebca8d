@@ -1,0 +1,290 @@
+// Il movimento di Mirion Trainer (28-11-2026, Marco: «anima tutta l'app bene con tecniche forti e rilassanti»), lo stesso di Mirion
+// Fit (public/movimento.js nel progetto di Fit: tenerli uguali, cambiano solo CONF e le tendine in fondo). Prima le animazioni
+// erano spente (trainer-telefono.css: «leva tutte le animazioni»); ora tornano, curate e calme, da qui e da trainer-movimento.css:
+//   - al cambio pagina i pezzi entrano a cascata (dissolvenza, salita di 10 px, un filo di sfocatura che si toglie, 45 ms fra un
+//     pezzo e l'altro); fra le pagine della barra in basso una dissolvenza incrociata (View Transitions, dove c'è);
+//   - i numeri contano fino al valore, solo alla prima vista o quando cambiano; barre, archi e quadratini si riempiono dal fondo;
+//   - le tendine (i giorni dei check) si aprono con una molla leggera; l'avviso in basso sale piano;
+//   - un solo pezzo per pagina respira piano (l'arco del cerchio, o l'icona della cosa più urgente).
+// Solo transform/opacity/filter, niente che blocchi i tocchi o sposti la pagina. Con «riduci movimento» resta tutto fermo.
+// Il disegno resta di trainer-telefono.js: qui si guarda #vista e si anima quello che c'è.
+
+const CONF = {
+  schermo: '#vista',
+  foglio: null, // in Trainer non c'è il foglio che sale: ci sono le tendine (tendine() in fondo)
+  barra: '.t-barra a[href]',
+  // i pezzi che entrano a cascata, in ordine dall'alto
+  pezzi: '#vista > :not(.t-unica), #vista .t-unica > .t-pezzo > *, #vista .t-unica > :not(.t-pezzo)',
+  carte: '#vista > section.t-carta',
+  numeri: '.cr-tile b, .cr-mezzo-dentro b, .cr-tre b, .t-cifra b',
+  barre: '.cr-barra i',
+  colonne: '.cr-barre > div > i',
+  quadratini: '.cr-traccia i',
+  archi: '.cr-mezzo-pieno',
+  barreDopo: '.t-classifica i', // la barra è il suo ::after
+  respiro: ['.cr-mezzo', '.t-guarda li.urgente .t-icona', '.t-primario'],
+  rotta: () => (location.hash || '#oggi').split('?')[0],
+}
+
+const ridotto = matchMedia('(prefers-reduced-motion: reduce)')
+const ENTRA = 'cubic-bezier(.22,1,.36,1)'
+const ESCE = 'cubic-bezier(.4,0,.9,.6)'
+// la molla leggera (un rimbalzo del 4% circa), scritta come curva linear() dove il browser la capisce
+const MOLLA = (() => {
+  try { if (!CSS.supports('animation-timing-function', 'linear(0, 1)')) return 'cubic-bezier(.3,1.25,.5,1)' } catch { return 'cubic-bezier(.3,1.25,.5,1)' }
+  const z = 0.72, w = 11, wd = w * Math.sqrt(1 - z * z), p = []
+  for (let i = 0; i <= 40; i++) { const t = i / 40; p.push(i === 40 ? 1 : 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t))) }
+  return `linear(${p.map((v) => v.toFixed(4)).join(', ')})`
+})()
+document.documentElement.style.setProperty('--molla', MOLLA)
+document.documentElement.classList.add('mv')
+
+const $ = (s, d = document) => d.querySelector(s)
+const $$ = (s, d = document) => [...d.querySelectorAll(s)]
+const anima = (el, k, o) => { try { return el.animate(k, o) } catch { return null } }
+const visibile = (r) => r.height > 0 && r.bottom > -40 && r.top < innerHeight + 40
+
+// ——— i numeri che contano ———
+// «1.358», «1,5», «520», «72,4»: si conta solo quello che si legge bene; il resto del testo (unità) resta
+function leggiNumero (t) {
+  const m = /^(\s*[+-]?)(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d+))?(\D*)$/.exec(t)
+  if (!m) return null
+  return { prima: m[1], v: Number(m[2].replace(/\./g, '') + (m[3] ? '.' + m[3] : '')), dec: m[3]?.length || 0, punti: m[2].includes('.'), dopo: m[4] }
+}
+function scriviNumero (n, f) {
+  const s = Math.abs(n).toFixed(f.dec).split('.')
+  const int = f.punti ? s[0].replace(/\B(?=(\d{3})+$)/g, '.') : s[0]
+  return f.prima + (n < 0 ? '-' : '') + int + (s[1] ? ',' + s[1] : '') + f.dopo
+}
+let conteggi = []
+let giro = 0
+function conta (el, da, f, ritardo = 0, durata = 780) {
+  const fine = el.textContent
+  conteggi = conteggi.filter((c) => c.el !== el)
+  conteggi.push({ el, da, a: f.v, f, fine, t0: performance.now() + ritardo, durata })
+  el.textContent = scriviNumero(da, f)
+  if (!giro) giro = requestAnimationFrame(passo)
+}
+function passo (ora) {
+  conteggi = conteggi.filter((c) => {
+    if (!c.el.isConnected) return false
+    const t = Math.min(1, Math.max(0, (ora - c.t0) / c.durata))
+    if (t >= 1) { c.el.textContent = c.fine; return false }
+    const e = 1 - Math.pow(1 - t, 3)
+    c.el.textContent = scriviNumero(c.da + (c.a - c.da) * e, c.f)
+    return true
+  })
+  giro = conteggi.length ? requestAnimationFrame(passo) : 0
+  occupato(conteggi.length > 0)
+}
+// mentre i numeri contano, chi legge lo schermo a voce aspetta il valore finale
+function occupato (si) { const s = $(CONF.schermo); if (s) si ? s.setAttribute('aria-busy', 'true') : s.removeAttribute('aria-busy') }
+
+// ——— la memoria della pagina di prima: i numeri e le barre, per animare solo quello che cambia ———
+let memoria = { rotta: null, numeri: [], barre: [], archi: [] }
+const larghezza = (i) => parseFloat(i.style.width) || 0
+function ricorda (rotta) {
+  const s = $(CONF.schermo)
+  memoria = {
+    rotta,
+    numeri: $$(CONF.numeri, s).map((b) => conteggi.find((c) => c.el === b)?.fine ?? b.textContent), // il valore vero, non quello a metà conteggio
+    barre: $$(CONF.barre, s).map(larghezza),
+    archi: $$(CONF.archi, s).map((a) => a.getAttribute('stroke-dasharray')),
+  }
+}
+
+// ——— la scena nuova: cascata, conteggi da zero, riempimenti ———
+let inizioScena = 0
+function scena (avanti = 0) {
+  const s = $(CONF.schermo); if (!s) return
+  if (ridotto.matches) { anima(s, [{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: 'linear' }); return }
+  const tempo = (a) => { if (a && avanti) a.currentTime = avanti; return a }
+  // la card grande: appare appena più piccola e si posa
+  for (const c of $$(CONF.carte)) if (visibile(c.getBoundingClientRect())) tempo(anima(c, [{ opacity: 0.35, scale: '.985' }, { opacity: 1, scale: '1' }], { duration: 360, easing: ENTRA, fill: 'backwards' }))
+  // i pezzi, dall'alto in basso; quelli sotto la piega ci sono già quando ci arrivi
+  const pezzi = [...new Set($$(CONF.pezzi))].map((e) => [e, e.getBoundingClientRect()]).filter(([, r]) => visibile(r))
+    .sort((a, b) => a[1].top - b[1].top || a[1].left - b[1].left)
+  pezzi.forEach(([e], i) => tempo(anima(e, [
+    { opacity: 0, translate: '0 10px', filter: 'blur(3px)' },
+    { opacity: 1, translate: '0 0', filter: 'blur(0)' },
+  ], { duration: 480, delay: Math.min(i, 9) * 45, easing: ENTRA, fill: 'backwards' })))
+  // dove sta ogni pezzo nella cascata, per far partire i suoi numeri e le sue barre insieme a lui
+  const ritardoDi = (el) => { const i = pezzi.findIndex(([p]) => p.contains(el)); return Math.min(Math.max(i, 0), 9) * 45 + 120 }
+  for (const b of $$(CONF.numeri, s)) {
+    const f = leggiNumero(b.textContent); if (!f || !f.v || !visibile(b.getBoundingClientRect())) continue
+    conta(b, 0, f, Math.max(0, ritardoDi(b) - avanti))
+  }
+  riempi(s, null, ritardoDi, tempo)
+  for (const q of $$(CONF.quadratini, s).filter((x) => x.parentElement && visibile(x.parentElement.getBoundingClientRect()))) {
+    const fila = [...q.parentElement.children], j = fila.indexOf(q), r = ritardoDi(q) + j * Math.min(18, 540 / fila.length)
+    tempo(anima(q, [{ opacity: 0, scale: '.4' }, { opacity: 1, scale: '1' }], { duration: 360, delay: r, easing: MOLLA, fill: 'backwards' }))
+  }
+  respira(true)
+}
+
+// barre, colonne della settimana e archi che si riempiono; prima = i valori di prima (null: da zero)
+function riempi (s, prima, ritardoDi, tempo = (a) => a) {
+  $$(CONF.barre, s).forEach((i, n) => {
+    const ora = larghezza(i), da = prima ? prima[n] : 0
+    if (!ora || da === ora || da == null || !visibile(i.getBoundingClientRect())) return
+    tempo(anima(i, [{ scale: `${Math.min(da / ora, 4)} 1` }, { scale: '1 1' }], { duration: 720, delay: prima ? 0 : ritardoDi(i), easing: ENTRA, fill: 'backwards' }))
+  })
+  if (CONF.barreDopo) $$(CONF.barreDopo, s).forEach((i) => {
+    if (prima || !visibile(i.getBoundingClientRect())) return
+    tempo(anima(i, [{ scale: '0 1' }, { scale: '1 1' }], { duration: 720, delay: ritardoDi(i), easing: ENTRA, fill: 'backwards', pseudoElement: '::after' }))
+  })
+  if (prima) return
+  for (const col of $$(CONF.colonne, s)) {
+    if (!visibile(col.getBoundingClientRect())) continue
+    const fila = [...col.parentElement.parentElement.children], j = fila.indexOf(col.parentElement)
+    tempo(anima(col, [{ scale: '1 0' }, { scale: '1 1' }], { duration: 640, delay: ritardoDi(col) + j * 40, easing: ENTRA, fill: 'backwards' }))
+  }
+  for (const a of $$(CONF.archi, s)) {
+    const p = a.getAttribute('stroke-dasharray'); if (!p || !visibile(a.getBoundingClientRect())) continue
+    tempo(anima(a, [{ strokeDasharray: '0 100', opacity: 0 }, { opacity: 1, offset: 0.12 }, { strokeDasharray: p, opacity: 1 }], { duration: 900, delay: ritardoDi(a), easing: ENTRA, fill: 'backwards' }))
+  }
+}
+
+// la stessa pagina ridisegnata (un tocco, i dati che arrivano): si muove solo quello che è cambiato
+function aggiorna () {
+  const s = $(CONF.schermo); if (!s) return
+  if (!ridotto.matches) {
+    $$(CONF.numeri, s).forEach((b, n) => {
+      const prima = memoria.numeri[n]; if (prima == null || prima === b.textContent) return
+      const f = leggiNumero(b.textContent), g = leggiNumero(prima)
+      if (f && g && f.dec === g.dec && f.dopo === g.dopo) conta(b, g.v, f, 0, 650)
+    })
+    riempi(s, memoria.barre, () => 0)
+    // l'arco che cambia scorre dal valore di prima
+    $$(CONF.archi, s).forEach((a, n) => {
+      const ora = a.getAttribute('stroke-dasharray'), prima = memoria.archi[n]
+      if (ora && prima && ora !== prima) anima(a, [{ strokeDasharray: prima }, { strokeDasharray: ora }], { duration: 700, easing: ENTRA })
+    })
+  }
+  respira(false)
+}
+
+// ——— il respiro: un solo pezzo per pagina, lentissimo ———
+let respiro = null
+function respira (nuova) {
+  const vecchio = respiro; respiro = null
+  if (ridotto.matches) return
+  const el = CONF.respiro.map((q) => $(`${CONF.schermo} ${q}`)).find(Boolean); if (!el) return
+  const a = anima(el, [{ scale: '1' }, { scale: '1.02' }], { duration: 5200, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out', delay: nuova ? 900 : 0 })
+  // ridisegnata la stessa pagina, il respiro continua da dov'era: niente scatti
+  if (a && !nuova && vecchio?.startTime != null) a.startTime = vecchio.startTime
+  respiro = a
+}
+
+// ——— chi guarda #schermo ———
+function cambiato () {
+  const rotta = CONF.rotta(), ora = performance.now()
+  if (rotta !== memoria.rotta) { inizioScena = ora; scena() }
+  // la pagina ridisegnata mentre entrava (i dati arrivati subito dopo): la cascata continua da dov'era, sui pezzi nuovi
+  else if (ora - inizioScena < 900) scena(ora - inizioScena)
+  else aggiorna()
+  ricorda(rotta)
+}
+function guarda () {
+  const s = $(CONF.schermo); if (!s) return
+  new MutationObserver(cambiato).observe(s, { childList: true })
+  cambiato()
+}
+
+// ——— il foglio: sale con la molla, il velo si scurisce; si chiude più in fretta ———
+function foglio () {
+  const d = CONF.foglio && $(CONF.foglio); if (!d) return
+  const largo = matchMedia('(min-width: 640px)')
+  let aperto = d.open
+  new MutationObserver(() => {
+    if (d.open === aperto) return
+    aperto = d.open
+    if (!aperto) return
+    if (ridotto.matches) { anima(d, [{ opacity: 0 }, { opacity: 1 }], { duration: 120 }); return }
+    if (largo.matches) anima(d, [{ opacity: 0, scale: '.96', translate: '0 12px' }, { opacity: 1, scale: '1', translate: '0 0' }], { duration: 420, easing: MOLLA })
+    else anima(d, [{ translate: '0 100%' }, { translate: '0 0' }], { duration: 520, easing: MOLLA })
+  }).observe(d, { attributes: true, attributeFilter: ['open'] })
+  // la chiusura: il foglio si chiude subito per davvero (app.js conta su questo), e una sua copia ferma scende e sparisce
+  const chiudi = d.close.bind(d)
+  d.close = (...x) => { const f = d.open ? fantasma(d, largo.matches) : null; chiudi(...x); if (f) queueMicrotask(() => { if (!d.open) f() }); }
+  d.addEventListener('cancel', () => { const f = fantasma(d, largo.matches); setTimeout(() => { if (!d.open) f() }, 0) })
+}
+function fantasma (d, largo) {
+  const r = d.getBoundingClientRect(), cs = getComputedStyle(d)
+  let velo = 'rgb(0 0 0 / 45%)'; try { velo = getComputedStyle(d, '::backdrop').backgroundColor || velo } catch { /* niente */ }
+  const corpo = d.querySelector('.corpo'), su = corpo?.scrollTop || 0
+  return () => {
+    const v = document.createElement('div'); v.className = 'mv-velo'; v.style.background = velo
+    if (ridotto.matches) { document.body.append(v); anima(v, [{ opacity: 1 }, { opacity: 0 }], { duration: 120 })?.finished.finally(() => v.remove()); return }
+    const g = document.createElement('div'); g.className = `${d.className} mv-fantasma`; g.setAttribute('aria-hidden', 'true'); g.inert = true
+    for (const n of d.childNodes) g.append(n.cloneNode(true))
+    for (const x of g.querySelectorAll('[id]')) x.removeAttribute('id')
+    for (const x of g.querySelectorAll('video, canvas, iframe')) x.remove()
+    Object.assign(g.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', background: cs.background, backgroundColor: cs.backgroundColor, borderRadius: cs.borderRadius, boxShadow: cs.boxShadow, border: cs.border, color: cs.color, padding: cs.padding })
+    document.body.append(v, g)
+    const gc = g.querySelector('.corpo'); if (gc) gc.scrollTop = su
+    anima(v, [{ opacity: 1 }, { opacity: 0 }], { duration: 260, easing: 'ease-out', fill: 'forwards' })?.finished.finally(() => v.remove())
+    const k = largo ? [{ opacity: 1, scale: '1' }, { opacity: 0, scale: '.97' }] : [{ translate: '0 0' }, { translate: `0 ${Math.round(r.height + 24)}px` }]
+    const a = anima(g, k, { duration: largo ? 200 : 280, easing: ESCE, fill: 'forwards' })
+    if (a) a.finished.finally(() => g.remove()); else g.remove()
+  }
+}
+
+// ——— fra le pagine della barra in basso: dissolvenza incrociata (View Transitions), e la scheda accesa che scivola ———
+function barra () {
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest(CONF.barra)
+    if (!a || !document.startViewTransition || ridotto.matches || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey) return
+    const h = a.getAttribute('href'); if (!h?.startsWith('#') || h === location.hash) return
+    e.preventDefault()
+    const html = document.documentElement
+    html.classList.add('mv-vt')
+    try {
+      const t = document.startViewTransition(() => new Promise((ok) => {
+        const s = $(CONF.schermo), m = new MutationObserver(() => { m.disconnect(); setTimeout(ok, 0) })
+        if (s) m.observe(s, { childList: true })
+        setTimeout(() => { m.disconnect(); ok() }, 260) // la pagina che tarda non tiene ferma la vista
+        location.hash = h
+      }))
+      t.finished.finally(() => html.classList.remove('mv-vt'))
+    } catch { html.classList.remove('mv-vt'); location.hash = h }
+  }, true)
+}
+
+// ——— le tendine: un <details> che si apre fa scendere il suo contenuto con una molla leggera; si chiude subito ———
+function tendine () {
+  document.addEventListener('toggle', (e) => {
+    const d = e.target
+    if (!(d instanceof HTMLDetailsElement) || !d.open || !d.closest(CONF.schermo)) return
+    const dentro = [...d.children].filter((x) => x.tagName !== 'SUMMARY')
+    if (ridotto.matches) { for (const x of dentro) anima(x, [{ opacity: 0 }, { opacity: 1 }], { duration: 120 }); return }
+    dentro.forEach((x, i) => anima(x, [{ opacity: 0, translate: '0 -8px' }, { opacity: 1, translate: '0 0' }], { duration: 460, delay: Math.min(i, 6) * 40, easing: MOLLA, fill: 'backwards' }))
+  }, true)
+  // lo stesso per un pezzo che compare (hidden tolto: la scheda pronta scelta in Clienti), con i suoi pezzi a cascata
+  const s = $(CONF.schermo); if (!s) return
+  new MutationObserver((l) => {
+    for (const m of l) {
+      const x = m.target
+      if (m.oldValue === null || x.hidden || !(x instanceof HTMLElement)) continue
+      if (ridotto.matches) { anima(x, [{ opacity: 0 }, { opacity: 1 }], { duration: 120 }); continue }
+      anima(x, [{ opacity: 0, translate: '0 -10px' }, { opacity: 1, translate: '0 0' }], { duration: 480, easing: MOLLA });
+      [...x.children].slice(0, 8).forEach((y, i) => anima(y, [{ opacity: 0, translate: '0 -6px' }, { opacity: 1, translate: '0 0' }], { duration: 420, delay: 60 + i * 40, easing: ENTRA, fill: 'backwards' }))
+    }
+  }).observe(s, { subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true })
+}
+// ——— l'avviso in basso (dimmi, installa): sale con la molla e un velo di sfocatura che si toglie ———
+function avvisi () {
+  new MutationObserver((l) => {
+    for (const m of l) for (const n of m.addedNodes) {
+      if (!(n instanceof HTMLElement) || !n.classList.contains('t-avviso')) continue
+      if (ridotto.matches) anima(n, [{ opacity: 0 }, { opacity: 1 }], { duration: 120 })
+      else anima(n, [{ opacity: 0, translate: '0 18px', scale: '.98', filter: 'blur(3px)' }, { opacity: 1, translate: '0 0', scale: '1', filter: 'blur(0)' }], { duration: 480, easing: MOLLA })
+    }
+  }).observe(document.body, { childList: true })
+}
+
+guarda()
+foglio()
+barra()
+tendine()
+avvisi()

@@ -1,0 +1,21 @@
+{
+  "name": "Mirion Trainer",
+  "short_name": "Trainer",
+  "description": "I tuoi clienti di Mirion Fit dal telefono: quello da guardare oggi, il cerchio, le sedute, la chat e la scheda.",
+  "start_url": "/trainer.html#oggi",
+  "scope": "/trainer.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#15101f",
+  "theme_color": "#15101f",
+  "lang": "it",
+  "icons": [
+    { "src": "/icone/trainer-arrotondata-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icone/trainer-arrotondata-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icone/trainer-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icone/trainer-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icone/trainer-monocromatica-192.png", "sizes": "192x192", "type": "image/png", "purpose": "monochrome" },
+    { "src": "/icone/trainer-monocromatica-512.png", "sizes": "512x512", "type": "image/png", "purpose": "monochrome" },
+    { "src": "/mirion-trainer.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

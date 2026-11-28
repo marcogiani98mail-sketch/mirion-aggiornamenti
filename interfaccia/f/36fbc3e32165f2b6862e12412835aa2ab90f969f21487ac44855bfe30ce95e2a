@@ -1,0 +1,585 @@
+/* Mirion Trainer sul telefono (25-11-2026): lo stile Spazio di Mirion (stili.css) in piccolo. Il fondo quasi nero con le nebulose,
+   le stelle che scorrono (spazio.js, il canvas sotto tutto), le card di vetro scuro con il filo di luce in alto, i titoli in
+   Space Grotesk; tutto a portata di pollice, con la barra in basso. */
+:root {
+  color-scheme: dark;
+  --fondo: #05040b; --carta: #120f1c; --linea: #2a2440; --testo: #f3eefa; --testo-2: #c4bdd3; --tenue: #8d86a0;
+  --viola: #9d6bff; --lilla: #e2b8ff; --accento-2: #ff9a6b; --info: #4aa8ff; --bene: #87dea0; --presto: #f6bb66; --scaduto: #feb0a9;
+  --titoli: "Space Grotesk", Inter, system-ui, sans-serif; --corpo: Inter, "Segoe UI", system-ui, sans-serif;
+  --barra: 64px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { background: var(--fondo); }
+body {
+  margin: 0; min-height: 100vh; color: var(--testo); font: 15px/1.45 var(--corpo);
+  background:
+    radial-gradient(520px 380px at 100% -6%, color-mix(in oklch, var(--viola) 38%, transparent), transparent 70%),
+    radial-gradient(420px 360px at -10% 40%, color-mix(in oklch, var(--info) 22%, transparent), transparent 70%),
+    radial-gradient(520px 380px at 60% 110%, color-mix(in oklch, var(--accento-2) 18%, transparent), transparent 70%),
+    var(--fondo);
+  background-attachment: fixed;
+  padding: calc(env(safe-area-inset-top, 0px) + 64px) 0 calc(var(--barra) + env(safe-area-inset-bottom, 0px) + 16px);
+}
+canvas.spazio-stelle { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+a { color: inherit; text-decoration: none; }
+button, input, textarea { font: inherit; color: inherit; }
+
+.t-cima { position: fixed; z-index: 5; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: .7rem; padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px;
+  background: color-mix(in oklch, var(--fondo) 55%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid color-mix(in oklch, var(--lilla) 10%, transparent); }
+.t-cima div { flex: 1; display: grid; line-height: 1.15; }
+.t-cima b { font: 700 1.02rem var(--titoli); letter-spacing: .01em; }
+.t-cima small { color: var(--tenue); font-size: .78rem; }
+.t-tondo { width: 40px; height: 40px; border-radius: 50%; border: 1px solid color-mix(in oklch, var(--lilla) 18%, transparent); background: color-mix(in oklch, var(--carta) 60%, transparent); font-size: 1.1rem; display: grid; place-items: center; cursor: pointer; }
+
+.t-vista { padding: 8px 16px; display: grid; gap: 14px; max-width: 560px; margin: 0 auto; }
+.t-titolo { font: 700 1.9rem/1.1 var(--titoli); letter-spacing: -.03em; margin: 6px 0 0; }
+.t-sotto { margin: -6px 0 0; color: var(--testo-2); }
+.t-vuoto { color: var(--tenue); margin: .4rem 0; }
+.t-nota { color: var(--testo-2); font-size: .88rem; margin: .4rem 0; }
+.t-nota.forte { color: var(--testo); font-weight: 600; }
+
+/* le card: vetro scuro, il filo di luce in alto */
+.t-carta { border-radius: 20px; padding: 14px 14px 12px; border: 1px solid color-mix(in oklch, var(--lilla) 11%, transparent);
+  background:
+    linear-gradient(90deg, transparent 8%, color-mix(in oklch, var(--lilla) 60%, transparent), color-mix(in oklch, var(--accento-2) 50%, transparent), transparent 92%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, color-mix(in oklch, var(--carta) 62%, transparent), color-mix(in oklch, var(--fondo) 50%, transparent));
+  backdrop-filter: blur(1.5px); box-shadow: 0 18px 44px -24px #000; }
+.t-carta > header { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; margin-bottom: 8px; }
+.t-carta h2 { font: 600 1.02rem var(--titoli); margin: 0; }
+.t-carta > header small { color: var(--tenue); font-size: .76rem; text-align: right; }
+
+.t-cifre { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.t-cifra { border-radius: 16px; padding: 10px 8px; display: grid; gap: 2px; text-align: center; background: color-mix(in oklch, var(--carta) 50%, transparent); border: 1px solid color-mix(in oklch, var(--lilla) 9%, transparent); }
+.t-cifra b { font: 700 1.4rem var(--titoli); }
+.t-cifra span { font-size: .68rem; color: var(--tenue); line-height: 1.2; }
+.t-cifra.presto b { color: var(--presto); }
+
+ul.t-guarda, ul.t-righe, ul.t-sedute, ol.t-classifica { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.t-guarda li > a, .t-guarda .t-riga { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 14px; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.t-guarda li.urgente > a, .t-guarda li.urgente .t-riga { background: color-mix(in oklch, var(--presto) 11%, transparent); box-shadow: inset 3px 0 0 var(--presto); }
+.t-guarda small, .t-righe small, .t-sedute small { color: var(--tenue); font-size: .75rem; display: block; }
+.t-guarda b { display: block; font-weight: 600; }
+.t-guarda p { margin: 2px 0 0; color: var(--testo-2); font-size: .88rem; }
+.t-icona { font-size: 1.25rem; width: 30px; text-align: center; flex: none; }
+
+.t-righe li > a, .t-righe.semplici li { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.t-righe.semplici li { display: grid; gap: 2px; }
+.t-righe li > a > div { flex: 1; min-width: 0; }
+.t-faccia { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; font: 700 .85rem var(--titoli); object-fit: cover;
+  background: linear-gradient(140deg, color-mix(in oklch, var(--viola) 70%, transparent), color-mix(in oklch, var(--accento-2) 55%, transparent)); box-shadow: 0 0 0 1px color-mix(in oklch, var(--lilla) 25%, transparent); }
+.t-punti { font: 700 1rem var(--titoli); padding: 4px 9px; border-radius: 99px; background: color-mix(in oklch, var(--viola) 24%, transparent); }
+.t-punti.basso { background: color-mix(in oklch, var(--presto) 22%, transparent); color: var(--presto); }
+.t-pallino { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.t-pallino.vivo { background: var(--bene); box-shadow: 0 0 8px var(--bene); }
+.t-pallino.fermo { background: var(--tenue); }
+.t-cerca { width: 100%; height: 44px; border-radius: 14px; padding: 0 14px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--carta) 60%, transparent); }
+
+.t-media { display: grid; justify-items: center; gap: 2px; padding: 12px 0 4px; }
+.t-media b { font: 700 3.6rem/1 var(--titoli); background: linear-gradient(140deg, var(--lilla), var(--accento-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.t-media span { color: var(--testo-2); }
+.t-media em { color: var(--presto); font-style: normal; font-size: .85rem; }
+.t-classifica li > a { display: grid; grid-template-columns: 1fr 34px; grid-template-areas: "n b" "i i" "s s"; gap: 4px 8px; padding: 10px; border-radius: 14px; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.t-classifica span { grid-area: n; font-weight: 600; }
+.t-classifica b { grid-area: b; text-align: right; font-family: var(--titoli); }
+.t-classifica small { grid-area: s; color: var(--tenue); font-size: .75rem; }
+.t-classifica i { grid-area: i; height: 6px; border-radius: 6px; background: color-mix(in oklch, var(--testo) 8%, transparent); position: relative; overflow: hidden; }
+.t-classifica i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--pieno); border-radius: 6px; background: linear-gradient(90deg, var(--viola), var(--lilla)); }
+.t-classifica i.basso::after { background: linear-gradient(90deg, var(--accento-2), var(--presto)); }
+
+.t-indietro { color: var(--lilla); font-weight: 600; }
+.t-persona { display: flex; gap: 12px; align-items: center; }
+.t-persona .t-faccia { width: 56px; height: 56px; font-size: 1.1rem; }
+.t-persona h1 { font: 700 1.6rem/1.1 var(--titoli); margin: 0; letter-spacing: -.02em; }
+.t-persona small { color: var(--tenue); }
+
+svg.t-cerchio { display: block; width: 100%; max-width: 290px; margin: 0 auto; overflow: visible; }
+svg.t-cerchio path { stroke: none; }
+svg.t-cerchio .vuoto { fill: color-mix(in oklch, var(--testo) 9%, transparent); }
+svg.t-cerchio .pieno { fill: var(--viola); filter: drop-shadow(0 0 6px color-mix(in oklch, var(--viola) 60%, transparent)); }
+svg.t-cerchio .pieno.debole { fill: var(--presto); }
+svg.t-cerchio .nome { fill: var(--testo-2); font: 600 11px var(--corpo); }
+svg.t-cerchio .punti { fill: var(--testo); font: 700 30px var(--titoli); }
+svg.t-cerchio .sotto { fill: var(--tenue); font: 500 11px var(--corpo); }
+
+.t-sedute li { display: flex; gap: 10px; padding: 10px; border-radius: 14px; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.t-sedute li.fastidio { box-shadow: inset 3px 0 0 var(--presto); }
+.t-sedute p { margin: 2px 0 0; font-size: .9rem; }
+.t-sedute blockquote { margin: 4px 0 0; padding-left: 8px; border-left: 2px solid var(--linea); color: var(--testo-2); font-size: .86rem; }
+.t-fatica { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 700 .95rem var(--titoli); background: color-mix(in oklch, var(--viola) 22%, transparent); }
+.t-sedute li.fastidio .t-fatica { background: color-mix(in oklch, var(--presto) 24%, transparent); color: var(--presto); }
+
+.t-modulo { display: grid; gap: 8px; }
+.t-modulo input, .t-modulo select, .t-modulo textarea, .t-scrivi textarea { width: 100%; border-radius: 12px; padding: 10px 12px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--fondo) 60%, transparent); }
+.t-modulo input:focus, .t-modulo textarea:focus, .t-scrivi textarea:focus, .t-cerca:focus { outline: none; border-color: var(--viola); box-shadow: 0 0 0 3px color-mix(in oklch, var(--viola) 25%, transparent); }
+.t-bottoni { display: flex; justify-content: flex-end; }
+.t-primario { border: 0; border-radius: 14px; padding: 11px 16px; font-weight: 650; color: #fff; cursor: pointer;
+  background: linear-gradient(135deg, var(--viola), color-mix(in oklch, var(--viola) 60%, var(--accento-2))); box-shadow: 0 0 22px -6px var(--viola), inset 0 1px 0 rgb(255 255 255 / .25); }
+.t-primario.t-tondo { width: 44px; height: 44px; padding: 0; border-radius: 50%; flex: none; }
+
+.t-chat { display: grid; gap: 6px; max-height: 340px; overflow: auto; padding: 2px; }
+.t-bolla { max-width: 84%; padding: 8px 11px; border-radius: 16px; background: color-mix(in oklch, var(--testo) 7%, transparent); }
+.t-bolla.mia { justify-self: end; background: color-mix(in oklch, var(--viola) 34%, transparent); border-bottom-right-radius: 4px; }
+.t-bolla.sua { border-bottom-left-radius: 4px; }
+.t-bolla.dolore { box-shadow: inset 3px 0 0 var(--presto); }
+.t-bolla small { color: var(--presto); font-size: .72rem; display: block; }
+.t-bolla p { margin: 0; white-space: pre-wrap; }
+.t-bolla time { color: var(--tenue); font-size: .68rem; }
+.t-veloci { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: none; }
+.t-veloci button { flex: none; border-radius: 99px; padding: 6px 11px; font-size: .8rem; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 50%, transparent); cursor: pointer; }
+.t-scrivi { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+.t-scrivi textarea { resize: none; min-height: 44px; }
+
+.t-barra { position: fixed; z-index: 5; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); height: var(--barra); max-width: 520px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(3, 1fr); border-radius: 22px; padding: 6px;
+  background: color-mix(in oklch, var(--carta) 72%, transparent); backdrop-filter: blur(16px); border: 1px solid color-mix(in oklch, var(--lilla) 14%, transparent); box-shadow: 0 16px 40px -14px #000; }
+.t-barra a { display: grid; place-items: center; align-content: center; gap: 1px; border-radius: 16px; font-size: .74rem; color: var(--tenue); font-weight: 600; }
+.t-barra a span { font-size: 1.15rem; line-height: 1; }
+.t-barra a[aria-current="true"] { color: var(--testo); background: linear-gradient(160deg, color-mix(in oklch, var(--viola) 30%, transparent), color-mix(in oklch, var(--accento-2) 12%, transparent)); }
+
+.t-avviso { position: fixed; z-index: 9; left: 16px; right: 16px; bottom: calc(var(--barra) + env(safe-area-inset-bottom, 0px) + 24px); max-width: 520px; margin: 0 auto; padding: 12px 14px; border-radius: 14px;
+  background: color-mix(in oklch, var(--carta) 92%, transparent); border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); box-shadow: 0 16px 40px -14px #000; animation: sale .25s both; }
+@keyframes sale { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .t-avviso { animation: none; } }
+
+/* i progressi da commentare (26-11-2026) */
+.t-guarda li > div { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: color-mix(in oklch, var(--testo) 4%, transparent); }
+.t-guarda li.nuovo > div { box-shadow: inset 3px 0 0 var(--viola, #a78bfa); }
+.t-guarda li > div p { margin: 0; }
+.t-guarda li blockquote { margin: 0; padding-left: 8px; border-left: 2px solid color-mix(in oklch, var(--testo) 20%, transparent); opacity: .8; }
+.t-scrivi input { flex: 1; min-width: 0; min-height: 44px; border-radius: 12px; padding: 10px 12px; border: 1px solid var(--linea); background: color-mix(in oklch, var(--fondo) 60%, transparent); color: inherit; font: inherit; }
+.t-scrivi input:focus { outline: none; border-color: var(--viola); box-shadow: 0 0 0 3px color-mix(in oklch, var(--viola) 25%, transparent); }
+.t-bottoni { gap: 8px; }
+.t-bottoni button:not(.t-primario) { border-radius: 14px; padding: 10px 14px; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 50%, transparent); color: inherit; font: inherit; cursor: pointer; }
+
+/* il percorso del cliente (26-11): il nome della seduta sopra, gli esercizi sotto, senza sovrapporsi */
+.percorso-sedute { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .55rem; }
+.percorso-sedute li { display: flex !important; flex-direction: column; align-items: stretch; gap: .15rem; grid-template-columns: none; }
+.percorso-sedute li > b { font-weight: 650; }
+.percorso-sedute li > small { white-space: normal; line-height: 1.45; }
+.percorso-sedute li { text-align: left; }
+
+/* invita un cliente (26-11-2026): il QR su fondo chiaro, il link e il codice da copiare */
+.t-invito { display: grid; gap: 8px; }
+.t-largo { width: 100%; }
+.t-qr { background: #fff; border-radius: 16px; padding: 10px; width: min(240px, 100%); margin: 2px auto 4px; }
+.t-qr svg { display: block; width: 100%; height: auto; }
+.t-etichetta { color: var(--tenue); font-size: .74rem; }
+.t-codice { display: block; padding: 8px 10px; border-radius: 12px; background: color-mix(in oklch, var(--testo) 6%, transparent); font-size: .8rem; word-break: break-all; user-select: all; }
+.t-codice.grande { font-size: 1rem; letter-spacing: .04em; }
+.t-fila { flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+.t-fila button:not(.t-primario) { border-radius: 14px; padding: 10px 14px; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 50%, transparent); color: inherit; cursor: pointer; }
+
+/* il passaggio al tuo Mirion Fit (26-11-2026) */
+.t-passa { height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 60%, transparent); font: 600 .8rem var(--corpo); color: var(--testo); cursor: pointer; white-space: nowrap; }
+
+/* il cerchio a esagono con i muscoli e le fasce di colore, come su Mirion Fit (26-11-2026) */
+.t-esagono { margin: 0; }
+svg.t-cerchio .punti { font-size: 24px; }
+svg.t-cerchio .esa-sotto { fill: color-mix(in oklch, var(--lilla, #c9a8ff) 7%, transparent); stroke: none; }
+svg.t-cerchio .esa-pieno { stroke: rgb(5 4 11 / 35%); stroke-width: .6; }
+svg.t-cerchio .f1, .esa-legenda i.f1 { fill: #ff5d73; background: #ff5d73; }
+svg.t-cerchio .f2, .esa-legenda i.f2 { fill: #ff9a6b; background: #ff9a6b; }
+svg.t-cerchio .f3, .esa-legenda i.f3 { fill: #ffd36b; background: #ffd36b; }
+svg.t-cerchio .f4, .esa-legenda i.f4 { fill: #6be3a4; background: #6be3a4; }
+svg.t-cerchio .f5, .esa-legenda i.f5 { fill: #9d6bff; background: linear-gradient(90deg, #9d6bff, #c9a8ff); }
+svg.t-cerchio .esa-riga { fill: none; stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 22%, transparent); stroke-width: .7; stroke-dasharray: 2 3; }
+svg.t-cerchio .esa-riga.bordo { stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 45%, transparent); stroke-width: 1.2; stroke-dasharray: none; }
+svg.t-cerchio .esa-raggio { stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 35%, transparent); stroke-width: 1; }
+svg.t-cerchio .esa-taglio { stroke: rgb(5 4 11 / 55%); stroke-width: .8; }
+svg.t-cerchio .esa-linea { fill: color-mix(in oklch, #c9a8ff 10%, transparent); stroke: #f1ecff; stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgb(201 168 255 / 70%)); }
+svg.t-cerchio .esa-centro { fill: var(--carta, #120f1c); stroke: color-mix(in oklch, var(--lilla, #c9a8ff) 50%, transparent); stroke-width: 1.2; }
+svg.t-cerchio .esa-gruppo.debole .nome { fill: var(--presto, #ff9a6b); }
+.esa-legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin: 6px 0 0; font-size: 11px; color: var(--tenue); }
+.esa-legenda span { display: inline-flex; align-items: center; gap: 4px; }
+.esa-legenda i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+/* «Manda una scheda» a più clienti (27-11-2026) */
+.t-modulo[hidden] { display: none; }
+.t-spunta { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--linea); border-radius: 12px; }
+.t-spunta:has(input:checked) { border-color: var(--viola); background: color-mix(in oklch, var(--viola) 14%, transparent); }
+.t-spunta input { width: auto; margin: 0; }
+.t-spunta small { margin-left: auto; opacity: .7; }
+
+/* Personalizza (27-11-2026): le sfumature, i cursori dei colori, le card da spostare o nascondere; ↻ che gira mentre aggiorna */
+.t-cima a.t-tondo { display: grid; place-items: center; text-decoration: none; }
+.t-tondo.gira { animation: t-gira .8s linear infinite; }
+@keyframes t-gira { to { transform: rotate(360deg); } }
+.t-sfumature { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.t-sfumatura { display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border-radius: 12px; border: 1px solid transparent; background: none; cursor: pointer; font-size: .74rem; color: var(--testo-2); }
+.t-sfumatura i { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 1px color-mix(in oklch, var(--testo) 14%, transparent); }
+.t-sfumatura.sel { border-color: color-mix(in oklch, var(--lilla) 45%, transparent); color: var(--testo); background: color-mix(in oklch, var(--viola) 12%, transparent); }
+.t-cursori { display: grid; gap: 12px; margin-top: 10px; }
+.t-cursore { display: grid; gap: 4px; }
+.t-cursore > span { display: flex; justify-content: space-between; font-size: .86rem; color: var(--testo-2); }
+.t-cursore input[type=range] { width: 100%; accent-color: var(--viola); }
+.t-personalizza li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 0; }
+.t-personalizza li.spenta b { color: var(--tenue); text-decoration: line-through; }
+.t-personalizza .t-fila { display: flex; flex-wrap: nowrap; gap: 6px; }
+.t-tondo.piccolo { width: 34px; height: 34px; font-size: .9rem; }
+.t-tondo:disabled { opacity: .35; }
+.t-elenco { display: grid; gap: 10px; }
+
+/* i check (27-11-2026): l'ultimo in evidenza, gli altri per giorno */
+.t-check-ultimo { padding: 12px; border-radius: 16px; background: color-mix(in oklch, var(--viola) 14%, transparent); border: 1px solid color-mix(in oklch, var(--viola) 40%, transparent); display: grid; gap: 8px; }
+.t-check-ultimo > small { color: var(--testo-2, var(--testo)); font-weight: 600; }
+.t-check-valori { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.t-check-valori li { display: flex; justify-content: space-between; gap: 10px; font-size: .9rem; }
+.t-check-valori li.basso b { color: var(--presto); }
+.t-check-ultimo blockquote { margin: 0; font-size: .85rem; color: var(--tenue); }
+.t-check-giorno { margin-top: 8px; }
+.t-check-giorno summary { cursor: pointer; padding: 8px 2px; font-size: .9rem; font-weight: 600; }
+.t-check-giorno ul { margin-top: 4px; }
+
+/* la cornice come Mirion Fit (27-11-2026): il tasto ‹ in alto a sinistra e «Personalizza» in cima a Oggi e Clienti */
+.t-su { flex: none; width: 36px; height: 36px; margin-right: -4px; border-radius: 50%; border: 1px solid color-mix(in oklch, var(--lilla) 18%, transparent); background: color-mix(in oklch, var(--carta) 60%, transparent); color: var(--testo); font-size: 1.5rem; line-height: 1; display: grid; place-items: center; padding: 0 0 3px; cursor: pointer; }
+.t-su[hidden] { display: none; }
+.t-strumenti { display: flex; justify-content: flex-end; margin: -6px 0 12px; }
+.t-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1px solid color-mix(in oklch, var(--lilla) 22%, transparent); background: color-mix(in oklch, var(--carta) 60%, transparent); color: var(--testo); font-size: .85rem; font-weight: 600; text-decoration: none; }
+
+/* ——— Mirion Trainer premium (27-11-2026, come Mirion Fit: Marco «un feedback un po' più premium»).
+   Un solo bagliore caldo in cima, card morbide senza bordo con un velo di luce, numeri grandi, bottoni a pillola, barra più leggera.
+   I colori restano quelli di Personalizza: qui cambia solo la forma. ——— */
+:root { --velo: rgb(255 255 255 / .045); --velo-forte: rgb(255 255 255 / .08); --sfuma: linear-gradient(135deg, var(--viola), var(--accento-2)); }
+body {
+  background:
+    radial-gradient(130% 60% at 50% -12%, color-mix(in oklch, var(--viola) 34%, transparent), transparent 62%),
+    radial-gradient(90% 40% at 100% 0%, color-mix(in oklch, var(--accento-2) 20%, transparent), transparent 60%),
+    var(--fondo);
+  background-attachment: fixed; letter-spacing: -.005em;
+}
+.t-cima { border-bottom: 0; background: color-mix(in oklch, var(--fondo) 40%, transparent); }
+.t-cima > img { border-radius: 9px; box-shadow: 0 6px 18px -6px color-mix(in oklch, var(--viola) 70%, transparent); }
+.t-tondo, .t-passa, .t-su, .t-chip { border: 0 !important; background: var(--velo-forte) !important; }
+.t-vista { gap: 18px; padding: 8px 18px; }
+.t-titolo { font-size: 2.15rem; letter-spacing: -.04em; margin-top: 8px; }
+.t-sotto { color: var(--tenue); }
+
+.t-carta { border: 0; border-radius: 26px; padding: 20px;
+  background: linear-gradient(180deg, var(--velo-forte), rgb(255 255 255 / .012) 46%), color-mix(in oklch, var(--carta) var(--trasp, 62%), transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .07), 0 24px 48px -28px rgb(0 0 0 / .9);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); }
+.t-carta > header { margin-bottom: 12px; }
+.t-carta h2 { font: 650 1.08rem var(--titoli); letter-spacing: -.02em; }
+
+.t-cifre { gap: 10px; }
+.t-cifra { border: 0; border-radius: 20px; padding: 14px 6px; background: linear-gradient(180deg, var(--velo-forte), var(--velo)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .06); }
+.t-cifra b { font-size: 1.7rem; letter-spacing: -.03em; }
+
+.t-guarda li > a, .t-guarda .t-riga, .t-righe li > a, .t-righe.semplici li, .t-sedute li, .t-classifica li > a, .t-guarda li > div { border-radius: 18px; padding: 12px; background: var(--velo); }
+.t-guarda li.urgente > a, .t-guarda li.urgente .t-riga { box-shadow: none; background: linear-gradient(100deg, color-mix(in oklch, var(--presto) 18%, transparent), var(--velo) 70%); }
+.t-icona { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; background: var(--velo-forte); font-size: 1.05rem; }
+.t-faccia { box-shadow: 0 6px 16px -8px color-mix(in oklch, var(--viola) 80%, transparent); background: var(--sfuma); }
+.t-punti { background: var(--velo-forte); }
+
+.t-primario { border-radius: 99px; background: var(--sfuma); box-shadow: 0 10px 26px -10px color-mix(in oklch, var(--viola) 85%, transparent), inset 0 1px 0 rgb(255 255 255 / .3); }
+.t-bottoni button:not(.t-primario), .t-fila button:not(.t-primario), .t-veloci button { border: 0 !important; border-radius: 99px !important; background: var(--velo-forte) !important; }
+.t-modulo input, .t-modulo select, .t-modulo textarea, .t-scrivi textarea, .t-scrivi input, .t-cerca { border: 0 !important; border-radius: 16px; background: rgb(255 255 255 / .06) !important; }
+
+.t-barra { border: 0; border-radius: 28px; background: color-mix(in oklch, var(--carta) 88%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .07), 0 20px 44px -16px #000; -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); }
+.t-barra a { border-radius: 20px; font-weight: 500; }
+.t-barra a[aria-current="true"] { background: rgb(255 255 255 / .07); }
+.t-barra a[aria-current="true"] span { color: var(--accento-2); filter: drop-shadow(0 0 8px color-mix(in oklch, var(--accento-2) 60%, transparent)); }
+
+/* la riga «Installa» (27-11-2026, cornice.js proponiInstallazione) */
+.t-installa { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.t-installa span { flex: 1 1 180px; }
+
+/* ——— Le dashboard nuove (27-11-2026, Marco: «prendi le dashboard più clean gratuite e rivisitiamole per Mirion Fit e Trainer…
+   per ogni cosa»). Come in Mirion Fit (pezzi comuni in cruscotto.js e cruscotto.css): i numeri in riquadri con l'icona e
+   l'etichetta di stato, le liste a righe con le iniziali e lo stato a destra, la costanza a quadratini, il mezzo anello del
+   cerchio, le barre con valore e obiettivo. Le card restano; i colori sono quelli di Personalizza. ——— */
+:root { --cr-a: var(--viola); --cr-b: var(--accento-2); --cr-testo: var(--testo); --cr-tenue: var(--tenue); --cr-bene: var(--bene); --cr-presto: var(--presto); --cr-male: var(--scaduto); }
+.t-riquadri .cr-tile { background: linear-gradient(180deg, rgb(255 255 255 / .06), rgb(255 255 255 / .025)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .06); }
+/* le liste: righe divise da una linea sottile dentro la card, non più scatole una sotto l'altra */
+.t-carta ul.t-guarda, .t-carta ul.t-righe:not(.semplici) { gap: 0; }
+.t-carta .t-guarda li > a, .t-carta .t-righe:not(.semplici) li > a { background: none; border-radius: 0; padding: 11px 2px; align-items: center; }
+.t-carta .t-guarda li + li > a, .t-carta .t-righe:not(.semplici) li + li > a { border-top: 1px solid var(--cr-linea); }
+.t-carta .t-guarda li.urgente > a { background: none; box-shadow: none; }
+.t-guarda li > a > div { flex: 1; min-width: 0; }
+.t-guarda li > a .cr-pill { flex: none; align-self: center; }
+.t-guarda li > a .t-icona { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 1rem; background: rgb(255 255 255 / .06); }
+.t-guarda li.urgente > a .t-icona { background: color-mix(in oklch, var(--presto) 18%, transparent); }
+.t-guarda li > a b { font-size: .95rem; }
+.t-guarda li > a p { font-size: .84rem; }
+/* l'elenco dei clienti: la settimana a quadratini e il cerchio come etichetta */
+.t-elenco ul.t-clienti { gap: 0; border-radius: 20px; padding: 4px 12px; background: linear-gradient(180deg, color-mix(in oklch, var(--carta) 62%, transparent), color-mix(in oklch, var(--fondo) 50%, transparent)); }
+.t-elenco .t-clienti li > a { background: none; border-radius: 0; padding: 12px 0; }
+.t-elenco .t-clienti li + li > a { border-top: 1px solid var(--cr-linea); }
+.t-clienti .cr-traccia { width: 62px; flex: none; }
+/* la costanza dei clienti */
+ul.t-tracce { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 10px; }
+.t-tracce a { display: grid; grid-template-columns: minmax(0, 6.5rem) 1fr 24px; gap: 10px; align-items: center; font-size: .86rem; }
+.t-tracce a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-tracce a b { text-align: right; font-variant-numeric: tabular-nums; }
+.t-largo-dentro { display: grid; gap: 4px; }
+.t-largo-dentro .cr-barra-riga { margin-top: 4px; }
+.t-largo-dentro .cr-riga > span, .t-largo-dentro .cr-riga > b { font-size: .78rem; color: var(--tenue); }
+/* il mezzo anello del cerchio, il riassunto del cliente */
+.t-mezzo, .t-breve { display: grid; gap: 12px; }
+.t-centro { display: flex; justify-content: center; }
+.t-breve-sett { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: .82rem; color: var(--tenue); }
+.t-persona > div { flex: 1; min-width: 0; }
+/* la classifica: la barra con la sfumatura di Personalizza */
+.t-carta ol.t-classifica { gap: 0; }
+.t-carta .t-classifica li > a { background: none; border-radius: 0; padding: 11px 2px; }
+.t-carta .t-classifica li + li > a { border-top: 1px solid var(--cr-linea); }
+.t-classifica i::after { background: linear-gradient(90deg, var(--cr-a), var(--cr-b)); }
+.t-classifica i.basso::after { background: var(--presto); }
+
+/* niente animazioni (27-11-2026, Marco: «leva tutte le animazioni»): niente transizioni, niente cose che salgono, pulsano o girano */
+*, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+/* le icone di «Da guardare oggi» a tema (27-11-2026 notte): righe bianche su fondo sfumato, come i riquadri */
+.t-guarda li > a .t-icona.t-icona-tema, .t-icona.t-icona-tema { border-radius: 11px; color: #fff; background: linear-gradient(135deg, var(--cr-a), var(--cr-b)); }
+.t-guarda li.urgente > a .t-icona.t-icona-tema { background: linear-gradient(135deg, var(--cr-presto), color-mix(in oklch, var(--cr-presto) 60%, var(--cr-male))); }
+.t-icona-tema svg { width: 17px; height: 17px; }
+
+/* Ogni pagina in una card sola, come il Diario di Mirion Fit (27-11-2026 notte, unaCarta in trainer-telefono.js): i pezzi dentro
+   la card grande senza fondo né ombra, divisi da una riga sottile; il titolo di ogni pezzo con l'icona sfumata a tema */
+.t-unica { display: flex; flex-direction: column; gap: 0; }
+.t-unica > .t-pezzo { background: none; box-shadow: none; border: 0; border-radius: 0; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.t-unica > .t-pezzo + .t-pezzo { border-top: 1px solid var(--cr-linea); margin-top: 18px; padding-top: 18px; }
+.t-unica > .t-pezzo > header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.t-unica > .t-pezzo > header h2 { flex: 1; font-size: 1rem; }
+.t-pezzo-icona { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 9px; color: #fff; background: var(--sfuma, linear-gradient(135deg, var(--viola), var(--accento-2))); box-shadow: 0 6px 14px -8px color-mix(in oklch, var(--viola) 80%, transparent); }
+.t-pezzo-icona svg { width: 16px; height: 16px; }
+.t-unica .t-riquadri .cr-tile { background: rgb(255 255 255 / .04); box-shadow: none; }
+/* dentro la card sola anche le righe sono righe, non scatole (come i pasti del Diario) */
+.t-unica .t-righe.semplici, .t-unica .t-sedute, .t-unica .t-guarda { gap: 0; }
+.t-unica .t-righe.semplici li, .t-unica .t-sedute li, .t-unica .t-guarda .t-riga, .t-unica .t-guarda li > div, .t-unica .t-classifica li > a { background: none; border-radius: 0; padding: 11px 2px; box-shadow: none; }
+.t-unica .t-righe.semplici li + li, .t-unica .t-sedute li + li, .t-unica .t-guarda li + li > .t-riga, .t-unica .t-guarda li + li > div, .t-unica .t-classifica li + li > a { border-top: 1px solid var(--cr-linea); }
+/* la tastiera (seguiTastiera in cornice.js): la barra in basso si toglie finché scrivi, così non copre la casella */
+html.tastiera .t-barra { display: none; }
+html.tastiera .t-vista { padding-bottom: 16px; }
+/* niente scritte che dicono una mancanza (27-11-2026 notte, Marco: «fallo per tutte le scritte dove descrivi una mancanza») */
+.mancanza { display: none !important; }
+
+/* ——— Stile morbido, come Mirion Fit (28-11-2026, Marco: «implementa tutta la lista», «mettine meno ma curati») ———
+   Nunito, testo caldo, pochi colori vicini (lilla → rosa), griglia a 8, luce dall'alto, ombre colorate, grana leggera, risposta al tocco */
+:root {
+  --titoli: "Nunito", system-ui, sans-serif; --corpo: "Nunito Sans", system-ui, sans-serif;
+  --fondo: #0d0912; --testo: #f5eeea; --testo-2: #c9bfc6; --tenue: #948a97;
+  --viola: #a87cf0; --lilla: #d9c2ff; --accento-2: #f08fb8; --info: #a87cf0;
+  --bene: #8fd6b4; --presto: #f3c08f; --scaduto: #f3a9a0;
+}
+body, button, input, select, textarea { font-family: var(--corpo); }
+h1, h2, h3, b, strong { font-family: var(--titoli); }
+.t-titolo { font-weight: 700; letter-spacing: -.01em; }
+.t-carta h2 { font: 700 1.1rem var(--titoli); }
+.t-cifra b { font-weight: 600; letter-spacing: 0; }
+.t-carta { border-radius: 28px; padding: 24px;
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgb(190 150 255 / .09), transparent 70%),
+    linear-gradient(180deg, rgb(255 255 255 / .05), rgb(255 255 255 / .01) 46%),
+    color-mix(in oklch, var(--carta) 66%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .09), 0 32px 64px -32px color-mix(in oklch, var(--viola) 45%, transparent); }
+.cr-mezzo-fondo { stroke: rgb(255 255 255 / .06); }
+body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+button, .btn, a.t-bottone { transition: transform .15s ease, background-color .15s ease, opacity .15s ease !important; }
+button:active:not(:disabled), .btn:active { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { button, .btn { transition: none !important; } button:active, .btn:active { transform: none; } }
+
+/* ——— (28-11) Sfumature ovunque (Marco: «il colore mettilo sfumato con colori sensati ovunque») ———
+   Niente più tinte piatte: ogni pallino, quadratino, barra, chip ed etichetta ha la sua sfumatura, sempre dagli stessi colori
+   (quelli di Personalizza, così le sfumature seguono la scelta). Lilla → rosa per «fatto/allenato», pesca → ambra caldo e luminoso
+   per «a metà/solo il diario», menta → acqua per «bene», corallo morbido per «male», vetro per «niente». cruscotto.css resta
+   uguale a quello di Mirion Fit: qui lo si copre solo per il Trainer. */
+:root {
+  --sf-si: linear-gradient(135deg, var(--viola), var(--accento-2));
+  --sf-meta: linear-gradient(135deg, color-mix(in oklch, var(--presto) 55%, #fff4e6), var(--presto) 55%, color-mix(in oklch, var(--presto) 72%, var(--accento-2)));
+  --sf-bene: linear-gradient(135deg, color-mix(in oklch, var(--bene) 60%, #f2fff8), var(--bene) 55%, color-mix(in oklch, var(--bene) 70%, #8fcde0));
+  --sf-male: linear-gradient(135deg, color-mix(in oklch, var(--scaduto) 60%, #fff0ec), var(--scaduto) 55%, color-mix(in oklch, var(--scaduto) 70%, var(--accento-2)));
+  --sf-vetro: linear-gradient(160deg, rgb(255 255 255 / .11), rgb(255 255 255 / .035));
+  --sf-vetro-forte: linear-gradient(160deg, rgb(255 255 255 / .14), rgb(255 255 255 / .06));
+  --sf-filo: inset 0 1px 0 rgb(255 255 255 / .09);
+  /* le tinte leggere, per i fondi delle etichette */
+  --sf-si-tenue: linear-gradient(135deg, color-mix(in oklch, var(--viola) 30%, transparent), color-mix(in oklch, var(--accento-2) 20%, transparent));
+  --sf-meta-tenue: linear-gradient(135deg, color-mix(in oklch, var(--presto) 28%, transparent), color-mix(in oklch, var(--presto) 12%, transparent));
+  --sf-bene-tenue: linear-gradient(135deg, color-mix(in oklch, var(--bene) 26%, transparent), color-mix(in oklch, var(--bene) 10%, transparent));
+  --sf-male-tenue: linear-gradient(135deg, color-mix(in oklch, var(--scaduto) 26%, transparent), color-mix(in oklch, var(--scaduto) 10%, transparent));
+}
+
+/* la costanza: i quadratini e la legenda */
+.cr-traccia i, .cr-legenda i { background: var(--sf-vetro); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .05); }
+.cr-traccia i.si, .cr-legenda i.si { background: var(--sf-si); box-shadow: var(--sf-filo), 0 3px 10px -5px color-mix(in oklch, var(--accento-2) 70%, transparent); }
+.cr-traccia i.meta, .cr-legenda i.meta { background: var(--sf-meta); box-shadow: var(--sf-filo), 0 3px 10px -5px color-mix(in oklch, var(--presto) 70%, transparent); }
+.cr-legenda i { border-radius: 50%; }
+
+/* le barre di avanzamento e le barre della settimana */
+.cr-barra, .t-classifica i { background: var(--sf-vetro); }
+.cr-barra i, .t-classifica i::after { background: linear-gradient(90deg, var(--viola), var(--accento-2)); }
+.cr-barra-riga.basso .cr-barra i, .t-classifica i.basso::after { background: linear-gradient(90deg, color-mix(in oklch, var(--presto) 55%, #fff4e6), var(--presto), color-mix(in oklch, var(--presto) 72%, var(--accento-2))); }
+.cr-barra-riga.oltre .cr-barra i { background: linear-gradient(90deg, color-mix(in oklch, var(--scaduto) 60%, #fff0ec), var(--scaduto), color-mix(in oklch, var(--scaduto) 70%, var(--accento-2))); }
+.cr-barra-riga.fatto .cr-barra i { background: linear-gradient(90deg, color-mix(in oklch, var(--bene) 60%, #f2fff8), var(--bene), color-mix(in oklch, var(--bene) 70%, #8fcde0)); }
+.cr-barre i { background: linear-gradient(180deg, rgb(255 255 255 / .12), rgb(255 255 255 / .04)); }
+.cr-barre > div.su i { background: linear-gradient(180deg, var(--accento-2), var(--viola)); }
+.cr-barre > div.oltre i { background: var(--sf-male-tenue); }
+.cr-barre > div.su.oltre i { background: linear-gradient(180deg, color-mix(in oklch, var(--scaduto) 60%, #fff0ec), var(--scaduto)); }
+
+/* le etichette di stato (pill), i punti, la fatica */
+.cr-pill { background: var(--sf-vetro); box-shadow: var(--sf-filo); }
+.cr-pill.bene { background: var(--sf-bene-tenue); color: color-mix(in oklch, var(--bene) 80%, #fff); }
+.cr-pill.presto { background: var(--sf-meta-tenue); color: color-mix(in oklch, var(--presto) 82%, #fff); }
+.cr-pill.male { background: var(--sf-male-tenue); color: color-mix(in oklch, var(--scaduto) 82%, #fff); }
+.cr-pill.viola { background: var(--sf-si-tenue); color: color-mix(in oklch, var(--viola) 45%, #fff); }
+.t-punti { background: var(--sf-si-tenue); box-shadow: var(--sf-filo); }
+.t-punti.basso { background: var(--sf-meta-tenue); color: color-mix(in oklch, var(--presto) 82%, #fff); }
+.t-fatica { background: var(--sf-si-tenue); box-shadow: var(--sf-filo); }
+.t-sedute li.fastidio .t-fatica { background: var(--sf-meta-tenue); color: color-mix(in oklch, var(--presto) 82%, #fff); }
+.t-cifra.presto b { background: var(--sf-meta); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.t-check-valori li.basso b { color: color-mix(in oklch, var(--presto) 82%, #fff); }
+
+/* i pallini: attivo menta, fermo vetro */
+.t-pallino.vivo { background: var(--sf-bene); box-shadow: 0 0 10px -1px color-mix(in oklch, var(--bene) 70%, transparent); }
+.t-pallino.fermo { background: linear-gradient(160deg, rgb(255 255 255 / .32), rgb(255 255 255 / .12)); }
+
+/* chip, tasti tondi e bottoni di vetro: un velo che scende dall'alto, non piatto */
+.t-tondo, .t-passa, .t-su, .t-chip { background: var(--sf-vetro-forte) !important; box-shadow: var(--sf-filo); }
+.t-bottoni button:not(.t-primario), .t-fila button:not(.t-primario), .t-veloci button { background: var(--sf-vetro-forte) !important; box-shadow: var(--sf-filo); }
+.t-icona { background: var(--sf-vetro-forte); }
+.t-guarda li.urgente > a .t-icona:not(.t-icona-tema) { background: var(--sf-meta-tenue); }
+.t-barra a[aria-current="true"] { background: linear-gradient(160deg, color-mix(in oklch, var(--viola) 22%, transparent), color-mix(in oklch, var(--accento-2) 10%, transparent)); }
+.t-barra a[aria-current="true"] span { color: transparent; background: var(--sf-si); -webkit-background-clip: text; background-clip: text; filter: none; }
+
+/* le cose scelte o in evidenza: la sfumatura tenue lilla → rosa */
+.t-bolla.mia { background: linear-gradient(135deg, color-mix(in oklch, var(--viola) 42%, transparent), color-mix(in oklch, var(--accento-2) 30%, transparent)); }
+.t-bolla small { color: color-mix(in oklch, var(--presto) 82%, #fff); }
+.t-spunta:has(input:checked), .t-sfumatura.sel { background: var(--sf-si-tenue); }
+.t-check-ultimo { background: linear-gradient(135deg, color-mix(in oklch, var(--viola) 18%, transparent), color-mix(in oklch, var(--accento-2) 8%, transparent)); }
+
+/* il cerchio a esagono: le fasce con colori vicini fra loro (corallo, pesca, miele, menta, lilla), la legenda sfumata */
+svg.t-cerchio .f1 { fill: #f39a9f; } svg.t-cerchio .f2 { fill: #f5b08f; } svg.t-cerchio .f3 { fill: #f3d197; }
+svg.t-cerchio .f4 { fill: #8fd6b4; } svg.t-cerchio .f5 { fill: #a87cf0; }
+svg.t-cerchio .pieno { fill: var(--viola); } svg.t-cerchio .pieno.debole { fill: var(--presto); }
+.esa-legenda i { border-radius: 50%; box-shadow: var(--sf-filo); }
+.esa-legenda i.f1 { background: linear-gradient(135deg, #f8c0bd, #f08a95); }
+.esa-legenda i.f2 { background: linear-gradient(135deg, #fbd0b4, #f29c7c); }
+.esa-legenda i.f3 { background: linear-gradient(135deg, #fbe6bd, #efc07a); }
+.esa-legenda i.f4 { background: linear-gradient(135deg, #c4f0da, #7fcdb8); }
+.esa-legenda i.f5 { background: linear-gradient(135deg, #a87cf0, #f08fb8); }
+
+/* ——— (28-11) Rifiniture: le due liste di tecniche approvate da Marco, misurate pagina per pagina a 390 px e portate a regola
+   dove sforavano; più lo sfondo e il vetro di Mirion Fit (stessi valori, 28-11 sera). ——— */
+
+/* lo sfondo di Mirion Fit (Marco: «non farlo nero lo sfondo»): prugna profondo dal colore scelto, trama di puntini leggera, e dietro
+   le card tre luci morbide che scivolano piano (Marco: «leggermente animate»), ferme se il telefono chiede meno movimento */
+body { isolation: isolate; background:
+    radial-gradient(circle at 1px 1px, rgb(255 255 255 / .05) 1px, transparent 1.4px) 0 0 / 22px 22px,
+    linear-gradient(180deg, color-mix(in oklch, var(--viola) 26%, #15101f) 0%, color-mix(in oklch, var(--viola) 14%, #110d1a) 60%, color-mix(in oklch, var(--accento-2) 10%, #110d1a) 100%);
+  background-attachment: fixed; min-height: 100vh; min-height: 100dvh; }
+html { background: #110d1a; }
+html body::before { content: ""; position: fixed; inset: -20%; z-index: -1; pointer-events: none; opacity: .85;
+  background:
+    radial-gradient(38% 30% at 18% 22%, color-mix(in oklch, var(--viola) 38%, transparent), transparent 70%),
+    radial-gradient(34% 28% at 84% 46%, color-mix(in oklch, var(--accento-2) 28%, transparent), transparent 70%),
+    radial-gradient(40% 30% at 40% 88%, color-mix(in oklch, var(--viola) 26%, transparent), transparent 70%);
+  filter: blur(18px); animation: luci-scivolano 45s ease-in-out infinite alternate !important; }
+@keyframes luci-scivolano {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(4%, -3%, 0) scale(1.06); }
+  100% { transform: translate3d(-3%, 4%, 0) scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { html body::before { animation: none !important; } }
+/* la card è quasi solo vetro, come in Fit: si vedono le luci dietro, sfocate; il filo di luce in cima e il bordo la staccano; niente alone sotto */
+.t-carta {
+  background:
+    linear-gradient(145deg, color-mix(in oklch, var(--viola) 14%, transparent) 0%, transparent 45%, transparent 60%, color-mix(in oklch, var(--accento-2) 10%, transparent) 100%),
+    linear-gradient(180deg, rgb(255 255 255 / .06), rgb(255 255 255 / .015) 45%),
+    color-mix(in oklch, #1a1426 22%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .2), inset 0 0 0 1px rgb(255 255 255 / .09); }
+/* le colonne spente della settimana sono vetro: velo lilla chiaro che sfuma in basso e filo di luce in cima */
+.cr-barre > div:not(.su):not(.oltre) i {
+  background: linear-gradient(180deg, color-mix(in oklch, var(--lilla) 16%, rgb(255 255 255 / .08)), rgb(255 255 255 / .02));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), inset 0 0 0 1px rgb(255 255 255 / .05); }
+
+/* A4 · B3 · dentro la card si raggruppa con lo spazio e con i livelli di superficie, non con le righe: niente fili divisori */
+.t-carta { --cr-linea: transparent; }
+.t-unica > .t-pezzo + .t-pezzo { border-top: 0; margin-top: 32px; padding-top: 0; }
+.t-elenco ul.t-clienti { background: none; padding: 0; border-radius: 0; }
+
+/* A7 · pollice e tocco: tutto quello che si tocca prende il dito su almeno 44 × 44 px. Dove il disegno è piccolo per scelta
+   si allarga solo l'area invisibile del tocco */
+.t-cima .t-tondo, .t-cima .t-su { width: 44px; height: 44px; }
+.t-passa { height: 44px; }
+:is(.t-chip, .t-tondo.piccolo, .t-veloci button, .t-sfumatura, .t-carta .cr-pill-tocco) { position: relative; }
+:is(.t-chip, .t-tondo.piccolo, .t-veloci button, .t-sfumatura)::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+.t-modulo select, .t-modulo input, .t-scrivi input, .t-scrivi textarea { min-height: 44px; }
+.t-sfumatura { min-height: 44px; }
+ul.t-tracce { gap: 0; } .t-tracce a { min-height: 44px; }
+/* i cursori di Personalizza: la traccia resta sottile, l'area del tocco è alta 44 */
+.t-cursore input[type=range] { height: 44px; margin: 0; }
+
+/* B · tipografia morbida: i numeri grandi di peso medio */
+.cr-tile-giu b, .cr-mezzo-dentro b, .cr-tre b, .t-cifra b { font-weight: 600; }
+/* A2 · un protagonista per card e tre grandezze accanto: piccolo 13, corpo 15, titolo 18 (i numeri dei riquadri 24, il mezzo anello resta il grande) */
+.t-carta :is(small, time, .cr-tile-et, .cr-pill, .cr-legenda span, .esa-legenda span, .cr-mezzo-dentro span, .cr-tre span, .cr-tre small,
+  .t-largo-dentro .cr-riga > span, .t-largo-dentro .cr-riga > b, .t-bolla small, .t-breve-sett, .t-veloci button, .t-sfumatura, .t-tracce a, .cr-barre span, .cr-barre em) { font-size: 13px; }
+.t-carta :is(p, .t-nota, blockquote, .t-guarda b, .t-righe b, .t-sedute b, .t-classifica b, .t-nota b, .t-guarda li > a b, .t-fatica, .t-bottoni button, .t-tracce a b, .cr-riga > span, .cr-riga > b, .t-cursore > span) { font-size: 15px; }
+.t-carta :is(.t-largo-dentro .cr-riga > span, .t-largo-dentro .cr-riga > b, .t-tracce a span, .t-guarda li > a p, .t-guarda .t-riga p) { font-size: 13px; }
+.cr-tre span, .cr-tre small { text-wrap: balance; }
+.t-carta h2, .t-unica > .t-pezzo > header h2 { font: 700 15px var(--titoli); letter-spacing: 0; }
+.t-carta :is(.cr-tre b, .t-cifra b) { font-size: 18px; }
+.t-carta .cr-tile-giu b { font-size: 24px; }
+
+/* A1 · griglia a 8: gli spazi che sforavano tornano a multipli di 4/8 */
+.t-vista { gap: 16px; }
+.cr-tile { padding: 12px; gap: 8px; }
+.t-carta .t-guarda li > a, .t-carta .t-righe:not(.semplici) li > a, .t-carta .t-classifica li > a,
+.t-unica .t-righe.semplici li, .t-unica .t-sedute li, .t-unica .t-guarda .t-riga, .t-unica .t-guarda li > div { padding: 12px 0; }
+.t-veloci button { padding: 8px 12px; } .t-veloci { gap: 8px; }
+.t-tracce a { gap: 8px; }
+.t-breve-sett { gap: 8px; }
+.cr-pill { padding-left: 8px; padding-right: 8px; }
+
+/* A5 · un solo bordo a sinistra: le righe partono dallo stesso filo del titolo (niente 2 px di rientro) */
+.t-carta .t-classifica li > a, .t-unica .t-righe.semplici li, .t-unica .t-sedute li { padding-left: 0; padding-right: 0; }
+
+/* B7 · niente bianco puro: sui bottoni pieni e sulle iconcine sfumate il testo è il bianco caldo */
+.t-primario, .t-pezzo-icona, .cr-tile-ico, .t-icona.t-icona-tema { color: var(--testo); }
+
+/* B5 · ombre colorate e morbide, mai nere: la barra in basso */
+.t-barra { box-shadow: inset 0 1px 0 rgb(255 255 255 / .07), 0 16px 40px -14px color-mix(in oklch, var(--viola) 40%, #0b0712); }
+
+/* B9 · le icone dell'interfaccia (prima simboli di testo ed emoji) sono della stessa famiglia: 24, tratto 2, estremità tonde */
+.t-ic { width: 20px; height: 20px; flex: none; display: block; }
+.t-chip .t-ic { width: 16px; height: 16px; }
+.t-primario.t-largo { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.t-primario.t-largo .t-ic { width: 18px; height: 18px; }
+.t-tondo.piccolo .t-ic { width: 16px; height: 16px; }
+.t-tondo, .t-su, .t-tondo.piccolo, .t-primario.t-tondo { display: grid; place-items: center; }
+.t-barra a span .t-ic { width: 22px; height: 22px; }
+.t-barra a span { display: grid; place-items: center; }
+.t-barra a[aria-current="true"] span { color: var(--lilla); background: none; -webkit-background-clip: border-box; background-clip: border-box; }
+
+/* B1 · le sfumature fra colori vicini si calcolano in OKLCH: stessi colori di prima, niente grigio al centro */
+:root {
+  --sf-si: linear-gradient(135deg in oklch, var(--viola), var(--accento-2));
+  --sfuma: linear-gradient(120deg in oklch, var(--viola), color-mix(in oklch, var(--viola), var(--accento-2)) 50%, var(--accento-2));
+}
+.cr-barra i, .t-classifica i::after { background: linear-gradient(90deg in oklch, var(--viola), var(--accento-2)); }
+.cr-barre > div.su i { background: linear-gradient(180deg in oklch, var(--accento-2), var(--viola)); }
+.t-primario { background: var(--sfuma); }
+/* A6 · il colore ha un compito: menta, miele e corallo dicono solo uno stato; il cerchio delle prestazioni va dal rosa al lilla, come in Fit */
+svg.t-cerchio .f1 { fill: #f59cbc; } svg.t-cerchio .f2 { fill: color-mix(in oklch, #f59cbc, #c97fdc); } svg.t-cerchio .f3 { fill: #c97fdc; }
+svg.t-cerchio .f4 { fill: color-mix(in oklch, #c97fdc, #9468f0); } svg.t-cerchio .f5 { fill: #9468f0; }
+.esa-legenda i.f1 { background: linear-gradient(160deg in oklch, color-mix(in oklch, #f59cbc, #fff 20%), #f59cbc); }
+.esa-legenda i.f2 { background: linear-gradient(160deg in oklch, #f59cbc, color-mix(in oklch, #f59cbc, #c97fdc)); }
+.esa-legenda i.f3 { background: linear-gradient(160deg in oklch, color-mix(in oklch, #f59cbc, #c97fdc), #c97fdc); }
+.esa-legenda i.f4 { background: linear-gradient(160deg in oklch, #c97fdc, color-mix(in oklch, #c97fdc, #9468f0)); }
+.esa-legenda i.f5 { background: linear-gradient(160deg in oklch, color-mix(in oklch, #c97fdc, #9468f0), #9468f0); }
+
+/* B2 · la grana sul fondo: 3% */
+body::after { opacity: .03; }
+
+/* B6 · raggi concentrici dove due superfici si toccano da vicino: interno = esterno − spazio (minimo 8) */
+.cr-tile-ico { border-radius: 8px; }
+.t-carta .t-riquadri .cr-tile { border-radius: 16px; }
+/* le citazioni (la nota del cliente): un livello di superficie al posto del filo a sinistra */
+.t-sedute blockquote, .t-guarda li blockquote { border-left: 0; padding: 8px 12px; border-radius: 12px; background: rgb(255 255 255 / .05); opacity: 1; }
+.t-bottoni button, .t-primario { min-height: 44px; }
+/* niente testo a capo nei bottoni: quando non stanno in fila vanno sotto, interi */
+.t-bottoni { flex-wrap: wrap; }
+.t-bottoni button, .t-primario, .t-chip, .t-passa { white-space: nowrap; }
+/* niente spazio vuoto sotto l'ultima card: finisce 16 px sopra la barra in basso, come in Mirion Fit */
+body { padding-bottom: calc(var(--barra) + env(safe-area-inset-bottom, 0px) + 18px); }
