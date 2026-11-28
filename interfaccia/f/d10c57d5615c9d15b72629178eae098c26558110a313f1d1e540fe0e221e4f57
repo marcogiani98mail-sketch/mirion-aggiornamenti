@@ -1,0 +1,47 @@
+// (28-11 notte, Marco: «quando apro una casella scende una cosa a tendina: non si apre la tendina di destra, ma scende dalla
+// casella»). I cassetti (.cassetto dentro .cassetto-fondo) non entrano più da destra: si aprono come una tendina che scende da
+// sotto la casella (o il bottone) che hai toccato, larga come lei, con un'animazione morbida. Nessun file che apre un cassetto
+// cambia: qui si guarda dove è stato il tocco e, quando arriva un cassetto, lo si mette lì sotto.
+let tocco = null
+addEventListener('pointerdown', e => {
+  const t = e.target instanceof Element ? e.target : null
+  if (!t || t.closest('.cassetto-fondo')) return
+  const bottone = t.closest('button, a, [role="button"], [data-vai]'), casella = t.closest('.riquadro, .fascia, .carta, section, li')
+  // la casella intera se non è troppo alta (la tendina deve vedersi), sennò il bottone toccato
+  const r = casella?.getBoundingClientRect()
+  tocco = { el: r && r.height < innerHeight * 0.45 ? casella : (bottone || casella || t), quando: Date.now() }
+}, true)
+
+const posa = (fondo, prima) => {
+  const a = fondo._ancora, c = fondo.querySelector(':scope > .cassetto')
+  if (!a || !c) return
+  const r = a.getBoundingClientRect(), m = 12, largo = Math.min(innerWidth - 2 * m, Math.max(r.width, c.classList.contains('cassetto-largo') ? 760 : 460))
+  const sotto = innerHeight - r.bottom - m, sopra = r.top - m, suGiu = sotto < 280 && sopra > sotto
+  const left = Math.max(m, Math.min(r.left, innerWidth - largo - m))
+  Object.assign(c.style, { left: left + 'px', width: largo + 'px', top: suGiu ? 'auto' : Math.max(m, r.bottom + 8) + 'px', bottom: suGiu ? (innerHeight - r.top + 8) + 'px' : 'auto',
+    maxHeight: Math.max(240, (suGiu ? sopra : sotto) - 8) + 'px', transformOrigin: suGiu ? 'bottom center' : 'top center' })
+  c.classList.toggle('sale', suGiu)
+  if (prima) c.classList.add('scende')
+}
+
+const prendi = fondo => {
+  if (fondo._ancora === undefined) {
+    const ok = tocco && Date.now() - tocco.quando < 1500 && tocco.el?.isConnected
+    fondo._ancora = ok ? tocco.el : null
+    if (fondo._ancora) { fondo.classList.add('a-tendina'); fondo._ancora.classList.add('tendina-aperta') }
+    posa(fondo, true)
+    // tolto il fondo, la casella torna come prima
+    new MutationObserver((_, o) => { if (!fondo.isConnected) { fondo._ancora?.classList.remove('tendina-aperta'); o.disconnect() } }).observe(document.body, { childList: true })
+  } else posa(fondo, false) // ridisegnato dentro (Personalizza): resta dov'era, senza ripartire
+}
+
+new MutationObserver(ms => {
+  for (const m of ms) for (const n of m.addedNodes) {
+    if (n.nodeType !== 1) continue
+    if (n.classList.contains('cassetto-fondo')) prendi(n)
+    else if (n.classList.contains('cassetto') && n.parentElement?.classList.contains('cassetto-fondo')) prendi(n.parentElement)
+    else n.querySelectorAll?.('.cassetto-fondo').forEach(prendi)
+  }
+}).observe(document.body, { childList: true, subtree: true })
+
+addEventListener('resize', () => document.querySelectorAll('.cassetto-fondo.a-tendina').forEach(f => posa(f, false)))

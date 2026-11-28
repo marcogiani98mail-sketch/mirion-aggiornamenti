@@ -1,0 +1,123 @@
+// La cornice comune di Mirion Fit e di Mirion Trainer sul telefono (Marco, 27-11-2026: «dai a Mirion Trainer le stesse funzioni
+// di Mirion Fit, con il contenuto di adesso: tornare indietro, personalizzazione ecc., così non le ripetiamo ogni volta»).
+// Un pezzo solo per le due web app: il tasto ‹ in alto (dove porta, pagina per pagina), i colori di Personalizza (le sfumature e
+// i cursori) e l'ordine delle card (su, giù, nascondi). Ognuna ci mette la sua grafica e i suoi nomi.
+// Si cambia QUI (mirion-codice, app/js/cornice.js) e si ricopia uguale in Mirion Fit (Programma/public/cornice.js): una prova di
+// prova.mjs controlla che le due copie siano identiche. Niente import: la tabella dei colori la passa chi lo usa.
+
+// ---- il tasto ‹ in alto ----
+// regole: [espressione sull'indirizzo (#…), dove porta (testo, o funzione della corrispondenza)]; vale la prima che corrisponde.
+// Nessuna regola = sei già in cima a una sezione, e il tasto non si vede.
+export function tornaSu (hash, regole) {
+  for (const [re, su] of regole) { const m = re.exec(hash || ''); if (m) return typeof su === 'function' ? su(m) : su }
+  return null
+}
+// il tasto: si accende e si spegne a ogni cambio di pagina; «prima» chiude quello che è aperto sopra (un foglio, un menù)
+// La tastiera del telefono (27-11-2026 notte, Marco: «quando si apre qualunque casella dai spazio anche alla tastiera senza
+// offuscare niente»): quando la tastiera sale, --tastiera dice quanto è alta e --vista quanto resta dello schermo; la pagina ha la
+// classe «tastiera». I pannelli che salgono dal basso si alzano sopra la tastiera e si accorciano nello spazio che resta, la barra
+// in basso si toglie, e la casella in cui scrivi resta in vista.
+export function seguiTastiera () {
+  const vv = window.visualViewport, radice = document.documentElement
+  if (!vv || radice.dataset.tastiera) return
+  radice.dataset.tastiera = '1'
+  const misura = () => {
+    const alta = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))
+    radice.style.setProperty('--tastiera', alta + 'px'); radice.style.setProperty('--vista', Math.round(vv.height) + 'px')
+    radice.classList.toggle('tastiera', alta > 80)
+    if (alta > 80) { const a = document.activeElement; if (a?.matches?.('input, textarea, select')) a.scrollIntoView({ block: 'nearest' }) }
+  }
+  vv.addEventListener('resize', misura); vv.addEventListener('scroll', misura)
+  document.addEventListener('focusin', e => { if (e.target.matches?.('input, textarea')) setTimeout(() => e.target.scrollIntoView({ block: 'nearest' }), 300) })
+  misura()
+}
+
+export function montaIndietro (bottone, regole, { prima } = {}) {
+  seguiTastiera()
+  if (!bottone) return () => {}
+  const aggiorna = () => { const su = tornaSu(location.hash, regole); bottone.hidden = !su; bottone.dataset.su = su || '' }
+  bottone.addEventListener('click', e => { e.preventDefault(); prima?.(); location.hash = bottone.dataset.su || '#' })
+  addEventListener('hashchange', aggiorna); aggiorna()
+  return aggiorna
+}
+
+// ---- i colori di Personalizza: le sfumature pronte e i cursori dello spazio dei colori (come Mirion sul computer) ----
+// i cursori, per tutte e due: [id, nome, minimo, massimo, unità]; ognuna mostra quelli che ha in «base»
+export const CURSORI_COLORI = [['accento', 'Il colore', 0, 360, '°'], ['secondo', 'Il secondo colore', 0, 360, '°'], ['saturazione', 'Quanto è vivo', 0, 200, '%'],
+  ['trasparenza', 'Card piene', 20, 100, '%'], ['buio', 'Fondo nero', 0, 100, '%']]
+export function creaColori (SFUMATURE, base) {
+  const sfumature = () => Object.entries(SFUMATURE).map(([id, [nome, accento, secondo]]) => ({ id, nome, accento, secondo }))
+  const valida = s => (s && SFUMATURE[s.tema] ? s : null)
+  // la scelta → i numeri dei cursori (quelli della sfumatura, se non li hai mossi)
+  function cursori (s) {
+    const [, accento, secondo, , buio] = SFUMATURE[s?.tema] || SFUMATURE.viola
+    const c = s?.colori || {}, n = (v, b) => (v !== null && v !== '' && Number.isFinite(+v) ? +v : b)
+    const fuori = { accento: n(c.accento, accento), secondo: n(c.secondo, secondo) }
+    for (const [k, v] of Object.entries(base)) fuori[k] = n(c[k], k === 'buio' ? (buio ?? v) : v)
+    return fuori
+  }
+  const quali = () => CURSORI_COLORI.filter(([id]) => id === 'accento' || id === 'secondo' || id in base)
+  return { sfumature, valida, cursori, quali }
+}
+// il tondo di una sfumatura (lo stesso disegno nelle due app)
+export const sfondoTondo = x => `linear-gradient(135deg, oklch(.64 .17 ${x.accento}), oklch(.72 .15 ${x.secondo}))`
+
+// ---- l'ordine delle card: quelle scelte prima, le nuove in fondo; le nascoste restano nell'elenco, spente ----
+export function ordineCard (tutte, scelta = {}) {
+  const ordine = [...new Set([...(Array.isArray(scelta.ordine) ? scelta.ordine : []).filter(id => tutte.includes(id)), ...tutte])]
+  return { ordine, nascoste: (Array.isArray(scelta.nascoste) ? scelta.nascoste : []).filter(id => tutte.includes(id)) }
+}
+export function sposta (ordine, id, verso) {
+  const o = [...ordine], i = o.indexOf(id), j = i + verso
+  if (i < 0 || j < 0 || j >= o.length) return o
+  ;[o[i], o[j]] = [o[j], o[i]]
+  return o
+}
+export const alterna = (nascoste, id) => (nascoste.includes(id) ? nascoste.filter(x => x !== id) : [...nascoste, id])
+
+// Installare la web app dal telefono (27-11-2026, Marco: «rendi da telefono tutte e due installabili tramite web app»), uguale per
+// Mirion Fit e Mirion Trainer. Già aperta come app: niente. Android (Chrome): quando si può, una riga con «Installa». iPhone (Safari):
+// la riga che dice dove toccare (Condividi → Aggiungi alla schermata Home). «Dopo» la nasconde per una settimana su questo telefono.
+// classi = { riga, tasto, pieno }: le classi di ogni app per la riga e i bottoni.
+export function proponiInstallazione ({ nome, classi }) {
+  const doc = globalThis.document, nav = globalThis.navigator
+  if (!doc || !nav) return
+  const giaApp = nav.standalone === true || globalThis.matchMedia?.('(display-mode: standalone)').matches
+  if (giaApp) return
+  const chiave = 'installa-dopo:' + nome
+  try { if (Date.now() - Number(localStorage.getItem(chiave) || 0) < 7 * 864e5) return } catch { }
+  const iphone = /iPhone|iPad|iPod/.test(nav.userAgent) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1)
+  const riga = (testo, installa) => {
+    if (doc.getElementById('installa-web')) return
+    const r = doc.createElement('div'); r.id = 'installa-web'; r.className = classi.riga; r.setAttribute('role', 'status')
+    r.innerHTML = `<span>${testo}</span>${installa ? `<button class="${classi.pieno}" type="button">Installa</button>` : ''}<button class="${classi.tasto}" type="button">${installa ? 'Dopo' : 'Ok'}</button>`
+    const bottoni = r.querySelectorAll('button'), dopo = bottoni[bottoni.length - 1]
+    if (installa) bottoni[0].onclick = () => { r.remove(); installa() }
+    dopo.onclick = () => { r.remove(); try { localStorage.setItem(chiave, String(Date.now())) } catch { } }
+    doc.body.prepend(r)
+  }
+  if (iphone) riga(`Per avere ${nome} come app: tocca <b>Condividi</b> in Safari, poi <b>Aggiungi alla schermata Home</b>.`)
+  const offri = () => riga(`Installa ${nome} sul telefono: si apre come un'app, anche senza rete.`, installaOra)
+  if (rinvio) offri(); else globalThis.addEventListener?.('installabile', offri, { once: true })
+}
+
+// (28-11 notte, Marco: «sul dispositivo possibile dammi la disponibilità di installare l'app come web app») il tasto «Installa come
+// app» sempre a portata (benvenuto, Io, Personalizza), non solo la riga che si può mandare via: Android e computer con Chrome o Edge
+// aprono la finestra del browser; iPhone e gli altri dicono dove toccare. Già aperta come app: il tasto non c'è.
+let rinvio = null
+globalThis.addEventListener?.('beforeinstallprompt', e => { e.preventDefault(); rinvio = e; globalThis.dispatchEvent?.(new Event('installabile')) })
+globalThis.addEventListener?.('appinstalled', () => { rinvio = null; globalThis.document?.querySelectorAll('.tasto-installa').forEach(b => b.closest('.installa-blocco')?.remove()) })
+const giaApp = () => globalThis.navigator?.standalone === true || Boolean(globalThis.matchMedia?.('(display-mode: standalone)').matches)
+const installaOra = async () => { const e = rinvio; if (!e) return false; rinvio = null; try { await e.prompt() } catch { } return true }
+export function tastoInstalla ({ nome, classe = 'btn piccolo', icona = '' }) {
+  const doc = globalThis.document, nav = globalThis.navigator
+  if (!doc || !nav || giaApp()) return null
+  const iphone = /iPhone|iPad|iPod/.test(nav.userAgent) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1)
+  const blocco = doc.createElement('div'); blocco.className = 'installa-blocco'
+  const b = doc.createElement('button'); b.type = 'button'; b.className = classe + ' tasto-installa'; b.innerHTML = `${icona}<span>Installa ${nome} come app</span>`
+  const come = doc.createElement('p'); come.className = 'installa-come'; come.hidden = true
+  come.innerHTML = iphone ? 'In Safari tocca <b>Condividi</b>, poi <b>Aggiungi alla schermata Home</b>.'
+    : 'Dal menu del browser (i tre puntini) scegli <b>Installa app</b> o <b>Aggiungi a schermata Home</b>.'
+  b.onclick = async () => { if (!(await installaOra())) come.hidden = !come.hidden }
+  blocco.append(b, come); return blocco
+}
